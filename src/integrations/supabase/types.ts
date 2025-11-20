@@ -14,7 +14,159 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      devices: {
+        Row: {
+          created_at: string
+          id: string
+          last_seen_at: string | null
+          name: string
+          playlist_id: string | null
+          user_id: string
+          venue_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_seen_at?: string | null
+          name: string
+          playlist_id?: string | null
+          user_id: string
+          venue_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_seen_at?: string | null
+          name?: string
+          playlist_id?: string | null
+          user_id?: string
+          venue_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devices_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devices_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      playlist_videos: {
+        Row: {
+          created_at: string
+          id: string
+          order_index: number
+          playlist_id: string
+          video_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_index?: number
+          playlist_id: string
+          video_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_index?: number
+          playlist_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playlist_videos_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "playlist_videos_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      playlists: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      venues: {
+        Row: {
+          created_at: string
+          id: string
+          location: string | null
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location?: string | null
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location?: string | null
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      videos: {
+        Row: {
+          created_at: string
+          id: string
+          title: string
+          user_id: string
+          video_url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title: string
+          user_id: string
+          video_url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string
+          user_id?: string
+          video_url?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

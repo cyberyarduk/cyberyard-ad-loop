@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PlaylistVideo {
   id: string;
@@ -14,28 +15,67 @@ const Player = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    // TODO: Fetch playlist videos from Supabase once database is ready
-    // For now using mock data
-    const mockVideos: PlaylistVideo[] = [
-      {
-        id: "1",
-        video_url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-        order_index: 0,
-      },
-    ];
-    
-    setVideos(mockVideos);
+    const fetchVideos = async () => {
+      if (!deviceId) return;
 
-    // TODO: Update device last_seen_at
-    // const updateLastSeen = async () => {
-    //   await supabase
-    //     .from('devices')
-    //     .update({ last_seen_at: new Date().toISOString() })
-    //     .eq('id', deviceId);
-    // };
-    // updateLastSeen();
-    // const interval = setInterval(updateLastSeen, 60000); // Every minute
-    // return () => clearInterval(interval);
+      // Get the device and its playlist
+      const { data: device, error: deviceError } = await supabase
+        .from('devices')
+        .select('playlist_id')
+        .eq('id', deviceId)
+        .single();
+
+      if (deviceError || !device?.playlist_id) {
+        console.error("Device not found or no playlist assigned:", deviceError);
+        setVideos([]);
+        return;
+      }
+
+      // Get videos in the playlist
+      const { data: playlistVideos, error: videosError } = await supabase
+        .from('playlist_videos')
+        .select(`
+          order_index,
+          videos (
+            id,
+            video_url
+          )
+        `)
+        .eq('playlist_id', device.playlist_id)
+        .order('order_index', { ascending: true });
+
+      if (videosError) {
+        console.error("Error fetching videos:", videosError);
+        setVideos([]);
+        return;
+      }
+
+      const formattedVideos: PlaylistVideo[] = playlistVideos
+        .filter(pv => pv.videos)
+        .map(pv => ({
+          id: (pv.videos as any).id,
+          video_url: (pv.videos as any).video_url,
+          order_index: pv.order_index,
+        }));
+
+      setVideos(formattedVideos);
+    };
+
+    fetchVideos();
+
+    // Update device last_seen_at
+    const updateLastSeen = async () => {
+      if (!deviceId) return;
+      await supabase
+        .from('devices')
+        .update({ last_seen_at: new Date().toISOString() })
+        .eq('id', deviceId);
+    };
+    
+    updateLastSeen();
+    const interval = setInterval(updateLastSeen, 60000); // Every minute
+    
+    return () => clearInterval(interval);
   }, [deviceId]);
 
   useEffect(() => {
