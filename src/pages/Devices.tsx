@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,30 +30,115 @@ import {
 import { Plus, Monitor, Copy, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 
 const Devices = () => {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [devices, setDevices] = useState<any[]>([]);
+  const [venues, setVenues] = useState<any[]>([]);
+  const [playlists, setPlaylists] = useState<any[]>([]);
   const [name, setName] = useState("");
   const [venueId, setVenueId] = useState("");
   const [playlistId, setPlaylistId] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newDevice = {
-      id: crypto.randomUUID(),
-      name,
-      venue_id: venueId || null,
-      playlist_id: playlistId || null,
-      last_seen_at: null,
-      created_at: new Date().toISOString(),
+  // Auth check
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/auth");
+      }
     };
-    setDevices([...devices, newDevice]);
-    toast.success("Device created successfully");
-    setOpen(false);
-    setName("");
-    setVenueId("");
-    setPlaylistId("");
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!session) {
+        navigate("/auth");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  // Fetch data
+  useEffect(() => {
+    fetchDevices();
+    fetchVenues();
+    fetchPlaylists();
+  }, []);
+
+  const fetchDevices = async () => {
+    const { data, error } = await supabase
+      .from('devices')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      toast.error("Failed to fetch devices");
+      console.error(error);
+    } else {
+      setDevices(data || []);
+    }
+  };
+
+  const fetchVenues = async () => {
+    const { data, error } = await supabase
+      .from('venues')
+      .select('*')
+      .order('name');
+    
+    if (error) {
+      console.error(error);
+    } else {
+      setVenues(data || []);
+    }
+  };
+
+  const fetchPlaylists = async () => {
+    const { data, error } = await supabase
+      .from('playlists')
+      .select('*')
+      .order('name');
+    
+    if (error) {
+      console.error(error);
+    } else {
+      setPlaylists(data || []);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error("You must be logged in");
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('devices')
+      .insert({
+        name,
+        user_id: user.id,
+        venue_id: venueId || null,
+        playlist_id: playlistId || null,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      toast.error("Failed to create device");
+      console.error(error);
+    } else {
+      toast.success("Device created successfully");
+      setDevices([data, ...devices]);
+      setOpen(false);
+      setName("");
+      setVenueId("");
+      setPlaylistId("");
+    }
   };
 
   const copyPlayerUrl = (deviceId: string) => {
@@ -103,7 +189,12 @@ const Devices = () => {
                       <SelectValue placeholder="Select a venue" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">No venue</SelectItem>
+                      <SelectItem value="">No venue</SelectItem>
+                      {venues.map((venue) => (
+                        <SelectItem key={venue.id} value={venue.id}>
+                          {venue.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -114,7 +205,12 @@ const Devices = () => {
                       <SelectValue placeholder="Select a playlist" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">No playlist</SelectItem>
+                      <SelectItem value="">No playlist</SelectItem>
+                      {playlists.map((playlist) => (
+                        <SelectItem key={playlist.id} value={playlist.id}>
+                          {playlist.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
