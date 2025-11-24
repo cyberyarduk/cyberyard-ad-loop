@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.7ab66e3bb88a49c6a3bcdb9036b58b8e',
+  appId: 'app.lovable.cyberyard',
   appName: 'Cyberyard',
   webDir: 'dist',
   server: {
