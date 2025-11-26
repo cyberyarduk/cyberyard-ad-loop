@@ -17,6 +17,22 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
   const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showAICreator, setShowAICreator] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+
+  const handleForceSync = async () => {
+    setSyncing(true);
+    try {
+      // Trigger a playlist refresh by briefly showing a toast
+      toast.info("Syncing playlist...");
+      
+      // Force a reload of the page to refresh the playlist
+      window.location.reload();
+    } catch (error) {
+      console.error('Sync error:', error);
+      toast.error('Failed to sync content');
+      setSyncing(false);
+    }
+  };
 
   const handlePINSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -175,11 +191,14 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
             </CardHeader>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow opacity-50">
+          <Card 
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={handleForceSync}
+          >
             <CardHeader>
               <CardTitle>Force Sync Content</CardTitle>
               <CardDescription>
-                Refresh playlist and check for new videos
+                {syncing ? 'Syncing...' : 'Refresh playlist and check for new videos'}
               </CardDescription>
             </CardHeader>
           </Card>

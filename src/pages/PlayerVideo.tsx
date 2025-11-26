@@ -20,6 +20,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [pendingPlaylistChange, setPendingPlaylistChange] = useState<Video[] | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const tapTimerRef = useRef<NodeJS.Timeout | null>(null);
   const tapCountRef = useRef(0);
@@ -82,9 +83,9 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           filter: `id=eq.${deviceInfo.id}`
         },
         async (payload) => {
-          console.log('Device updated, refreshing playlist:', payload);
+          console.log('Device updated, fetching new playlist:', payload);
           
-          // Fetch new playlist first
+          // Fetch new playlist
           const response = await fetch(
             `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/device-playlist`,
             {
@@ -99,16 +100,13 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           const data = await response.json();
           
           if (data.success && data.videos) {
-            // Seamlessly switch: keep playing until new video loads, then switch
             const newVideos = data.videos;
             
-            if (newVideos.length > 0) {
-              // Update videos and reset index
-              setVideos(newVideos);
-              setCurrentIndex(0);
-              
-              // The video element will automatically reload with new content via key change
-              toast.success('Playlist updated!');
+            if (newVideos.length > 0 && JSON.stringify(newVideos) !== JSON.stringify(videos)) {
+              console.log('New playlist detected, queuing switch after current video ends');
+              // Queue the new playlist - it will switch when current video ends
+              setPendingPlaylistChange(newVideos);
+              toast.info('New playlist ready - switching after current video');
             }
           }
         }
@@ -128,6 +126,16 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   }, [authToken, deviceInfo.id]);
 
   const handleVideoEnd = () => {
+    // Check if there's a pending playlist change
+    if (pendingPlaylistChange) {
+      console.log('Switching to new playlist after video ended');
+      setVideos(pendingPlaylistChange);
+      setCurrentIndex(0);
+      setPendingPlaylistChange(null);
+      toast.success('Playlist updated!');
+      return;
+    }
+
     if (videos.length === 0) return;
     
     // Move to next video, loop back to start if at end
