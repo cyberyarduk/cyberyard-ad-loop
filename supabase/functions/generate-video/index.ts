@@ -20,9 +20,9 @@ serve(async (req) => {
       throw new Error('SHOTSTACK_API_KEY not configured');
     }
 
-    // Build tracks array with enhanced visual design
+    // Build tracks array with text assets and sparkle effects
     const tracks = [
-      // Background image layer
+      // Background image layer with zoom
       {
         clips: [
           {
@@ -33,67 +33,56 @@ serve(async (req) => {
             start: 0,
             length: parseFloat(duration),
             fit: "cover",
-            scale: 1.05,
+            scale: 1.2,
             effect: "zoomIn"
           }
         ]
       },
-      // Dark overlay for better text readability
+      // Dark vignette overlay
       {
         clips: [
           {
             asset: {
-              type: "html",
-              html: `<div style="width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.6) 100%);"></div>`,
-              width: 1080,
-              height: 1920
+              type: "luma",
+              src: "https://shotstack-assets.s3.amazonaws.com/luma-mattes/vignette.mp4"
             },
             start: 0,
             length: parseFloat(duration)
           }
         ]
       },
-      // Main text with attractive styling
+      // Sparkle/particles overlay
       {
         clips: [
           {
             asset: {
-              type: "html",
-              html: `
-                <div style="
-                  text-align: center;
-                  font-family: 'Arial Black', sans-serif;
-                  padding: 30px;
-                ">
-                  <div style="
-                    display: inline-block;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    padding: 40px 60px;
-                    border-radius: 30px;
-                    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-                    border: 4px solid rgba(255,255,255,0.3);
-                  ">
-                    <p style="
-                      color: #ffffff;
-                      font-size: 90px;
-                      font-weight: 900;
-                      margin: 0;
-                      text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
-                      letter-spacing: 2px;
-                      line-height: 1.2;
-                    ">${mainText}</p>
-                  </div>
-                </div>
-              `,
-              width: 1080,
-              height: 400,
-              position: "center"
+              type: "video",
+              src: "https://shotstack-assets.s3.amazonaws.com/footage/particles-white.mp4"
             },
             start: 0,
             length: parseFloat(duration),
-            offset: {
-              y: -0.25
+            opacity: 0.4
+          }
+        ]
+      },
+      // Main text using title asset
+      {
+        clips: [
+          {
+            asset: {
+              type: "title",
+              text: mainText,
+              style: "future",
+              color: "#ffffff",
+              size: "large",
+              background: "rgba(0,0,0,0.7)",
+              position: "center",
+              offset: {
+                y: -0.2
+              }
             },
+            start: 0,
+            length: parseFloat(duration),
             transition: {
               in: "slideDown",
               out: "slideUp"
@@ -103,45 +92,25 @@ serve(async (req) => {
       }
     ];
 
-    // Add subtext track only if subtext exists
+    // Add subtext if provided
     if (subtext && subtext.trim()) {
       tracks.push({
         clips: [
           {
             asset: {
-              type: "html",
-              html: `
-                <div style="
-                  text-align: center;
-                  font-family: 'Arial', sans-serif;
-                  padding: 20px;
-                ">
-                  <div style="
-                    display: inline-block;
-                    background: rgba(255, 255, 255, 0.95);
-                    padding: 25px 50px;
-                    border-radius: 20px;
-                    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
-                  ">
-                    <p style="
-                      color: #333333;
-                      font-size: 55px;
-                      font-weight: 700;
-                      margin: 0;
-                      text-shadow: 1px 1px 2px rgba(255,255,255,0.5);
-                    ">${subtext}</p>
-                  </div>
-                </div>
-              `,
-              width: 1080,
-              height: 300,
-              position: "center"
+              type: "title",
+              text: subtext,
+              style: "subtitle",
+              color: "#ffffff",
+              size: "medium",
+              background: "rgba(0,0,0,0.8)",
+              position: "center",
+              offset: {
+                y: 0.15
+              }
             },
             start: 0,
             length: parseFloat(duration),
-            offset: {
-              y: 0.3
-            },
             transition: {
               in: "slideUp",
               out: "slideDown"
