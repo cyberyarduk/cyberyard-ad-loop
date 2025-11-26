@@ -1,7 +1,7 @@
 project_id = "coislwmlvrcgxdwcvoqu"
 
 [functions.generate-video]
-verify_jwt = true
+verify_jwt = false
 
 [functions.device-pair]
 verify_jwt = false
