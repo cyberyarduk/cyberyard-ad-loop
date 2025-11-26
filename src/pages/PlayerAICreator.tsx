@@ -1,8 +1,9 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Camera, ArrowLeft, Wand2 } from "lucide-react";
 import { toast } from "sonner";
@@ -21,7 +22,41 @@ const PlayerAICreator = ({ authToken, deviceInfo, onBack, onComplete }: PlayerAI
   const [mainText, setMainText] = useState("");
   const [subtext, setSubtext] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [playlists, setPlaylists] = useState<any[]>([]);
+  const [selectedPlaylist, setSelectedPlaylist] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch playlists on mount
+  useEffect(() => {
+    const fetchPlaylists = async () => {
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/playlists?select=*&order=created_at.desc`,
+          {
+            headers: {
+              'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+              'authorization': `Bearer ${authToken}`,
+            }
+          }
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          setPlaylists(data);
+          // Default to device's current playlist if available
+          if (deviceInfo.playlist_id) {
+            setSelectedPlaylist(deviceInfo.playlist_id);
+          } else if (data.length > 0) {
+            setSelectedPlaylist(data[0].id);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch playlists:', error);
+      }
+    };
+    
+    fetchPlaylists();
+  }, [authToken, deviceInfo.playlist_id]);
 
   const handleCapture = async () => {
     // Check if running on native platform
@@ -73,13 +108,14 @@ const PlayerAICreator = ({ authToken, deviceInfo, onBack, onComplete }: PlayerAI
       return;
     }
 
+    if (!selectedPlaylist) {
+      toast.error("Please select a playlist");
+      return;
+    }
+
     setGenerating(true);
     try {
-      if (!capturedImage) {
-        throw new Error("No image captured");
-      }
-
-      console.log('Starting video generation...');
+      console.log('Starting video generation with playlist:', selectedPlaylist);
       toast.info("Generating video... This may take 30-60 seconds");
 
       // Send base64 image directly to edge function - it will handle the upload
@@ -99,7 +135,7 @@ const PlayerAICreator = ({ authToken, deviceInfo, onBack, onComplete }: PlayerAI
             duration: '5',
             style: 'boom',
             deviceToken: authToken,
-            ...(deviceInfo.playlist_id && { playlistId: deviceInfo.playlist_id })
+            ...(selectedPlaylist && { playlistId: selectedPlaylist })
           })
         }
       );
@@ -220,12 +256,32 @@ const PlayerAICreator = ({ authToken, deviceInfo, onBack, onComplete }: PlayerAI
                 disabled={generating}
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="playlist">Add to Playlist *</Label>
+              <Select
+                value={selectedPlaylist}
+                onValueChange={setSelectedPlaylist}
+                disabled={generating}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a playlist" />
+                </SelectTrigger>
+                <SelectContent>
+                  {playlists.map((playlist) => (
+                    <SelectItem key={playlist.id} value={playlist.id}>
+                      {playlist.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </CardContent>
         </Card>
 
         <Button
           onClick={handleGenerate}
-          disabled={!capturedImage || !mainText.trim() || generating}
+          disabled={!capturedImage || !mainText.trim() || !selectedPlaylist || generating}
           className="w-full h-14 text-lg"
           size="lg"
         >
