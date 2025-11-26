@@ -20,7 +20,7 @@ serve(async (req) => {
       throw new Error('SHOTSTACK_API_KEY not configured');
     }
 
-    // Build tracks array with text assets and sparkle effects
+    // Build tracks array with reliable HTML-based design
     const tracks = [
       // Background image layer with zoom
       {
@@ -38,44 +38,86 @@ serve(async (req) => {
           }
         ]
       },
-      // Dark overlay for text contrast
+      // Semi-transparent dark overlay using HTML
       {
         clips: [
           {
             asset: {
-              type: "video",
-              src: "https://shotstack-assets.s3.amazonaws.com/footage/black-screen.mp4"
+              type: "html",
+              html: `<div style="width: 100%; height: 100%; background: rgba(0,0,0,0.4);"></div>`,
+              width: 1080,
+              height: 1920
             },
             start: 0,
-            length: parseFloat(duration),
-            opacity: 0.4
+            length: parseFloat(duration)
           }
         ]
       },
-      // Sparkle/particles overlay
+      // Sparkle effect using CSS animation
       {
         clips: [
           {
             asset: {
-              type: "video",
-              src: "https://shotstack-assets.s3.amazonaws.com/footage/particles-white.mp4"
+              type: "html",
+              html: `
+                <div style="width: 100%; height: 100%; overflow: hidden;">
+                  <div style="position: absolute; width: 20px; height: 20px; background: white; border-radius: 50%; top: 20%; left: 30%; animation: sparkle 2s infinite;"></div>
+                  <div style="position: absolute; width: 15px; height: 15px; background: white; border-radius: 50%; top: 50%; left: 70%; animation: sparkle 2.5s infinite 0.5s;"></div>
+                  <div style="position: absolute; width: 25px; height: 25px; background: white; border-radius: 50%; top: 70%; left: 20%; animation: sparkle 3s infinite 1s;"></div>
+                  <div style="position: absolute; width: 18px; height: 18px; background: white; border-radius: 50%; top: 30%; left: 80%; animation: sparkle 2.2s infinite 1.5s;"></div>
+                  <style>
+                    @keyframes sparkle {
+                      0%, 100% { opacity: 0; transform: scale(0); }
+                      50% { opacity: 1; transform: scale(1); }
+                    }
+                  </style>
+                </div>
+              `,
+              width: 1080,
+              height: 1920
             },
             start: 0,
-            length: parseFloat(duration),
-            opacity: 0.3
+            length: parseFloat(duration)
           }
         ]
       },
-      // Main text using title asset
+      // Main text with bold styling
       {
         clips: [
           {
             asset: {
-              type: "title",
-              text: mainText,
-              style: "future",
-              color: "#ffffff",
-              size: "large"
+              type: "html",
+              html: `
+                <div style="
+                  width: 100%;
+                  text-align: center;
+                  font-family: 'Impact', 'Arial Black', sans-serif;
+                  padding: 40px;
+                ">
+                  <div style="
+                    display: inline-block;
+                    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+                    padding: 30px 50px;
+                    border-radius: 25px;
+                    box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+                    border: 5px solid rgba(255,255,255,0.4);
+                    transform: rotate(-2deg);
+                  ">
+                    <h1 style="
+                      color: #ffffff;
+                      font-size: 100px;
+                      font-weight: 900;
+                      margin: 0;
+                      text-shadow: 4px 4px 8px rgba(0,0,0,0.9);
+                      letter-spacing: 3px;
+                      text-transform: uppercase;
+                    ">${mainText}</h1>
+                  </div>
+                </div>
+              `,
+              width: 1080,
+              height: 500,
+              position: "center"
             },
             start: 0,
             length: parseFloat(duration),
@@ -97,16 +139,37 @@ serve(async (req) => {
         clips: [
           {
             asset: {
-              type: "title",
-              text: subtext,
-              style: "subtitle",
-              color: "#ffffff",
-              size: "medium"
+              type: "html",
+              html: `
+                <div style="
+                  text-align: center;
+                  font-family: 'Arial', sans-serif;
+                  padding: 20px;
+                ">
+                  <div style="
+                    display: inline-block;
+                    background: rgba(255, 255, 255, 0.95);
+                    padding: 20px 40px;
+                    border-radius: 20px;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+                  ">
+                    <p style="
+                      color: #333333;
+                      font-size: 60px;
+                      font-weight: 700;
+                      margin: 0;
+                    ">${subtext}</p>
+                  </div>
+                </div>
+              `,
+              width: 1080,
+              height: 300,
+              position: "center"
             },
             start: 0,
             length: parseFloat(duration),
             offset: {
-              y: 0.15
+              y: 0.2
             },
             transition: {
               in: "slideUp",
