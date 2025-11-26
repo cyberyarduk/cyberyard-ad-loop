@@ -16,6 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
+import { supabase } from "@/integrations/supabase/client";
 
 const CreateAIVideo = () => {
   const navigate = useNavigate();
@@ -29,33 +30,38 @@ const CreateAIVideo = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!mainText.trim()) {
+      toast.error("Please enter main text for your video.");
+      return;
+    }
+
     setIsGenerating(true);
 
-    // TODO: Replace this mock logic with actual AI video generation API
-    // For now, simulating the generation process
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      toast.info("Starting video generation. This may take 1-2 minutes...");
+      
+      const { data, error } = await supabase.functions.invoke('generate-video', {
+        body: {
+          imageUrl: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=1080&h=1920&fit=crop',
+          mainText,
+          subtext,
+          duration,
+          playlistId: playlistId || null
+        }
+      });
 
-      // TODO: Call edge function to generate video
-      // const response = await fetch('/api/ai/generate-offer-video', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     image: imageFile,
-      //     mainText,
-      //     subtext,
-      //     duration,
-      //     theme,
-      //     music,
-      //     playlistId
-      //   })
-      // });
+      if (error) throw error;
 
-      toast.success("AI video generated successfully!");
-      navigate("/videos");
+      if (data?.success) {
+        toast.success("Video generated successfully!");
+        navigate("/videos");
+      } else {
+        throw new Error(data?.error || 'Failed to generate video');
+      }
     } catch (error) {
-      toast.error("Failed to generate video");
+      console.error('Video generation error:', error);
+      toast.error(error instanceof Error ? error.message : "Failed to generate video. Please try again.");
     } finally {
       setIsGenerating(false);
     }
@@ -173,10 +179,9 @@ const CreateAIVideo = () => {
 
               <div className="bg-muted p-4 rounded-lg">
                 <p className="text-sm text-muted-foreground">
-                  <strong>Note:</strong> This feature uses AI to generate videos.
+                  <strong>Note:</strong> This feature uses Shotstack AI to generate real videos.
                   The generated video will be in 9:16 portrait format, perfect for
-                  wearable screens. Currently using mock generation - ready to connect
-                  to your preferred AI video generation API.
+                  vertical displays. Generation typically takes 1-2 minutes.
                 </p>
               </div>
 
