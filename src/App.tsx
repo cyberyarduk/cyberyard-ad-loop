@@ -22,7 +22,7 @@ const queryClient = new QueryClient();
 
 // Protected route wrapper
 function ProtectedRoute({ children, requireSuperAdmin = false }: { children: React.ReactNode; requireSuperAdmin?: boolean }) {
-  const { user, profile, company, loading, isSuperAdmin, checkAccess } = useAuth();
+  const { user, profile, company, loading, isSuperAdmin, checkAccess, signOut } = useAuth();
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
@@ -40,7 +40,7 @@ function ProtectedRoute({ children, requireSuperAdmin = false }: { children: Rea
   if (!isSuperAdmin && !checkAccess()) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center space-y-4 p-8 border rounded-lg">
+        <div className="text-center space-y-4 p-8 border rounded-lg max-w-md">
           <h1 className="text-2xl font-bold">Subscription Inactive</h1>
           <p className="text-muted-foreground">
             Your Cyberyard subscription is not active. Please contact support.
@@ -51,6 +51,12 @@ function ProtectedRoute({ children, requireSuperAdmin = false }: { children: Rea
               <p>Status: {company.status}</p>
             </div>
           )}
+          <button
+            onClick={signOut}
+            className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+          >
+            Log Out
+          </button>
         </div>
       </div>
     );
