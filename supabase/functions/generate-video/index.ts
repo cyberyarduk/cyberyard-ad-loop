@@ -178,6 +178,10 @@ serve(async (req) => {
     const userId = payload.sub;
     
     console.log('User ID from token:', userId);
+    
+    if (!userId) {
+      throw new Error('Could not extract user ID from token');
+    }
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -190,22 +194,28 @@ serve(async (req) => {
       .select('company_id')
       .eq('id', userId)
       .single();
+    
+    console.log('Profile fetched:', profile);
 
     // Insert video record
+    const videoData = {
+      title: mainText || 'AI Generated Video',
+      video_url: videoUrl,
+      user_id: userId,
+      company_id: profile?.company_id
+    };
+    
+    console.log('Inserting video with data:', videoData);
+    
     const { data: video, error: videoError } = await supabase
       .from('videos')
-      .insert({
-        title: mainText || 'AI Generated Video',
-        video_url: videoUrl,
-        user_id: userId,
-        company_id: profile?.company_id
-      })
+      .insert(videoData)
       .select()
       .single();
 
     if (videoError) {
-      console.error('Error saving video:', videoError);
-      throw new Error('Failed to save video to database');
+      console.error('Error saving video:', JSON.stringify(videoError, null, 2));
+      throw new Error(`Failed to save video to database: ${videoError.message}`);
     }
 
     // Add to playlist if specified
