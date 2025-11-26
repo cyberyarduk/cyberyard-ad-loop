@@ -14,8 +14,93 @@ export type Database = {
   }
   public: {
     Tables: {
+      companies: {
+        Row: {
+          address_line1: string
+          address_line2: string | null
+          billing_cycle: string
+          billing_email: string
+          city: string
+          connectivity_type: Database["public"]["Enums"]["connectivity_type"]
+          country: string
+          created_at: string
+          created_by_user_id: string
+          device_limit: number | null
+          end_date: string
+          id: string
+          name: string
+          notes: string | null
+          plan_type: Database["public"]["Enums"]["plan_type"]
+          postcode: string
+          price_per_device: number
+          primary_contact_email: string
+          primary_contact_name: string
+          primary_contact_phone: string | null
+          slug: string
+          start_date: string
+          status: Database["public"]["Enums"]["company_status"]
+          term_months: number
+          updated_at: string
+        }
+        Insert: {
+          address_line1: string
+          address_line2?: string | null
+          billing_cycle?: string
+          billing_email: string
+          city: string
+          connectivity_type: Database["public"]["Enums"]["connectivity_type"]
+          country: string
+          created_at?: string
+          created_by_user_id: string
+          device_limit?: number | null
+          end_date: string
+          id?: string
+          name: string
+          notes?: string | null
+          plan_type: Database["public"]["Enums"]["plan_type"]
+          postcode: string
+          price_per_device: number
+          primary_contact_email: string
+          primary_contact_name: string
+          primary_contact_phone?: string | null
+          slug: string
+          start_date: string
+          status?: Database["public"]["Enums"]["company_status"]
+          term_months: number
+          updated_at?: string
+        }
+        Update: {
+          address_line1?: string
+          address_line2?: string | null
+          billing_cycle?: string
+          billing_email?: string
+          city?: string
+          connectivity_type?: Database["public"]["Enums"]["connectivity_type"]
+          country?: string
+          created_at?: string
+          created_by_user_id?: string
+          device_limit?: number | null
+          end_date?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          plan_type?: Database["public"]["Enums"]["plan_type"]
+          postcode?: string
+          price_per_device?: number
+          primary_contact_email?: string
+          primary_contact_name?: string
+          primary_contact_phone?: string | null
+          slug?: string
+          start_date?: string
+          status?: Database["public"]["Enums"]["company_status"]
+          term_months?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       devices: {
         Row: {
+          company_id: string | null
           created_at: string
           id: string
           last_seen_at: string | null
@@ -25,6 +110,7 @@ export type Database = {
           venue_id: string | null
         }
         Insert: {
+          company_id?: string | null
           created_at?: string
           id?: string
           last_seen_at?: string | null
@@ -34,6 +120,7 @@ export type Database = {
           venue_id?: string | null
         }
         Update: {
+          company_id?: string | null
           created_at?: string
           id?: string
           last_seen_at?: string | null
@@ -43,6 +130,13 @@ export type Database = {
           venue_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "devices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "devices_playlist_id_fkey"
             columns: ["playlist_id"]
@@ -100,27 +194,80 @@ export type Database = {
       }
       playlists: {
         Row: {
+          company_id: string | null
           created_at: string
           id: string
           name: string
           user_id: string
         }
         Insert: {
+          company_id?: string | null
           created_at?: string
           id?: string
           name: string
           user_id: string
         }
         Update: {
+          company_id?: string | null
           created_at?: string
           id?: string
           name?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "playlists_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          is_active: boolean
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          is_active?: boolean
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          is_active?: boolean
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       venues: {
         Row: {
+          company_id: string | null
           created_at: string
           id: string
           location: string | null
@@ -128,6 +275,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          company_id?: string | null
           created_at?: string
           id?: string
           location?: string | null
@@ -135,16 +283,26 @@ export type Database = {
           user_id: string
         }
         Update: {
+          company_id?: string | null
           created_at?: string
           id?: string
           location?: string | null
           name?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "venues_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       videos: {
         Row: {
+          company_id: string | null
           created_at: string
           id: string
           title: string
@@ -152,6 +310,7 @@ export type Database = {
           video_url: string
         }
         Insert: {
+          company_id?: string | null
           created_at?: string
           id?: string
           title: string
@@ -159,23 +318,39 @@ export type Database = {
           video_url: string
         }
         Update: {
+          company_id?: string | null
           created_at?: string
           id?: string
           title?: string
           user_id?: string
           video_url?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "videos_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { user_id: string }
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
+      is_super_admin: { Args: { user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      company_status: "pending" | "active" | "expired" | "suspended"
+      connectivity_type: "wifi" | "cyberyard_anywhere"
+      plan_type: "wifi" | "anywhere"
+      user_role: "super_admin" | "company_admin" | "company_user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -302,6 +477,11 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      company_status: ["pending", "active", "expired", "suspended"],
+      connectivity_type: ["wifi", "cyberyard_anywhere"],
+      plan_type: ["wifi", "anywhere"],
+      user_role: ["super_admin", "company_admin", "company_user"],
+    },
   },
 } as const
