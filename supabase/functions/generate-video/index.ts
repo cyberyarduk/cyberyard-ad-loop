@@ -302,7 +302,7 @@ serve(async (req) => {
     }
 
     // Add to playlist if specified
-    if (playlistId && video) {
+    if (playlistId && playlistId !== 'default' && video) {
       const { data: existingVideos } = await supabase
         .from('playlist_videos')
         .select('order_index')

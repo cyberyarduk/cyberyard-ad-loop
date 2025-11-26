@@ -89,8 +89,9 @@ const PlayerAICreator = ({ authToken, deviceInfo, onBack, onComplete }: PlayerAI
             mainText,
             subtext: subtext || undefined,
             duration: '5',
+            style: 'boom',
             deviceToken: authToken, // Use device token instead of JWT
-            playlistId: deviceInfo.playlist_id || undefined
+            ...(deviceInfo.playlist_id && { playlistId: deviceInfo.playlist_id })
           })
         }
       );
