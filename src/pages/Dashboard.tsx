@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -9,6 +9,12 @@ import { Link } from "react-router-dom";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [stats, setStats] = useState([
+    { label: "Total Venues", value: "0", icon: MapPin, link: "/venues" },
+    { label: "Active Devices", value: "0", icon: Monitor, link: "/devices" },
+    { label: "Videos", value: "0", icon: Video, link: "/videos" },
+    { label: "Playlists", value: "0", icon: List, link: "/playlists" },
+  ]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -29,12 +35,28 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const stats = [
-    { label: "Total Venues", value: "0", icon: MapPin, link: "/venues" },
-    { label: "Active Devices", value: "0", icon: Monitor, link: "/devices" },
-    { label: "Videos", value: "0", icon: Video, link: "/videos" },
-    { label: "Playlists", value: "0", icon: List, link: "/playlists" },
-  ];
+  useEffect(() => {
+    const fetchStats = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const [venuesResult, devicesResult, videosResult, playlistsResult] = await Promise.all([
+        supabase.from('venues').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+        supabase.from('devices').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+        supabase.from('videos').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+        supabase.from('playlists').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+      ]);
+
+      setStats([
+        { label: "Total Venues", value: String(venuesResult.count || 0), icon: MapPin, link: "/venues" },
+        { label: "Active Devices", value: String(devicesResult.count || 0), icon: Monitor, link: "/devices" },
+        { label: "Videos", value: String(videosResult.count || 0), icon: Video, link: "/videos" },
+        { label: "Playlists", value: String(playlistsResult.count || 0), icon: List, link: "/playlists" },
+      ]);
+    };
+
+    fetchStats();
+  }, []);
 
   return (
     <DashboardLayout>
