@@ -320,6 +320,7 @@ export type Database = {
           company_id: string | null
           created_at: string
           id: string
+          source: string | null
           title: string
           user_id: string
           video_url: string
@@ -328,6 +329,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           id?: string
+          source?: string | null
           title: string
           user_id: string
           video_url: string
@@ -336,6 +338,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           id?: string
+          source?: string | null
           title?: string
           user_id?: string
           video_url?: string
