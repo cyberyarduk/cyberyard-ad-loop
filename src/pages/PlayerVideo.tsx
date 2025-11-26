@@ -45,7 +45,15 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       }
 
       console.log('Fetched videos:', data.videos);
-      setVideos(data.videos || []);
+      const newVideos = data.videos || [];
+      
+      // If videos changed, reset to first video
+      if (JSON.stringify(newVideos) !== JSON.stringify(videos)) {
+        console.log('Playlist changed, resetting to first video');
+        setCurrentIndex(0);
+      }
+      
+      setVideos(newVideos);
       setLoading(false);
     } catch (error) {
       console.error('Playlist fetch error:', error);
@@ -175,49 +183,57 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
 
   const currentVideo = videos[currentIndex];
 
+  // Safety check: if currentIndex is out of bounds, reset to 0
+  if (!currentVideo && videos.length > 0) {
+    setCurrentIndex(0);
+    return null;
+  }
+
   return (
     <div 
       className="fixed inset-0 bg-black overflow-hidden"
       onTouchStart={handleTripleTap}
       onClick={handleTripleTap}
     >
-      <video
-        ref={videoRef}
-        key={currentVideo.id}
-        src={currentVideo.video_url}
-        className="w-full h-full object-contain"
-        autoPlay
-        playsInline
-        crossOrigin="anonymous"
-        preload="auto"
-        onEnded={handleVideoEnd}
-        onError={(e) => {
-          console.error('Video playback error:', e);
-          console.error('Failed video URL:', currentVideo.video_url);
-          console.error('Video error details:', videoRef.current?.error);
-          toast.error(`Error playing video: ${currentVideo.title}`);
-          // Skip to next video on error
-          handleVideoEnd();
-        }}
-        onLoadStart={() => {
-          console.log('Video loading started:', currentVideo.video_url);
-        }}
-        onLoadedMetadata={() => {
-          console.log('Video metadata loaded:', currentVideo.video_url);
-        }}
-        onCanPlay={() => {
-          console.log('Video can play:', currentVideo.video_url);
-        }}
-        onPlay={() => {
-          console.log('Video started playing:', currentVideo.video_url);
-        }}
-        onStalled={() => {
-          console.warn('Video playback stalled:', currentVideo.video_url);
-        }}
-        onSuspend={() => {
-          console.warn('Video loading suspended:', currentVideo.video_url);
-        }}
-      />
+      {currentVideo && (
+        <video
+          ref={videoRef}
+          key={`${currentVideo.id}-${currentIndex}`}
+          src={currentVideo.video_url}
+          className="w-full h-full object-contain"
+          autoPlay
+          playsInline
+          crossOrigin="anonymous"
+          preload="auto"
+          onEnded={handleVideoEnd}
+          onError={(e) => {
+            console.error('Video playback error:', e);
+            console.error('Failed video URL:', currentVideo.video_url);
+            console.error('Video error details:', videoRef.current?.error);
+            toast.error(`Error playing video: ${currentVideo.title}`);
+            // Skip to next video on error
+            handleVideoEnd();
+          }}
+          onLoadStart={() => {
+            console.log('Video loading started:', currentVideo.video_url);
+          }}
+          onLoadedMetadata={() => {
+            console.log('Video metadata loaded:', currentVideo.video_url);
+          }}
+          onCanPlay={() => {
+            console.log('Video can play:', currentVideo.video_url);
+          }}
+          onPlay={() => {
+            console.log('Video started playing:', currentVideo.video_url);
+          }}
+          onStalled={() => {
+            console.warn('Video playback stalled:', currentVideo.video_url);
+          }}
+          onSuspend={() => {
+            console.warn('Video loading suspended:', currentVideo.video_url);
+          }}
+        />
+      )}
       
       {/* Invisible tap zone indicator (only visible during development) */}
       <div 
