@@ -81,7 +81,7 @@ serve(async (req) => {
             },
             start: 0.5,
             length: parseFloat(duration) - 0.5,
-            effect: "fadeIn"
+            effect: "slideUp"
           }
         ]
       });
