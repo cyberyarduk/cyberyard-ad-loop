@@ -120,6 +120,39 @@ const Videos = () => {
     }
   };
 
+  const handleDelete = async (videoId: string, videoUrl: string) => {
+    if (!confirm("Are you sure you want to delete this video?")) return;
+
+    try {
+      // Extract file path from URL
+      const urlParts = videoUrl.split('/storage/v1/object/public/videos/');
+      const filePath = urlParts[1];
+
+      // Delete from storage if file path exists
+      if (filePath) {
+        const { error: storageError } = await supabase.storage
+          .from('videos')
+          .remove([filePath]);
+
+        if (storageError) console.error('Storage deletion error:', storageError);
+      }
+
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from('videos')
+        .delete()
+        .eq('id', videoId);
+
+      if (dbError) throw dbError;
+
+      toast.success("Video deleted successfully");
+      fetchVideos();
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      toast.error(error.message || "Failed to delete video");
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -301,7 +334,11 @@ const Videos = () => {
                     >
                       <Video className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleDelete(video.id, video.video_url)}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </TableCell>
