@@ -12,8 +12,8 @@ serve(async (req) => {
   }
 
   try {
-    const { imageUrl, mainText, subtext, duration, playlistId } = await req.json();
-    console.log('Generating video with params:', { imageUrl, mainText, subtext, duration, playlistId });
+    const { imageUrl, mainText, subtext, duration, playlistId, deviceToken } = await req.json();
+    console.log('Generating video with params:', { imageUrl, mainText, subtext, duration, playlistId, deviceToken: !!deviceToken });
 
     const SHOTSTACK_API_KEY = Deno.env.get('SHOTSTACK_API_KEY');
     if (!SHOTSTACK_API_KEY) {
@@ -165,49 +165,84 @@ serve(async (req) => {
     }
 
     // Save video to database
-    const authHeader = req.headers.get('Authorization');
-    console.log('Auth header received:', authHeader ? 'Yes' : 'No');
-    
-    if (!authHeader) {
-      throw new Error('No authorization header');
-    }
+    let userId: string;
+    let companyId: string | null = null;
 
-    // Extract user ID from JWT token
-    const token = authHeader.replace('Bearer ', '');
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const userId = payload.sub;
-    
-    console.log('User ID from token:', userId);
-    
-    if (!userId) {
-      throw new Error('Could not extract user ID from token');
+    // Support both user JWT auth and device token auth
+    if (deviceToken) {
+      console.log('Using device token authentication');
+      
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+
+      // Find device by token
+      const { data: device, error: deviceError } = await supabase
+        .from('devices')
+        .select('id, user_id, company_id')
+        .eq('auth_token', deviceToken)
+        .eq('status', 'active')
+        .single();
+
+      if (deviceError || !device) {
+        throw new Error('Invalid device token');
+      }
+
+      userId = device.user_id;
+      companyId = device.company_id;
+      console.log('Device authenticated:', device.id, 'Company:', companyId);
+    } else {
+      // Standard JWT authentication
+      const authHeader = req.headers.get('Authorization');
+      console.log('Auth header received:', authHeader ? 'Yes' : 'No');
+      
+      if (!authHeader) {
+        throw new Error('No authorization header');
+      }
+
+      const token = authHeader.replace('Bearer ', '');
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      userId = payload.sub;
+      
+      console.log('User ID from token:', userId);
+      
+      if (!userId) {
+        throw new Error('Could not extract user ID from token');
+      }
+
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+        {
+          global: {
+            headers: { Authorization: authHeader }
+          }
+        }
+      );
+
+      // Get user's company_id
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', userId)
+        .single();
+      
+      companyId = profile?.company_id || null;
+      console.log('Profile fetched:', profile);
     }
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader }
-        }
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
-
-    // Get user's company_id
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('company_id')
-      .eq('id', userId)
-      .single();
-    
-    console.log('Profile fetched:', profile);
 
     // Insert video record
     const videoData = {
       title: mainText || 'AI Generated Video',
       video_url: videoUrl,
       user_id: userId,
-      company_id: profile?.company_id
+      company_id: companyId
     };
     
     console.log('Inserting video with data:', videoData);
