@@ -205,6 +205,26 @@ const Devices = () => {
     }
   };
 
+  const unpairDevice = async (deviceId: string) => {
+    if (!confirm('Are you sure you want to unpair this device? You will need to pair it again to use it.')) return;
+
+    const { error } = await supabase
+      .from('devices')
+      .update({ 
+        status: 'unpaired',
+        auth_token: null
+      })
+      .eq('id', deviceId);
+
+    if (error) {
+      toast.error("Failed to unpair device");
+      console.error(error);
+    } else {
+      toast.success("Device unpaired successfully! You can now pair it again.");
+      fetchDevices();
+    }
+  };
+
   const deleteDevice = async (deviceId: string) => {
     if (!confirm('Are you sure you want to delete this device?')) return;
 
@@ -431,24 +451,36 @@ const Devices = () => {
                     </div>
                   </div>
 
-                  {device.status === 'active' && (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => updateDeviceStatus(device.id, 'suspended')}
-                    >
-                      Suspend Device
-                    </Button>
-                  )}
-                  {device.status === 'suspended' && (
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={() => updateDeviceStatus(device.id, 'active')}
-                    >
-                      Reactivate Device
-                    </Button>
-                  )}
+                  <div className="flex gap-2">
+                    {device.status === 'active' && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => unpairDevice(device.id)}
+                        >
+                          <KeyRound className="mr-2 h-4 w-4" />
+                          Unpair Device
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => updateDeviceStatus(device.id, 'suspended')}
+                        >
+                          Suspend Device
+                        </Button>
+                      </>
+                    )}
+                    {device.status === 'suspended' && (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => updateDeviceStatus(device.id, 'active')}
+                      >
+                        Reactivate Device
+                      </Button>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ))}
