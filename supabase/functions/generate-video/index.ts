@@ -34,14 +34,14 @@ serve(async (req) => {
     // Create Supabase client for storage operations
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Generate text overlay images using Lovable AI and upload to storage
-    console.log('Generating text overlay with AI...');
+    // Generate complete promotional image with text using Lovable AI
+    console.log('Generating complete promotional image with AI...');
     
     const stylePrompts: Record<string, string> = {
-      boom: `Create a bold text overlay image (1080x400px transparent background) with the text "${mainText}" in huge bold letters with a vibrant red-to-pink gradient background, dramatic shadows, and an explosive, energetic style. Make it eye-catching and dynamic.`,
-      sparkle: `Create a magical text overlay image (1080x400px transparent background) with the text "${mainText}" in elegant letters with purple-to-blue gradients, sparkles, and a dreamy, enchanting style.`,
-      stars: `Create a glamorous text overlay image (1080x400px transparent background) with the text "${mainText}" in stylish letters with hot pink colors, star decorations, and a dazzling celebrity style.`,
-      minimal: `Create a clean text overlay image (1080x400px transparent background) with the text "${mainText}" in modern sans-serif font, simple black text on white background, minimalist and professional.`
+      boom: `Take this product image and transform it into an eye-catching promotional poster in 1080x1920 portrait format. Add bold, explosive text "${mainText}" in huge letters with vibrant red and pink gradients, dramatic shadows, and energy burst effects. Make it look like a dramatic product advertisement with WOW factor.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`,
+      sparkle: `Take this product image and transform it into a magical promotional poster in 1080x1920 portrait format. Add elegant text "${mainText}" with purple-to-blue gradients, sparkles, and dreamy glowing effects. Make it enchanting and eye-catching.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`,
+      stars: `Take this product image and transform it into a glamorous promotional poster in 1080x1920 portrait format. Add stylish text "${mainText}" with hot pink colors, star decorations, and dazzling celebrity-style effects. Make it fabulous and attention-grabbing.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`,
+      minimal: `Take this product image and transform it into a clean promotional poster in 1080x1920 portrait format. Add modern text "${mainText}" in bold sans-serif font with simple, professional styling. Keep it minimal but impactful.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`
     };
 
     const textPrompt = stylePrompts[style] || stylePrompts.boom;
@@ -57,7 +57,18 @@ serve(async (req) => {
         messages: [
           {
             role: 'user',
-            content: textPrompt
+            content: [
+              {
+                type: 'text',
+                text: textPrompt
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: imageUrl
+                }
+              }
+            ]
           }
         ],
         modalities: ['image', 'text']
@@ -71,149 +82,56 @@ serve(async (req) => {
     }
 
     const aiData = await aiResponse.json();
-    const textOverlayBase64 = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    const completeImageBase64 = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
     
-    if (!textOverlayBase64) {
-      throw new Error('No image generated from AI');
+    if (!completeImageBase64) {
+      throw new Error('No promotional image generated from AI');
     }
 
-    console.log('Text overlay generated, uploading to storage...');
+    console.log('Complete promotional image generated, uploading to storage...');
     
     // Convert base64 to blob
-    const base64Data = textOverlayBase64.split(',')[1];
+    const base64Data = completeImageBase64.split(',')[1];
     const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
     
     const timestamp = Date.now();
-    const overlayPath = `text-overlays/${timestamp}-main.png`;
+    const promoImagePath = `promo-images/${timestamp}.png`;
     
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('videos')
-      .upload(overlayPath, binaryData, {
+      .upload(promoImagePath, binaryData, {
         contentType: 'image/png',
         upsert: false
       });
     
     if (uploadError) {
       console.error('Upload error:', uploadError);
-      throw new Error(`Failed to upload overlay: ${uploadError.message}`);
+      throw new Error(`Failed to upload promotional image: ${uploadError.message}`);
     }
     
-    const { data: { publicUrl: textOverlayUrl } } = supabase.storage
+    const { data: { publicUrl: promoImageUrl } } = supabase.storage
       .from('videos')
-      .getPublicUrl(overlayPath);
+      .getPublicUrl(promoImagePath);
     
-    console.log('Text overlay uploaded successfully:', textOverlayUrl);
+    console.log('Promotional image uploaded successfully:', promoImageUrl);
 
-    // Build tracks with background image and AI-generated text overlay
+    // Build simple track with just the complete promotional image
     const tracks = [
-      // Background image with zoom
       {
         clips: [
           {
             asset: {
               type: "image",
-              src: imageUrl
+              src: promoImageUrl
             },
             start: 0,
             length: parseFloat(duration),
             fit: "cover",
-            scale: 1.2,
             effect: "zoomIn"
-          }
-        ]
-      },
-      // AI-generated text overlay from storage URL
-      {
-        clips: [
-          {
-            asset: {
-              type: "image",
-              src: textOverlayUrl
-            },
-            start: 0,
-            length: parseFloat(duration),
-            fit: "none",
-            position: "center",
-            offset: {
-              x: 0,
-              y: -0.1
-            },
-            opacity: 1,
-            effect: "slideUp"
           }
         ]
       }
     ];
-
-    // Add subtext overlay if provided
-    if (subtext && subtext.trim()) {
-      const subtextPrompt = `Create a simple text overlay image (1080x200px transparent background) with the text "${subtext}" in medium-sized white letters with subtle shadow for readability.`;
-      
-      const subtextAiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'google/gemini-3-pro-image-preview',
-          messages: [
-            {
-              role: 'user',
-              content: subtextPrompt
-            }
-          ],
-          modalities: ['image', 'text']
-        })
-      });
-
-      if (subtextAiResponse.ok) {
-        const subtextAiData = await subtextAiResponse.json();
-        const subtextOverlayBase64 = subtextAiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-        
-        if (subtextOverlayBase64) {
-          // Upload subtext overlay to storage
-          const subtextBase64Data = subtextOverlayBase64.split(',')[1];
-          const subtextBinaryData = Uint8Array.from(atob(subtextBase64Data), c => c.charCodeAt(0));
-          
-          const subtextPath = `text-overlays/${timestamp}-sub.png`;
-          
-          const { error: subtextUploadError } = await supabase.storage
-            .from('videos')
-            .upload(subtextPath, subtextBinaryData, {
-              contentType: 'image/png',
-              upsert: false
-            });
-          
-          if (!subtextUploadError) {
-            const { data: { publicUrl: subtextOverlayUrl } } = supabase.storage
-              .from('videos')
-              .getPublicUrl(subtextPath);
-            
-            tracks.push({
-              clips: [
-                {
-                  asset: {
-                    type: "image",
-                    src: subtextOverlayUrl
-                  },
-                  start: 0.3,
-                  length: parseFloat(duration) - 0.3,
-                  fit: "none",
-                  position: "center",
-                  offset: {
-                    x: 0,
-                    y: 0.3
-                  },
-                  opacity: 1,
-                  effect: "slideUp"
-                }
-              ]
-            });
-          }
-        }
-      }
-    }
 
     // Create Shotstack edit
     const shotstackEdit = {
