@@ -12,15 +12,67 @@ serve(async (req) => {
   }
 
   try {
-    const { imageUrl, mainText, subtext, duration, playlistId, deviceToken } = await req.json();
-    console.log('Generating video with params:', { imageUrl, mainText, subtext, duration, playlistId, deviceToken: !!deviceToken });
+    const { imageUrl, mainText, subtext, duration, style = 'boom', playlistId, deviceToken } = await req.json();
+    console.log('Generating video with params:', { imageUrl, mainText, subtext, duration, style, playlistId, deviceToken: !!deviceToken });
 
     const SHOTSTACK_API_KEY = Deno.env.get('SHOTSTACK_API_KEY');
     if (!SHOTSTACK_API_KEY) {
       throw new Error('SHOTSTACK_API_KEY not configured');
     }
 
-    // Build tracks array with reliable HTML-based design
+    // Get style-specific configurations
+    const getStyleConfig = (styleName: string) => {
+      switch(styleName) {
+        case 'boom':
+          return {
+            mainBg: 'linear-gradient(135deg, #ff0844 0%, #ffb199 100%)',
+            mainColor: '#ffffff',
+            mainSize: '110px',
+            mainTransform: 'rotate(-3deg) scale(1.05)',
+            mainShadow: '5px 5px 15px rgba(0,0,0,0.9), 0 0 30px rgba(255,8,68,0.5)',
+            sparkleHtml: `<div style="position: absolute; width: 40px; height: 40px; background: radial-gradient(circle, #fff 0%, transparent 70%); top: 15%; left: 25%; animation: explode 1.5s infinite;"></div>
+              <div style="position: absolute; width: 35px; height: 35px; background: radial-gradient(circle, #ffeb3b 0%, transparent 70%); top: 60%; left: 75%; animation: explode 2s infinite 0.5s;"></div>
+              <style>@keyframes explode { 0%, 100% { transform: scale(0); opacity: 0; } 50% { transform: scale(1.5); opacity: 1; }}</style>`
+          };
+        case 'sparkle':
+          return {
+            mainBg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            mainColor: '#ffffff',
+            mainSize: '95px',
+            mainTransform: 'rotate(0deg)',
+            mainShadow: '0 10px 40px rgba(0,0,0,0.6), 0 0 20px rgba(102,126,234,0.4)',
+            sparkleHtml: `<div style="position: absolute; width: 15px; height: 15px; background: white; clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); top: 20%; left: 30%; animation: twinkle 2s infinite;"></div>
+              <div style="position: absolute; width: 20px; height: 20px; background: white; clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); top: 50%; left: 70%; animation: twinkle 2.5s infinite 0.5s;"></div>
+              <style>@keyframes twinkle { 0%, 100% { opacity: 0; transform: rotate(0deg) scale(0); } 50% { opacity: 1; transform: rotate(180deg) scale(1); }}</style>`
+          };
+        case 'stars':
+          return {
+            mainBg: 'linear-gradient(135deg, #4b0082 0%, #ff1493 100%)',
+            mainColor: '#ffffff',
+            mainSize: '90px',
+            mainTransform: 'rotate(0deg)',
+            mainShadow: '0 10px 40px rgba(0,0,0,0.7), 0 0 30px rgba(255,20,147,0.6)',
+            sparkleHtml: `<div style="position: absolute; width: 25px; height: 25px; background: radial-gradient(circle, #fff 20%, #ffeb3b 40%, transparent 70%); border-radius: 50%; top: 25%; left: 20%; animation: float 3s infinite;"></div>
+              <div style="position: absolute; width: 20px; height: 20px; background: radial-gradient(circle, #fff 20%, #ff1493 40%, transparent 70%); border-radius: 50%; top: 65%; left: 80%; animation: float 3.5s infinite 1s;"></div>
+              <style>@keyframes float { 0%, 100% { transform: translateY(0px); opacity: 0.5; } 50% { transform: translateY(-20px); opacity: 1; }}</style>`
+          };
+        case 'minimal':
+          return {
+            mainBg: '#ffffff',
+            mainColor: '#000000',
+            mainSize: '85px',
+            mainTransform: 'rotate(0deg)',
+            mainShadow: '0 5px 20px rgba(0,0,0,0.3)',
+            sparkleHtml: ''
+          };
+        default:
+          return getStyleConfig('boom');
+      }
+    };
+
+    const styleConfig = getStyleConfig(style);
+
+    // Build tracks array with style-based design
     const tracks = [
       // Background image layer with zoom
       {
@@ -38,100 +90,87 @@ serve(async (req) => {
           }
         ]
       },
-      // Semi-transparent dark overlay using HTML
+      // Semi-transparent dark overlay
       {
         clips: [
           {
             asset: {
               type: "html",
-              html: `<div style="width: 100%; height: 100%; background: rgba(0,0,0,0.4);"></div>`,
+              html: `<div style="width: 100%; height: 100%; background: rgba(0,0,0,0.5);"></div>`,
               width: 1080,
               height: 1920
             },
             start: 0,
             length: parseFloat(duration)
-          }
-        ]
-      },
-      // Sparkle effect using CSS animation
-      {
-        clips: [
-          {
-            asset: {
-              type: "html",
-              html: `
-                <div style="width: 100%; height: 100%; overflow: hidden;">
-                  <div style="position: absolute; width: 20px; height: 20px; background: white; border-radius: 50%; top: 20%; left: 30%; animation: sparkle 2s infinite;"></div>
-                  <div style="position: absolute; width: 15px; height: 15px; background: white; border-radius: 50%; top: 50%; left: 70%; animation: sparkle 2.5s infinite 0.5s;"></div>
-                  <div style="position: absolute; width: 25px; height: 25px; background: white; border-radius: 50%; top: 70%; left: 20%; animation: sparkle 3s infinite 1s;"></div>
-                  <div style="position: absolute; width: 18px; height: 18px; background: white; border-radius: 50%; top: 30%; left: 80%; animation: sparkle 2.2s infinite 1.5s;"></div>
-                  <style>
-                    @keyframes sparkle {
-                      0%, 100% { opacity: 0; transform: scale(0); }
-                      50% { opacity: 1; transform: scale(1); }
-                    }
-                  </style>
-                </div>
-              `,
-              width: 1080,
-              height: 1920
-            },
-            start: 0,
-            length: parseFloat(duration)
-          }
-        ]
-      },
-      // Main text with bold styling
-      {
-        clips: [
-          {
-            asset: {
-              type: "html",
-              html: `
-                <div style="
-                  width: 100%;
-                  text-align: center;
-                  font-family: 'Impact', 'Arial Black', sans-serif;
-                  padding: 40px;
-                ">
-                  <div style="
-                    display: inline-block;
-                    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
-                    padding: 30px 50px;
-                    border-radius: 25px;
-                    box-shadow: 0 15px 40px rgba(0,0,0,0.6);
-                    border: 5px solid rgba(255,255,255,0.4);
-                    transform: rotate(-2deg);
-                  ">
-                    <h1 style="
-                      color: #ffffff;
-                      font-size: 100px;
-                      font-weight: 900;
-                      margin: 0;
-                      text-shadow: 4px 4px 8px rgba(0,0,0,0.9);
-                      letter-spacing: 3px;
-                      text-transform: uppercase;
-                    ">${mainText}</h1>
-                  </div>
-                </div>
-              `,
-              width: 1080,
-              height: 500,
-              position: "center"
-            },
-            start: 0,
-            length: parseFloat(duration),
-            offset: {
-              y: -0.2
-            },
-            transition: {
-              in: "slideDown",
-              out: "slideUp"
-            }
           }
         ]
       }
     ];
+
+    // Add sparkle effect if style has one
+    if (styleConfig.sparkleHtml) {
+      tracks.push({
+        clips: [
+          {
+            asset: {
+              type: "html",
+              html: `<div style="width: 100%; height: 100%; overflow: hidden;">${styleConfig.sparkleHtml}</div>`,
+              width: 1080,
+              height: 1920
+            },
+            start: 0,
+            length: parseFloat(duration)
+          }
+        ]
+      });
+    }
+
+    // Add main text
+    tracks.push({
+      clips: [
+        {
+          asset: {
+            type: "html",
+            html: `
+              <div style="
+                width: 100%;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                font-family: 'Impact', 'Arial Black', sans-serif;
+                padding-top: 600px;
+              ">
+                <div style="
+                  display: inline-block;
+                  background: ${styleConfig.mainBg};
+                  padding: 35px 55px;
+                  border-radius: 25px;
+                  box-shadow: ${styleConfig.mainShadow};
+                  border: 5px solid rgba(255,255,255,0.3);
+                  transform: ${styleConfig.mainTransform};
+                ">
+                  <h1 style="
+                    color: ${styleConfig.mainColor};
+                    font-size: ${styleConfig.mainSize};
+                    font-weight: 900;
+                    margin: 0;
+                    letter-spacing: 3px;
+                    text-transform: uppercase;
+                    line-height: 1.1;
+                  ">${mainText}</h1>
+                </div>
+              </div>
+            `,
+            width: 1080,
+            height: 1920
+          },
+          start: 0,
+          length: parseFloat(duration)
+        }
+      ]
+    });
 
     // Add subtext if provided
     if (subtext && subtext.trim()) {
@@ -142,9 +181,14 @@ serve(async (req) => {
               type: "html",
               html: `
                 <div style="
+                  width: 100%;
+                  height: 100%;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
                   text-align: center;
                   font-family: 'Arial', sans-serif;
-                  padding: 20px;
+                  padding-top: 1200px;
                 ">
                   <div style="
                     display: inline-block;
@@ -163,18 +207,10 @@ serve(async (req) => {
                 </div>
               `,
               width: 1080,
-              height: 300,
-              position: "center"
+              height: 1920
             },
             start: 0,
-            length: parseFloat(duration),
-            offset: {
-              y: 0.2
-            },
-            transition: {
-              in: "slideUp",
-              out: "slideDown"
-            }
+            length: parseFloat(duration)
           }
         ]
       });
