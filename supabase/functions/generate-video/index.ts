@@ -20,61 +20,19 @@ serve(async (req) => {
       throw new Error('SHOTSTACK_API_KEY not configured');
     }
 
-    // Get style-specific configurations
-    const getStyleConfig = (styleName: string) => {
-      switch(styleName) {
-        case 'boom':
-          return {
-            mainBg: 'linear-gradient(135deg, #ff0844 0%, #ffb199 100%)',
-            mainColor: '#ffffff',
-            mainSize: '110px',
-            mainTransform: 'rotate(-3deg) scale(1.05)',
-            mainShadow: '5px 5px 15px rgba(0,0,0,0.9), 0 0 30px rgba(255,8,68,0.5)',
-            sparkleHtml: `<div style="position: absolute; width: 40px; height: 40px; background: radial-gradient(circle, #fff 0%, transparent 70%); top: 15%; left: 25%; animation: explode 1.5s infinite;"></div>
-              <div style="position: absolute; width: 35px; height: 35px; background: radial-gradient(circle, #ffeb3b 0%, transparent 70%); top: 60%; left: 75%; animation: explode 2s infinite 0.5s;"></div>
-              <style>@keyframes explode { 0%, 100% { transform: scale(0); opacity: 0; } 50% { transform: scale(1.5); opacity: 1; }}</style>`
-          };
-        case 'sparkle':
-          return {
-            mainBg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            mainColor: '#ffffff',
-            mainSize: '95px',
-            mainTransform: 'rotate(0deg)',
-            mainShadow: '0 10px 40px rgba(0,0,0,0.6), 0 0 20px rgba(102,126,234,0.4)',
-            sparkleHtml: `<div style="position: absolute; width: 15px; height: 15px; background: white; clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); top: 20%; left: 30%; animation: twinkle 2s infinite;"></div>
-              <div style="position: absolute; width: 20px; height: 20px; background: white; clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); top: 50%; left: 70%; animation: twinkle 2.5s infinite 0.5s;"></div>
-              <style>@keyframes twinkle { 0%, 100% { opacity: 0; transform: rotate(0deg) scale(0); } 50% { opacity: 1; transform: rotate(180deg) scale(1); }}</style>`
-          };
-        case 'stars':
-          return {
-            mainBg: 'linear-gradient(135deg, #4b0082 0%, #ff1493 100%)',
-            mainColor: '#ffffff',
-            mainSize: '90px',
-            mainTransform: 'rotate(0deg)',
-            mainShadow: '0 10px 40px rgba(0,0,0,0.7), 0 0 30px rgba(255,20,147,0.6)',
-            sparkleHtml: `<div style="position: absolute; width: 25px; height: 25px; background: radial-gradient(circle, #fff 20%, #ffeb3b 40%, transparent 70%); border-radius: 50%; top: 25%; left: 20%; animation: float 3s infinite;"></div>
-              <div style="position: absolute; width: 20px; height: 20px; background: radial-gradient(circle, #fff 20%, #ff1493 40%, transparent 70%); border-radius: 50%; top: 65%; left: 80%; animation: float 3.5s infinite 1s;"></div>
-              <style>@keyframes float { 0%, 100% { transform: translateY(0px); opacity: 0.5; } 50% { transform: translateY(-20px); opacity: 1; }}</style>`
-          };
-        case 'minimal':
-          return {
-            mainBg: '#ffffff',
-            mainColor: '#000000',
-            mainSize: '85px',
-            mainTransform: 'rotate(0deg)',
-            mainShadow: '0 5px 20px rgba(0,0,0,0.3)',
-            sparkleHtml: ''
-          };
-        default:
-          return getStyleConfig('boom');
-      }
+    // Use Shotstack's native title assets which are more reliable
+    const styleConfig: Record<string, { color: string; background: string; size: string }> = {
+      boom: { color: '#ffffff', background: '#ff0844', size: 'large' },
+      sparkle: { color: '#ffffff', background: '#667eea', size: 'large' },
+      stars: { color: '#ffffff', background: '#ff1493', size: 'large' },
+      minimal: { color: '#000000', background: '#ffffff', size: 'medium' }
     };
 
-    const styleConfig = getStyleConfig(style);
+    const config = styleConfig[style] || styleConfig.boom;
 
-    // Build tracks array with style-based design
+    // Build tracks - simpler approach using title assets
     const tracks = [
-      // Background image layer with zoom
+      // Background image with zoom
       {
         clips: [
           {
@@ -90,87 +48,24 @@ serve(async (req) => {
           }
         ]
       },
-      // Semi-transparent dark overlay
+      // Main text using Shotstack title (more reliable than HTML)
       {
         clips: [
           {
             asset: {
-              type: "html",
-              html: `<div style="width: 100%; height: 100%; background: rgba(0,0,0,0.5);"></div>`,
-              width: 1080,
-              height: 1920
+              type: "title",
+              text: mainText.toUpperCase(),
+              style: "blockbuster",
+              color: config.color,
+              size: config.size
             },
             start: 0,
-            length: parseFloat(duration)
+            length: parseFloat(duration),
+            effect: "slideUp"
           }
         ]
       }
     ];
-
-    // Add sparkle effect if style has one
-    if (styleConfig.sparkleHtml) {
-      tracks.push({
-        clips: [
-          {
-            asset: {
-              type: "html",
-              html: `<div style="width: 100%; height: 100%; overflow: hidden;">${styleConfig.sparkleHtml}</div>`,
-              width: 1080,
-              height: 1920
-            },
-            start: 0,
-            length: parseFloat(duration)
-          }
-        ]
-      });
-    }
-
-    // Add main text
-    tracks.push({
-      clips: [
-        {
-          asset: {
-            type: "html",
-            html: `
-              <div style="
-                width: 100%;
-                height: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                text-align: center;
-                font-family: 'Impact', 'Arial Black', sans-serif;
-                padding-top: 600px;
-              ">
-                <div style="
-                  display: inline-block;
-                  background: ${styleConfig.mainBg};
-                  padding: 35px 55px;
-                  border-radius: 25px;
-                  box-shadow: ${styleConfig.mainShadow};
-                  border: 5px solid rgba(255,255,255,0.3);
-                  transform: ${styleConfig.mainTransform};
-                ">
-                  <h1 style="
-                    color: ${styleConfig.mainColor};
-                    font-size: ${styleConfig.mainSize};
-                    font-weight: 900;
-                    margin: 0;
-                    letter-spacing: 3px;
-                    text-transform: uppercase;
-                    line-height: 1.1;
-                  ">${mainText}</h1>
-                </div>
-              </div>
-            `,
-            width: 1080,
-            height: 1920
-          },
-          start: 0,
-          length: parseFloat(duration)
-        }
-      ]
-    });
 
     // Add subtext if provided
     if (subtext && subtext.trim()) {
@@ -178,39 +73,15 @@ serve(async (req) => {
         clips: [
           {
             asset: {
-              type: "html",
-              html: `
-                <div style="
-                  width: 100%;
-                  height: 100%;
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  text-align: center;
-                  font-family: 'Arial', sans-serif;
-                  padding-top: 1200px;
-                ">
-                  <div style="
-                    display: inline-block;
-                    background: rgba(255, 255, 255, 0.95);
-                    padding: 20px 40px;
-                    border-radius: 20px;
-                    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-                  ">
-                    <p style="
-                      color: #333333;
-                      font-size: 60px;
-                      font-weight: 700;
-                      margin: 0;
-                    ">${subtext}</p>
-                  </div>
-                </div>
-              `,
-              width: 1080,
-              height: 1920
+              type: "title",
+              text: subtext,
+              style: "subtitle",
+              color: "#ffffff",
+              size: "small"
             },
-            start: 0,
-            length: parseFloat(duration)
+            start: 0.5,
+            length: parseFloat(duration) - 0.5,
+            effect: "fadeIn"
           }
         ]
       });
