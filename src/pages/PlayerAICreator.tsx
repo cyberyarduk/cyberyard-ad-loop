@@ -75,9 +75,15 @@ const PlayerAICreator = ({ authToken, deviceInfo, onBack, onComplete }: PlayerAI
 
     setGenerating(true);
     try {
+      if (!capturedImage) {
+        throw new Error("No image captured");
+      }
+
+      console.log('Starting video generation...');
       toast.info("Generating video... This may take 30-60 seconds");
 
       // Send base64 image directly to edge function - it will handle the upload
+      console.log('Calling generate-video endpoint...');
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-video`,
         {
@@ -98,7 +104,9 @@ const PlayerAICreator = ({ authToken, deviceInfo, onBack, onComplete }: PlayerAI
         }
       );
 
+      console.log('Response status:', response.status);
       const data = await response.json();
+      console.log('Response data:', data);
 
       if (!response.ok || !data.success) {
         throw new Error(data.error || 'Failed to generate video');
