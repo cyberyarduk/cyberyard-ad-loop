@@ -38,16 +38,17 @@ serve(async (req) => {
           }
         ]
       },
-      // Dark vignette overlay
+      // Dark overlay for text contrast
       {
         clips: [
           {
             asset: {
-              type: "luma",
-              src: "https://shotstack-assets.s3.amazonaws.com/luma-mattes/vignette.mp4"
+              type: "video",
+              src: "https://shotstack-assets.s3.amazonaws.com/footage/black-screen.mp4"
             },
             start: 0,
-            length: parseFloat(duration)
+            length: parseFloat(duration),
+            opacity: 0.4
           }
         ]
       },
@@ -61,7 +62,7 @@ serve(async (req) => {
             },
             start: 0,
             length: parseFloat(duration),
-            opacity: 0.4
+            opacity: 0.3
           }
         ]
       },
@@ -74,15 +75,13 @@ serve(async (req) => {
               text: mainText,
               style: "future",
               color: "#ffffff",
-              size: "large",
-              background: "rgba(0,0,0,0.7)",
-              position: "center",
-              offset: {
-                y: -0.2
-              }
+              size: "large"
             },
             start: 0,
             length: parseFloat(duration),
+            offset: {
+              y: -0.2
+            },
             transition: {
               in: "slideDown",
               out: "slideUp"
@@ -102,15 +101,13 @@ serve(async (req) => {
               text: subtext,
               style: "subtitle",
               color: "#ffffff",
-              size: "medium",
-              background: "rgba(0,0,0,0.8)",
-              position: "center",
-              offset: {
-                y: 0.15
-              }
+              size: "medium"
             },
             start: 0,
             length: parseFloat(duration),
+            offset: {
+              y: 0.15
+            },
             transition: {
               in: "slideUp",
               out: "slideDown"
