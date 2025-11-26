@@ -109,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(currentSession?.user ?? null);
 
         if (currentSession?.user) {
+          setLoading(true);
           // Defer profile and company fetching
           setTimeout(async () => {
             const userProfile = await fetchProfile(currentSession.user.id);
@@ -134,6 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(currentSession?.user ?? null);
 
       if (currentSession?.user) {
+        setLoading(true);
         setTimeout(async () => {
           const userProfile = await fetchProfile(currentSession.user.id);
           setProfile(userProfile);
