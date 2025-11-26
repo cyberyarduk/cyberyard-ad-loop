@@ -26,12 +26,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, List, Edit, Trash2, ArrowUp, ArrowDown, Send, Upload } from "lucide-react";
+import { Plus, List, Edit, Trash2, ArrowUp, ArrowDown, Send, Upload, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 const Playlists = () => {
   const navigate = useNavigate();
@@ -472,109 +478,118 @@ const Playlists = () => {
             </p>
           </div>
         ) : (
-          <div className="grid gap-6">
+          <Accordion type="multiple" className="space-y-4">
             {playlists.map((playlist) => (
-              <div key={playlist.id} className="border border-border rounded-lg p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-xl font-semibold">{playlist.name}</h3>
-                    <p className="text-muted-foreground text-sm">
-                      {playlist.videos.length} videos
-                    </p>
+              <AccordionItem 
+                key={playlist.id} 
+                value={playlist.id} 
+                className="border border-border rounded-lg"
+              >
+                <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                  <div className="flex justify-between items-center w-full pr-4">
+                    <div className="flex items-center gap-4">
+                      <div className="text-left">
+                        <h3 className="text-xl font-semibold">{playlist.name}</h3>
+                        <p className="text-muted-foreground text-sm">
+                          {playlist.videos.length} videos
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setSelectedPlaylist(playlist.id);
+                          setAddVideosOpen(true);
+                        }}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Videos
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handlePushToDevice(playlist.id, playlist.name)}
+                      >
+                        <Send className="h-4 w-4 mr-2" />
+                        Push to Device
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handlePushToAllDevices(playlist.id, playlist.name)}
+                      >
+                        <Send className="h-4 w-4 mr-2" />
+                        Push to All
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleDelete(playlist.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        setSelectedPlaylist(playlist.id);
-                        setAddVideosOpen(true);
-                      }}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Videos
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handlePushToDevice(playlist.id, playlist.name)}
-                    >
-                      <Send className="h-4 w-4 mr-2" />
-                      Push to Device
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handlePushToAllDevices(playlist.id, playlist.name)}
-                    >
-                      <Send className="h-4 w-4 mr-2" />
-                      Push to All
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleDelete(playlist.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                {playlist.videos.length === 0 ? (
-                  <div className="text-center py-8 border-2 border-dashed border-border rounded">
-                    <p className="text-muted-foreground">
-                      No videos in this playlist yet
-                    </p>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-12">#</TableHead>
-                        <TableHead>Video</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {playlist.videos.map((video: any, index: number) => (
-                        <TableRow key={video.id}>
-                          <TableCell>{index + 1}</TableCell>
-                          <TableCell className="font-medium">
-                            {video.title}
-                          </TableCell>
-                          <TableCell className="text-right space-x-2">
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleReorder(playlist.id, video.id, "up")}
-                              disabled={index === 0}
-                            >
-                              <ArrowUp className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleReorder(playlist.id, video.id, "down")}
-                              disabled={index === playlist.videos.length - 1}
-                            >
-                              <ArrowDown className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleRemoveVideo(playlist.id, video.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-4">
+                  {playlist.videos.length === 0 ? (
+                    <div className="text-center py-8 border-2 border-dashed border-border rounded">
+                      <p className="text-muted-foreground">
+                        No videos in this playlist yet
+                      </p>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-12">#</TableHead>
+                          <TableHead>Video</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </div>
+                      </TableHeader>
+                      <TableBody>
+                        {playlist.videos.map((video: any, index: number) => (
+                          <TableRow key={video.id}>
+                            <TableCell>{index + 1}</TableCell>
+                            <TableCell className="font-medium">
+                              {video.title}
+                            </TableCell>
+                            <TableCell className="text-right space-x-2">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleReorder(playlist.id, video.id, "up")}
+                                disabled={index === 0}
+                              >
+                                <ArrowUp className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleReorder(playlist.id, video.id, "down")}
+                                disabled={index === playlist.videos.length - 1}
+                              >
+                                <ArrowDown className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleRemoveVideo(playlist.id, video.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </AccordionContent>
+              </AccordionItem>
             ))}
-          </div>
+          </Accordion>
         )}
 
         <Dialog open={addVideosOpen} onOpenChange={(open) => {
