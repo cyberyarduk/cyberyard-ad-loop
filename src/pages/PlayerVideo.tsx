@@ -81,17 +81,36 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           table: 'devices',
           filter: `id=eq.${deviceInfo.id}`
         },
-        (payload) => {
+        async (payload) => {
           console.log('Device updated, refreshing playlist:', payload);
-          // Reset current index and pause video before fetching new playlist
-          if (videoRef.current) {
-            videoRef.current.pause();
-            videoRef.current.src = '';
+          
+          // Fetch new playlist first
+          const response = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/device-playlist`,
+            {
+              method: 'GET',
+              headers: {
+                'x-device-token': authToken,
+                'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+              }
+            }
+          );
+
+          const data = await response.json();
+          
+          if (data.success && data.videos) {
+            // Seamlessly switch: keep playing until new video loads, then switch
+            const newVideos = data.videos;
+            
+            if (newVideos.length > 0) {
+              // Update videos and reset index
+              setVideos(newVideos);
+              setCurrentIndex(0);
+              
+              // The video element will automatically reload with new content via key change
+              toast.success('Playlist updated!');
+            }
           }
-          setCurrentIndex(0);
-          // Fetch new playlist
-          fetchPlaylist();
-          toast.success('Playlist updated!');
         }
       )
       .subscribe();
