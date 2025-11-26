@@ -152,8 +152,8 @@ const Devices = () => {
         name,
         user_id: user.id,
         company_id: profile?.company_id,
-        venue_id: venueId || null,
-        playlist_id: playlistId || null,
+        venue_id: venueId && venueId !== 'none' ? venueId : null,
+        playlist_id: playlistId && playlistId !== 'none' ? playlistId : null,
       })
       .select()
       .single();
@@ -230,8 +230,8 @@ const Devices = () => {
       .from('devices')
       .update({
         name: editDevice.name,
-        playlist_id: editDevice.playlist_id || null,
-        venue_id: editDevice.venue_id || null,
+        playlist_id: editDevice.playlist_id && editDevice.playlist_id !== 'none' ? editDevice.playlist_id : null,
+        venue_id: editDevice.venue_id && editDevice.venue_id !== 'none' ? editDevice.venue_id : null,
       })
       .eq('id', editDevice.id);
 
@@ -298,7 +298,7 @@ const Devices = () => {
                       <SelectValue placeholder="Select a venue" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No venue</SelectItem>
+                      <SelectItem value="none">No venue</SelectItem>
                       {venues.map((venue) => (
                         <SelectItem key={venue.id} value={venue.id}>
                           {venue.name}
@@ -314,7 +314,7 @@ const Devices = () => {
                       <SelectValue placeholder="Select a playlist" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No playlist</SelectItem>
+                      <SelectItem value="none">No playlist</SelectItem>
                       {playlists.map((playlist) => (
                         <SelectItem key={playlist.id} value={playlist.id}>
                           {playlist.name}
@@ -508,7 +508,7 @@ const Devices = () => {
                       <SelectValue placeholder="Select a playlist" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Default playlist</SelectItem>
+                      <SelectItem value="none">Default playlist</SelectItem>
                       {playlists.map((playlist) => (
                         <SelectItem key={playlist.id} value={playlist.id}>
                           {playlist.name}
