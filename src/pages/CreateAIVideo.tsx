@@ -25,7 +25,7 @@ const CreateAIVideo = () => {
   const [mainText, setMainText] = useState("");
   const [subtext, setSubtext] = useState("");
   const [duration, setDuration] = useState("10");
-  const [theme, setTheme] = useState("dark");
+  const [style, setStyle] = useState("boom");
   const [music, setMusic] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
@@ -81,12 +81,13 @@ const CreateAIVideo = () => {
 
       toast.info("Starting video generation. This may take 1-2 minutes...");
       
-      const { data, error } = await supabase.functions.invoke('generate-video', {
+      const { data, error} = await supabase.functions.invoke('generate-video', {
         body: {
           imageUrl: publicUrl,
           mainText,
           subtext,
           duration,
+          style,
           playlistId: playlistId || null
         }
       });
@@ -204,15 +205,16 @@ const CreateAIVideo = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="theme">Theme</Label>
-                  <Select value={theme} onValueChange={setTheme}>
+                  <Label htmlFor="style">Video Style</Label>
+                  <Select value={style} onValueChange={setStyle}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="light">Light</SelectItem>
-                      <SelectItem value="dark">Dark</SelectItem>
-                      <SelectItem value="colorful">Colorful</SelectItem>
+                      <SelectItem value="boom">💥 BOOM - Bold Explosion</SelectItem>
+                      <SelectItem value="sparkle">✨ Sparkle - Elegant Shine</SelectItem>
+                      <SelectItem value="stars">⭐ Stars - Magical</SelectItem>
+                      <SelectItem value="minimal">🎯 Minimal - Clean</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

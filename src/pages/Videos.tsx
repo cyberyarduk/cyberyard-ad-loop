@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Video, Edit, Trash2, Sparkles } from "lucide-react";
+import { Plus, Video, Edit, Trash2, Sparkles, Download } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
@@ -281,6 +281,15 @@ const Videos = () => {
                   </TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button 
+                      variant="ghost" 
+                      size="sm"
+                      asChild
+                    >
+                      <a href={video.video_url} download={`${video.title}.mp4`}>
+                        <Download className="h-4 w-4" />
+                      </a>
+                    </Button>
+                    <Button
                       variant="ghost" 
                       size="sm"
                       onClick={() => {
