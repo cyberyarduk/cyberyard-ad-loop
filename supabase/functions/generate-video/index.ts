@@ -61,8 +61,8 @@ serve(async (req) => {
               }
             ]
           },
-          {
-            clips: subtext ? [
+          ...(subtext ? [{
+            clips: [
               {
                 asset: {
                   type: "html",
@@ -81,8 +81,8 @@ serve(async (req) => {
                   out: "fade"
                 }
               }
-            ] : []
-          }
+            ]
+          }] : [])
         ]
       },
       output: {
