@@ -27,6 +27,20 @@ const CreateAIVideo = () => {
   const [duration, setDuration] = useState("10");
   const [theme, setTheme] = useState("dark");
   const [music, setMusic] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,14 +50,40 @@ const CreateAIVideo = () => {
       return;
     }
 
+    if (!imageFile) {
+      toast.error("Please upload an image for your video.");
+      return;
+    }
+
     setIsGenerating(true);
 
     try {
+      toast.info("Uploading image...");
+      
+      // Upload image to Supabase Storage
+      const fileExt = imageFile.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+      const filePath = `offer-images/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('videos')
+        .upload(filePath, imageFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('videos')
+        .getPublicUrl(filePath);
+
       toast.info("Starting video generation. This may take 1-2 minutes...");
       
       const { data, error } = await supabase.functions.invoke('generate-video', {
         body: {
-          imageUrl: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=1080&h=1920&fit=crop',
+          imageUrl: publicUrl,
           mainText,
           subtext,
           duration,
@@ -111,7 +151,17 @@ const CreateAIVideo = () => {
                   type="file"
                   accept="image/jpeg,image/png"
                   required
+                  onChange={handleImageChange}
                 />
+                {imagePreview && (
+                  <div className="mt-2">
+                    <img 
+                      src={imagePreview} 
+                      alt="Preview" 
+                      className="w-full max-w-xs rounded-lg border"
+                    />
+                  </div>
+                )}
                 <p className="text-sm text-muted-foreground">
                   Upload a photo (e.g., blueberry muffins)
                 </p>
