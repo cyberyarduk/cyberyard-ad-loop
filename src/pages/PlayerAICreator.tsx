@@ -75,6 +75,38 @@ const PlayerAICreator = ({ authToken, deviceInfo, onBack, onComplete }: PlayerAI
 
     setGenerating(true);
     try {
+      toast.info("Uploading image...");
+
+      // Convert base64 to blob and upload to storage
+      const base64Response = await fetch(capturedImage);
+      const blob = await base64Response.blob();
+      
+      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.jpg`;
+      const filePath = `offer-images/${fileName}`;
+
+      // Upload to Supabase storage
+      const uploadResponse = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/videos/${filePath}`,
+        {
+          method: 'POST',
+          headers: {
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            'authorization': `Bearer ${authToken}`,
+            'content-type': blob.type,
+            'x-upsert': 'false'
+          },
+          body: blob
+        }
+      );
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload image');
+      }
+
+      const imageUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/videos/${filePath}`;
+      
+      toast.info("Generating video... This may take 30-60 seconds");
+
       // Generate video using the existing generate-video endpoint
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-video`,
@@ -85,12 +117,12 @@ const PlayerAICreator = ({ authToken, deviceInfo, onBack, onComplete }: PlayerAI
             'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
           body: JSON.stringify({
-            imageUrl: capturedImage,
+            imageUrl,
             mainText,
             subtext: subtext || undefined,
             duration: '5',
             style: 'boom',
-            deviceToken: authToken, // Use device token instead of JWT
+            deviceToken: authToken,
             ...(deviceInfo.playlist_id && { playlistId: deviceInfo.playlist_id })
           })
         }

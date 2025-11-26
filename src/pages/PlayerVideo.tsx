@@ -83,7 +83,13 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
         },
         (payload) => {
           console.log('Device updated, refreshing playlist:', payload);
-          // Immediately fetch new playlist when device is updated
+          // Reset current index and pause video before fetching new playlist
+          if (videoRef.current) {
+            videoRef.current.pause();
+            videoRef.current.src = '';
+          }
+          setCurrentIndex(0);
+          // Fetch new playlist
           fetchPlaylist();
           toast.success('Playlist updated!');
         }
@@ -93,6 +99,10 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
     return () => {
       if (refreshIntervalRef.current) {
         clearInterval(refreshIntervalRef.current);
+      }
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.src = '';
       }
       supabase.removeChannel(channel);
     };
