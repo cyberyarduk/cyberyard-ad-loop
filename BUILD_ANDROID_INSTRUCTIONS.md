@@ -1,13 +1,15 @@
-# Cyberyard Player - Android Build Instructions
+# Cyberyard Player - Android Build & Kiosk Mode Instructions
 
-This guide will help you build and deploy the Cyberyard Player Android app.
+This guide will help you build a native Android app that runs in **kiosk mode** (locked to this app only) and **auto-starts on device boot** - perfect for digital signage.
 
 ## Prerequisites
 
-1. **Node.js and npm** installed (already satisfied if you can run the project)
+1. **Node.js and npm** installed
 2. **Android Studio** installed ([Download here](https://developer.android.com/studio))
 3. **Java Development Kit (JDK) 17** or higher
 4. Git installed
+
+## Part 1: Building the Android App
 
 ## Step 1: Export and Clone the Project
 
