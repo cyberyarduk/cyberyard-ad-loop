@@ -172,28 +172,23 @@ serve(async (req) => {
       throw new Error('No authorization header');
     }
 
+    // Extract user ID from JWT token
+    const token = authHeader.replace('Bearer ', '');
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const userId = payload.sub;
+    
+    console.log('User ID from token:', userId);
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader }
-        }
-      }
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
-
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    console.log('User retrieved:', user ? user.id : 'null', 'Error:', userError);
-    
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
 
     // Get user's company_id
     const { data: profile } = await supabase
       .from('profiles')
       .select('company_id')
-      .eq('id', user.id)
+      .eq('id', userId)
       .single();
 
     // Insert video record
@@ -202,7 +197,7 @@ serve(async (req) => {
       .insert({
         title: mainText || 'AI Generated Video',
         video_url: videoUrl,
-        user_id: user.id,
+        user_id: userId,
         company_id: profile?.company_id
       })
       .select()
