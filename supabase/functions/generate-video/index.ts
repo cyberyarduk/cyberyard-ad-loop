@@ -18,6 +18,8 @@ serve(async (req) => {
 
     const SHOTSTACK_API_KEY = Deno.env.get('SHOTSTACK_API_KEY');
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
     if (!SHOTSTACK_API_KEY) {
       throw new Error('SHOTSTACK_API_KEY not configured');
@@ -25,8 +27,14 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY not configured');
     }
+    if (!serviceRoleKey || !supabaseUrl) {
+      throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY or SUPABASE_URL');
+    }
 
-    // Generate text overlay images using Lovable AI
+    // Create Supabase client for storage operations
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    // Generate text overlay images using Lovable AI and upload to storage
     console.log('Generating text overlay with AI...');
     
     const stylePrompts: Record<string, string> = {
@@ -69,7 +77,32 @@ serve(async (req) => {
       throw new Error('No image generated from AI');
     }
 
-    console.log('Text overlay generated successfully');
+    console.log('Text overlay generated, uploading to storage...');
+    
+    // Convert base64 to blob
+    const base64Data = textOverlayBase64.split(',')[1];
+    const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+    
+    const timestamp = Date.now();
+    const overlayPath = `text-overlays/${timestamp}-main.png`;
+    
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('videos')
+      .upload(overlayPath, binaryData, {
+        contentType: 'image/png',
+        upsert: false
+      });
+    
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      throw new Error(`Failed to upload overlay: ${uploadError.message}`);
+    }
+    
+    const { data: { publicUrl: textOverlayUrl } } = supabase.storage
+      .from('videos')
+      .getPublicUrl(overlayPath);
+    
+    console.log('Text overlay uploaded successfully:', textOverlayUrl);
 
     // Build tracks with background image and AI-generated text overlay
     const tracks = [
@@ -89,13 +122,13 @@ serve(async (req) => {
           }
         ]
       },
-      // AI-generated text overlay
+      // AI-generated text overlay from storage URL
       {
         clips: [
           {
             asset: {
               type: "image",
-              src: textOverlayBase64
+              src: textOverlayUrl
             },
             start: 0,
             length: parseFloat(duration),
@@ -139,26 +172,45 @@ serve(async (req) => {
         const subtextOverlayBase64 = subtextAiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
         
         if (subtextOverlayBase64) {
-          tracks.push({
-            clips: [
-              {
-                asset: {
-                  type: "image",
-                  src: subtextOverlayBase64
-                },
-                start: 0.3,
-                length: parseFloat(duration) - 0.3,
-                fit: "none",
-                position: "center",
-                offset: {
-                  x: 0,
-                  y: 0.3
-                },
-                opacity: 1,
-                effect: "slideUp"
-              }
-            ]
-          });
+          // Upload subtext overlay to storage
+          const subtextBase64Data = subtextOverlayBase64.split(',')[1];
+          const subtextBinaryData = Uint8Array.from(atob(subtextBase64Data), c => c.charCodeAt(0));
+          
+          const subtextPath = `text-overlays/${timestamp}-sub.png`;
+          
+          const { error: subtextUploadError } = await supabase.storage
+            .from('videos')
+            .upload(subtextPath, subtextBinaryData, {
+              contentType: 'image/png',
+              upsert: false
+            });
+          
+          if (!subtextUploadError) {
+            const { data: { publicUrl: subtextOverlayUrl } } = supabase.storage
+              .from('videos')
+              .getPublicUrl(subtextPath);
+            
+            tracks.push({
+              clips: [
+                {
+                  asset: {
+                    type: "image",
+                    src: subtextOverlayUrl
+                  },
+                  start: 0.3,
+                  length: parseFloat(duration) - 0.3,
+                  fit: "none",
+                  position: "center",
+                  offset: {
+                    x: 0,
+                    y: 0.3
+                  },
+                  opacity: 1,
+                  effect: "slideUp"
+                }
+              ]
+            });
+          }
         }
       }
     }
@@ -306,21 +358,8 @@ serve(async (req) => {
         .single();
       
       companyId = profile?.company_id || null;
-      console.log('Profile fetched:', profile);
+    console.log('Profile fetched:', profile);
     }
-
-    // Create service role client to bypass RLS
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    
-    console.log('Service role key exists:', !!serviceRoleKey);
-    console.log('Supabase URL exists:', !!supabaseUrl);
-    
-    if (!serviceRoleKey || !supabaseUrl) {
-      throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY or SUPABASE_URL');
-    }
-
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     // Insert video record
     const videoData = {
