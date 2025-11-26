@@ -2,7 +2,18 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { KeyRound, Video, ArrowLeft } from "lucide-react";
+import { KeyRound, Video, ArrowLeft, Phone } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import PlayerAICreator from "./PlayerAICreator";
 
@@ -22,16 +33,19 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
   const handleForceSync = async () => {
     setSyncing(true);
     try {
-      // Trigger a playlist refresh by briefly showing a toast
       toast.info("Syncing playlist...");
-      
-      // Force a reload of the page to refresh the playlist
       window.location.reload();
     } catch (error) {
       console.error('Sync error:', error);
       toast.error('Failed to sync content');
       setSyncing(false);
     }
+  };
+
+  const handleEmergencyCall = () => {
+    // Trigger emergency call
+    window.location.href = 'tel:999';
+    toast.error('Calling Emergency Services (999)');
   };
 
   const handlePINSubmit = async (e: React.FormEvent) => {
@@ -202,6 +216,49 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
               </CardDescription>
             </CardHeader>
           </Card>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Card className="cursor-pointer hover:shadow-lg transition-shadow border-red-500 bg-red-50 dark:bg-red-950">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                    <Phone className="h-5 w-5" />
+                    Emergency - Call 999
+                  </CardTitle>
+                  <CardDescription className="text-red-600 dark:text-red-400">
+                    Call emergency services immediately
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-red-600">Emergency Call Confirmation</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will immediately call 999 (Emergency Services).
+                  <br /><br />
+                  <strong>Only use in genuine emergencies:</strong>
+                  <ul className="list-disc ml-6 mt-2">
+                    <li>Someone is seriously ill or injured</li>
+                    <li>A crime is in progress</li>
+                    <li>There is a fire</li>
+                    <li>Someone's life is at risk</li>
+                  </ul>
+                  <br />
+                  Are you sure you want to call emergency services?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleEmergencyCall}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  Yes, Call 999 Now
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
 
         <div className="text-center text-sm text-muted-foreground">
