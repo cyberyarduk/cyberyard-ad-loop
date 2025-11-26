@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,29 +28,224 @@ import {
 } from "@/components/ui/select";
 import { Plus, List, Edit, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const Playlists = () => {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [addVideosOpen, setAddVideosOpen] = useState(false);
   const [playlists, setPlaylists] = useState<any[]>([]);
+  const [videos, setVideos] = useState<any[]>([]);
   const [name, setName] = useState("");
-  const [venueId, setVenueId] = useState("");
   const [selectedPlaylist, setSelectedPlaylist] = useState<string | null>(null);
+  const [selectedVideos, setSelectedVideos] = useState<string[]>([]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+    fetchPlaylists();
+    fetchVideos();
+  };
+
+  const fetchPlaylists = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: playlistsData, error: playlistsError } = await supabase
+      .from("playlists")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (playlistsError) {
+      toast.error("Failed to load playlists");
+      return;
+    }
+
+    const playlistsWithVideos = await Promise.all(
+      (playlistsData || []).map(async (playlist) => {
+        const { data: playlistVideos } = await supabase
+          .from("playlist_videos")
+          .select(`
+            id,
+            order_index,
+            videos (
+              id,
+              title,
+              video_url
+            )
+          `)
+          .eq("playlist_id", playlist.id)
+          .order("order_index");
+
+        return {
+          ...playlist,
+          videos: playlistVideos?.map(pv => pv.videos) || [],
+        };
+      })
+    );
+
+    setPlaylists(playlistsWithVideos);
+  };
+
+  const fetchVideos = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("videos")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      toast.error("Failed to load videos");
+      return;
+    }
+
+    setVideos(data || []);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newPlaylist = {
-      id: crypto.randomUUID(),
-      name,
-      venue_id: venueId || null,
-      videos: [],
-      created_at: new Date().toISOString(),
-    };
-    setPlaylists([...playlists, newPlaylist]);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("company_id")
+      .eq("id", user.id)
+      .single();
+
+    const { error } = await supabase
+      .from("playlists")
+      .insert({
+        name,
+        user_id: user.id,
+        company_id: profile?.company_id,
+      });
+
+    if (error) {
+      toast.error("Failed to create playlist");
+      return;
+    }
+
     toast.success("Playlist created successfully");
     setOpen(false);
     setName("");
-    setVenueId("");
+    fetchPlaylists();
+  };
+
+  const handleDelete = async (playlistId: string) => {
+    if (!confirm("Are you sure you want to delete this playlist?")) return;
+
+    const { error } = await supabase
+      .from("playlists")
+      .delete()
+      .eq("id", playlistId);
+
+    if (error) {
+      toast.error("Failed to delete playlist");
+      return;
+    }
+
+    toast.success("Playlist deleted");
+    fetchPlaylists();
+  };
+
+  const handleAddVideos = async () => {
+    if (!selectedPlaylist || selectedVideos.length === 0) return;
+
+    const { data: existingVideos } = await supabase
+      .from("playlist_videos")
+      .select("order_index")
+      .eq("playlist_id", selectedPlaylist)
+      .order("order_index", { ascending: false })
+      .limit(1);
+
+    const startIndex = existingVideos && existingVideos.length > 0 
+      ? existingVideos[0].order_index + 1 
+      : 0;
+
+    const playlistVideos = selectedVideos.map((videoId, index) => ({
+      playlist_id: selectedPlaylist,
+      video_id: videoId,
+      order_index: startIndex + index,
+    }));
+
+    const { error } = await supabase
+      .from("playlist_videos")
+      .insert(playlistVideos);
+
+    if (error) {
+      toast.error("Failed to add videos to playlist");
+      return;
+    }
+
+    toast.success(`Added ${selectedVideos.length} video(s) to playlist`);
+    setAddVideosOpen(false);
+    setSelectedVideos([]);
+    setSelectedPlaylist(null);
+    fetchPlaylists();
+  };
+
+  const handleRemoveVideo = async (playlistId: string, videoId: string) => {
+    const { error } = await supabase
+      .from("playlist_videos")
+      .delete()
+      .eq("playlist_id", playlistId)
+      .eq("video_id", videoId);
+
+    if (error) {
+      toast.error("Failed to remove video");
+      return;
+    }
+
+    toast.success("Video removed from playlist");
+    fetchPlaylists();
+  };
+
+  const handleReorder = async (playlistId: string, videoId: string, direction: "up" | "down") => {
+    const playlist = playlists.find(p => p.id === playlistId);
+    if (!playlist) return;
+
+    const currentIndex = playlist.videos.findIndex((v: any) => v.id === videoId);
+    if (currentIndex === -1) return;
+    if (direction === "up" && currentIndex === 0) return;
+    if (direction === "down" && currentIndex === playlist.videos.length - 1) return;
+
+    const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    const { data: playlistVideos } = await supabase
+      .from("playlist_videos")
+      .select("id, video_id, order_index")
+      .eq("playlist_id", playlistId)
+      .order("order_index");
+
+    if (!playlistVideos) return;
+
+    const currentVideo = playlistVideos[currentIndex];
+    const swapVideo = playlistVideos[newIndex];
+
+    await supabase
+      .from("playlist_videos")
+      .update({ order_index: swapVideo.order_index })
+      .eq("id", currentVideo.id);
+
+    await supabase
+      .from("playlist_videos")
+      .update({ order_index: currentVideo.order_index })
+      .eq("id", swapVideo.id);
+
+    fetchPlaylists();
   };
 
   return (
@@ -88,17 +283,6 @@ const Playlists = () => {
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="venue">Venue (Optional)</Label>
-                  <Select value={venueId} onValueChange={setVenueId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a venue" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No venue</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
                 <Button type="submit" className="w-full">
                   Create Playlist
                 </Button>
@@ -127,10 +311,22 @@ const Playlists = () => {
                     </p>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="ghost" size="sm">
-                      <Edit className="h-4 w-4" />
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setSelectedPlaylist(playlist.id);
+                        setAddVideosOpen(true);
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Videos
                     </Button>
-                    <Button variant="ghost" size="sm">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleDelete(playlist.id)}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -141,9 +337,6 @@ const Playlists = () => {
                     <p className="text-muted-foreground">
                       No videos in this playlist yet
                     </p>
-                    <Button variant="outline" size="sm" className="mt-2">
-                      Add Videos
-                    </Button>
                   </div>
                 ) : (
                   <Table>
@@ -151,7 +344,7 @@ const Playlists = () => {
                       <TableRow>
                         <TableHead className="w-12">#</TableHead>
                         <TableHead>Video</TableHead>
-                        <TableHead className="text-right">Order</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -162,11 +355,28 @@ const Playlists = () => {
                             {video.title}
                           </TableCell>
                           <TableCell className="text-right space-x-2">
-                            <Button variant="ghost" size="sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleReorder(playlist.id, video.id, "up")}
+                              disabled={index === 0}
+                            >
                               <ArrowUp className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleReorder(playlist.id, video.id, "down")}
+                              disabled={index === playlist.videos.length - 1}
+                            >
                               <ArrowDown className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleRemoveVideo(playlist.id, video.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -178,6 +388,53 @@ const Playlists = () => {
             ))}
           </div>
         )}
+
+        <Dialog open={addVideosOpen} onOpenChange={setAddVideosOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Videos to Playlist</DialogTitle>
+              <DialogDescription>
+                Select videos to add to this playlist
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              {videos.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">
+                  No videos available. Create some videos first!
+                </p>
+              ) : (
+                videos.map((video) => (
+                  <div key={video.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={video.id}
+                      checked={selectedVideos.includes(video.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedVideos([...selectedVideos, video.id]);
+                        } else {
+                          setSelectedVideos(selectedVideos.filter(id => id !== video.id));
+                        }
+                      }}
+                    />
+                    <label
+                      htmlFor={video.id}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      {video.title}
+                    </label>
+                  </div>
+                ))
+              )}
+            </div>
+            <Button 
+              onClick={handleAddVideos} 
+              disabled={selectedVideos.length === 0}
+              className="w-full"
+            >
+              Add {selectedVideos.length} Video(s)
+            </Button>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
