@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,13 +25,36 @@ import { Plus, Video, Edit, Trash2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const Videos = () => {
   const [open, setOpen] = useState(false);
   const [videos, setVideos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(true);
+
+  useEffect(() => {
+    fetchVideos();
+  }, []);
+
+  const fetchVideos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('videos')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setVideos(data || []);
+    } catch (error) {
+      console.error('Error fetching videos:', error);
+      toast.error('Failed to load videos');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,7 +156,11 @@ const Videos = () => {
           </div>
         </div>
 
-        {videos.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Loading videos...</p>
+          </div>
+        ) : videos.length === 0 ? (
           <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
             <Video className="mx-auto h-12 w-12 text-muted-foreground" />
             <h3 className="mt-4 text-lg font-semibold">No videos yet</h3>
@@ -157,28 +184,24 @@ const Videos = () => {
                 <TableRow key={video.id}>
                   <TableCell className="font-medium">{video.title}</TableCell>
                   <TableCell>
-                    {video.source_type === "ai_generated" ? (
-                      <Badge variant="secondary">
-                        <Sparkles className="h-3 w-3 mr-1" />
-                        AI Generated
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline">Upload</Badge>
-                    )}
+                    <Badge variant="secondary">
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      AI Generated
+                    </Badge>
                   </TableCell>
                   <TableCell>
-                    {video.is_active ? (
-                      <Badge className="bg-green-500">Active</Badge>
-                    ) : (
-                      <Badge variant="secondary">Inactive</Badge>
-                    )}
+                    <Badge className="bg-green-500">Active</Badge>
                   </TableCell>
                   <TableCell>
                     {new Date(video.created_at).toLocaleDateString()}
                   </TableCell>
                   <TableCell className="text-right space-x-2">
-                    <Button variant="ghost" size="sm">
-                      <Edit className="h-4 w-4" />
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => window.open(video.video_url, '_blank')}
+                    >
+                      <Video className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="sm">
                       <Trash2 className="h-4 w-4" />
