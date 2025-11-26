@@ -35,26 +35,24 @@ const CreateAIVideo = () => {
   useEffect(() => {
     const fetchPlaylists = async () => {
       try {
-        console.log('CreateAIVideo: Fetching playlists...');
-        toast.info("Loading playlists...");
+        console.log('CreateAIVideo: Starting playlist fetch...');
         
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         
         if (userError) {
           console.error("Auth error:", userError);
-          toast.error(`Auth error: ${userError.message}`);
+          toast.error(`Authentication failed: ${userError.message}`);
           return;
         }
         
         if (!user) {
-          console.log('No authenticated user');
-          toast.error("Please log in to create videos");
-          navigate("/auth");
+          console.log('No authenticated user found');
+          toast.error("Not logged in. Redirecting...");
+          setTimeout(() => navigate("/auth"), 2000);
           return;
         }
 
-        console.log('User authenticated:', user.id);
-        toast.info(`Logged in as ${user.email}`);
+        console.log('User authenticated, ID:', user.id);
 
         const { data, error } = await supabase
           .from("playlists")
@@ -63,31 +61,30 @@ const CreateAIVideo = () => {
           .order("created_at", { ascending: false });
 
         if (error) {
-          console.error("Failed to fetch playlists:", error);
-          toast.error(`Database error: ${error.message}. Check if you have playlists.`);
+          console.error("Playlist fetch error:", error);
+          toast.error(`Cannot load playlists: ${error.message}`);
           return;
         }
 
-        console.log('Playlists fetched:', data?.length || 0);
+        console.log('Playlists retrieved:', data?.length || 0);
         
         if (!data || data.length === 0) {
-          toast.warning("No playlists found. Create a playlist first from the Playlists page.");
+          toast.error("No playlists exist. Go to Playlists page and create one first.");
           setPlaylists([]);
           return;
         }
         
         setPlaylists(data);
         setPlaylistId(data[0].id);
-        toast.success(`Loaded ${data.length} playlist(s)`);
-        console.log('Default playlist set:', data[0].id);
+        toast.success(`Ready! ${data.length} playlist(s) available`);
       } catch (err) {
-        console.error("Unexpected error:", err);
-        toast.error(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        console.error("Unexpected error in fetchPlaylists:", err);
+        toast.error(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`);
       }
     };
 
     fetchPlaylists();
-  }, [navigate]);
+  }, []);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
