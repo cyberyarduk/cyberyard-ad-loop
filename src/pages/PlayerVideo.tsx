@@ -20,6 +20,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [tapCount, setTapCount] = useState(0);
   const [pendingPlaylistChange, setPendingPlaylistChange] = useState<Video[] | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const tapTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -163,6 +164,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
     if (!isTopRight) {
       // Reset count if tapping outside the corner
       tapCountRef.current = 0;
+      setTapCount(0);
       if (tapTimerRef.current) {
         clearTimeout(tapTimerRef.current);
       }
@@ -170,6 +172,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
     }
 
     tapCountRef.current += 1;
+    setTapCount(tapCountRef.current);
     console.log(`Tap ${tapCountRef.current} in corner detected`);
 
     if (tapTimerRef.current) {
@@ -180,12 +183,14 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
     tapTimerRef.current = setTimeout(() => {
       console.log('Tap timeout, resetting count');
       tapCountRef.current = 0;
+      setTapCount(0);
     }, 1500);
 
     // Require exactly 4 taps
     if (tapCountRef.current === 4) {
       console.log('Four taps detected - opening admin mode!');
       tapCountRef.current = 0;
+      setTapCount(0);
       if (tapTimerRef.current) {
         clearTimeout(tapTimerRef.current);
       }
@@ -252,6 +257,13 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       onTouchStart={handleTripleTap}
       onClick={handleTripleTap}
     >
+      {/* Tap counter - only show when actively tapping */}
+      {tapCount > 0 && (
+        <div className="absolute top-4 right-4 z-50 bg-white/20 backdrop-blur-sm rounded-full w-12 h-12 flex items-center justify-center">
+          <span className="text-white text-2xl font-bold">{tapCount}</span>
+        </div>
+      )}
+      
       {currentVideo && (
         <video
           ref={videoRef}
