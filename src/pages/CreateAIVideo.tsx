@@ -34,8 +34,22 @@ const CreateAIVideo = () => {
   // Fetch playlists on mount
   useEffect(() => {
     const fetchPlaylists = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      console.log('CreateAIVideo: Fetching playlists...');
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        console.error("Auth error:", userError);
+        toast.error("Authentication error");
+        return;
+      }
+      
+      if (!user) {
+        console.log('No authenticated user');
+        toast.error("Please log in to create videos");
+        return;
+      }
+
+      console.log('User authenticated:', user.id);
 
       const { data, error } = await supabase
         .from("playlists")
@@ -45,14 +59,20 @@ const CreateAIVideo = () => {
 
       if (error) {
         console.error("Failed to fetch playlists:", error);
-        toast.error("Failed to load playlists");
+        toast.error(`Failed to load playlists: ${error.message}`);
         return;
       }
 
+      console.log('Playlists fetched:', data?.length || 0);
       setPlaylists(data || []);
+      
       // Set first playlist as default
       if (data && data.length > 0) {
         setPlaylistId(data[0].id);
+        console.log('Default playlist set:', data[0].id);
+      } else {
+        console.log('No playlists available');
+        toast.info("No playlists found. Create a playlist first.");
       }
     };
 
