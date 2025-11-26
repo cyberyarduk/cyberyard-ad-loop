@@ -264,10 +264,10 @@ const PlayerAICreator = ({ authToken, deviceInfo, onBack, onComplete }: PlayerAI
                 onValueChange={setSelectedPlaylist}
                 disabled={generating}
               >
-                <SelectTrigger>
+                <SelectTrigger id="playlist">
                   <SelectValue placeholder="Select a playlist" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[100] bg-background">
                   {playlists.map((playlist) => (
                     <SelectItem key={playlist.id} value={playlist.id}>
                       {playlist.name}
