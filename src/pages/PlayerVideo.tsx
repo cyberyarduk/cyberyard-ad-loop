@@ -133,6 +133,14 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       setCurrentIndex(0);
       setPendingPlaylistChange(null);
       toast.success('Playlist updated!');
+      
+      // Force video to play after state update
+      setTimeout(() => {
+        if (videoRef.current) {
+          console.log('Force playing new playlist video');
+          videoRef.current.play().catch(e => console.error('Failed to autoplay after playlist switch:', e));
+        }
+      }, 100);
       return;
     }
 
@@ -254,14 +262,20 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           }}
           onLoadedMetadata={() => {
             console.log('Video metadata loaded:', currentVideo.video_url);
-            // Ensure autoplay
-            if (videoRef.current) {
+            // Ensure autoplay - try immediately
+            if (videoRef.current && videoRef.current.paused) {
+              console.log('Video is paused, attempting to play...');
               videoRef.current.play().catch(e => {
                 console.error('Autoplay failed:', e);
-                // Try again with muted if autoplay fails
+                // Try again with muted if autoplay fails (browser restriction)
                 if (videoRef.current) {
+                  console.log('Trying muted autoplay...');
                   videoRef.current.muted = true;
-                  videoRef.current.play().catch(err => console.error('Muted autoplay also failed:', err));
+                  videoRef.current.play().catch(err => {
+                    console.error('Muted autoplay also failed:', err);
+                    // As last resort, show play button to user
+                    toast.error('Tap the video to play');
+                  });
                 }
               });
             }
