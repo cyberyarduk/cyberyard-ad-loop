@@ -26,11 +26,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, List, Edit, Trash2, ArrowUp, ArrowDown, Send } from "lucide-react";
+import { Plus, List, Edit, Trash2, ArrowUp, ArrowDown, Send, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Playlists = () => {
   const navigate = useNavigate();
@@ -41,6 +42,9 @@ const Playlists = () => {
   const [name, setName] = useState("");
   const [selectedPlaylist, setSelectedPlaylist] = useState<string | null>(null);
   const [selectedVideos, setSelectedVideos] = useState<string[]>([]);
+  const [uploadingToPlaylist, setUploadingToPlaylist] = useState(false);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoTitle, setVideoTitle] = useState("");
 
   useEffect(() => {
     checkAuth();
@@ -198,6 +202,90 @@ const Playlists = () => {
     fetchPlaylists();
   };
 
+  const handleUploadToPlaylist = async () => {
+    if (!videoFile || !videoTitle || !selectedPlaylist) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    setUploadingToPlaylist(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("company_id")
+        .eq("id", user.id)
+        .single();
+
+      // Upload file to storage
+      const fileExt = videoFile.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('videos')
+        .upload(fileName, videoFile);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('videos')
+        .getPublicUrl(fileName);
+
+      // Insert video record
+      const { data: newVideo, error: insertError } = await supabase
+        .from('videos')
+        .insert({
+          title: videoTitle,
+          video_url: publicUrl,
+          user_id: user.id,
+          company_id: profile?.company_id,
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      // Add to playlist
+      const { data: existingVideos } = await supabase
+        .from("playlist_videos")
+        .select("order_index")
+        .eq("playlist_id", selectedPlaylist)
+        .order("order_index", { ascending: false })
+        .limit(1);
+
+      const orderIndex = existingVideos && existingVideos.length > 0 
+        ? existingVideos[0].order_index + 1 
+        : 0;
+
+      const { error: playlistError } = await supabase
+        .from("playlist_videos")
+        .insert({
+          playlist_id: selectedPlaylist,
+          video_id: newVideo.id,
+          order_index: orderIndex,
+        });
+
+      if (playlistError) throw playlistError;
+
+      toast.success("Video uploaded and added to playlist");
+      setVideoFile(null);
+      setVideoTitle("");
+      setAddVideosOpen(false);
+      setSelectedPlaylist(null);
+      fetchPlaylists();
+      fetchVideos();
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast.error(error.message || "Failed to upload video");
+    } finally {
+      setUploadingToPlaylist(false);
+    }
+  };
+
   const handlePushToDevice = async (playlistId: string, playlistName: string) => {
     // Fetch devices for selection
     const { data: devices } = await supabase
@@ -236,6 +324,33 @@ const Playlists = () => {
     }
 
     toast.success(`Pushed "${playlistName}" to ${selectedDevice.name}`);
+  };
+
+  const handlePushToAllDevices = async (playlistId: string, playlistName: string) => {
+    const { data: devices } = await supabase
+      .from("devices")
+      .select("*");
+
+    if (!devices || devices.length === 0) {
+      toast.error("No devices available");
+      return;
+    }
+
+    if (!confirm(`Push "${playlistName}" to ALL ${devices.length} device(s)?`)) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from("devices")
+      .update({ playlist_id: playlistId })
+      .neq("id", "00000000-0000-0000-0000-000000000000"); // Update all devices
+
+    if (error) {
+      toast.error("Failed to push playlist to devices");
+      return;
+    }
+
+    toast.success(`Pushed "${playlistName}" to all ${devices.length} device(s)`);
   };
 
   const handleRemoveVideo = async (playlistId: string, videoId: string) => {
@@ -371,6 +486,14 @@ const Playlists = () => {
                       Push to Device
                     </Button>
                     <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handlePushToAllDevices(playlist.id, playlist.name)}
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      Push to All
+                    </Button>
+                    <Button 
                       variant="ghost" 
                       size="sm"
                       onClick={() => handleDelete(playlist.id)}
@@ -437,50 +560,100 @@ const Playlists = () => {
           </div>
         )}
 
-        <Dialog open={addVideosOpen} onOpenChange={setAddVideosOpen}>
-          <DialogContent>
+        <Dialog open={addVideosOpen} onOpenChange={(open) => {
+          setAddVideosOpen(open);
+          if (!open) {
+            setVideoFile(null);
+            setVideoTitle("");
+            setSelectedVideos([]);
+          }
+        }}>
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Add Videos to Playlist</DialogTitle>
               <DialogDescription>
-                Select videos to add to this playlist
+                Select existing videos or upload new ones
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 max-h-96 overflow-y-auto">
-              {videos.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
-                  No videos available. Create some videos first!
-                </p>
-              ) : (
-                videos.map((video) => (
-                  <div key={video.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={video.id}
-                      checked={selectedVideos.includes(video.id)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          setSelectedVideos([...selectedVideos, video.id]);
-                        } else {
-                          setSelectedVideos(selectedVideos.filter(id => id !== video.id));
-                        }
-                      }}
+            <Tabs defaultValue="existing" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="existing">Existing Videos</TabsTrigger>
+                <TabsTrigger value="upload">Upload New</TabsTrigger>
+              </TabsList>
+              <TabsContent value="existing" className="space-y-4">
+                <div className="space-y-4 max-h-96 overflow-y-auto">
+                  {videos.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-8">
+                      No videos available. Upload some videos first!
+                    </p>
+                  ) : (
+                    videos.map((video) => (
+                      <div key={video.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={video.id}
+                          checked={selectedVideos.includes(video.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedVideos([...selectedVideos, video.id]);
+                            } else {
+                              setSelectedVideos(selectedVideos.filter(id => id !== video.id));
+                            }
+                          }}
+                        />
+                        <label
+                          htmlFor={video.id}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                          {video.title}
+                        </label>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <Button 
+                  onClick={handleAddVideos} 
+                  disabled={selectedVideos.length === 0}
+                  className="w-full"
+                >
+                  Add {selectedVideos.length} Video(s)
+                </Button>
+              </TabsContent>
+              <TabsContent value="upload" className="space-y-4">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="upload-title">Video Title</Label>
+                    <Input
+                      id="upload-title"
+                      placeholder="My Video"
+                      value={videoTitle}
+                      onChange={(e) => setVideoTitle(e.target.value)}
+                      required
                     />
-                    <label
-                      htmlFor={video.id}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                    >
-                      {video.title}
-                    </label>
                   </div>
-                ))
-              )}
-            </div>
-            <Button 
-              onClick={handleAddVideos} 
-              disabled={selectedVideos.length === 0}
-              className="w-full"
-            >
-              Add {selectedVideos.length} Video(s)
-            </Button>
+                  <div className="space-y-2">
+                    <Label htmlFor="upload-file">Video File (MP4)</Label>
+                    <Input
+                      id="upload-file"
+                      type="file"
+                      accept="video/mp4,video/quicktime,video/x-msvideo"
+                      onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+                      required
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Recommended: 9:16 portrait orientation for device screens
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={handleUploadToPlaylist}
+                    disabled={!videoFile || !videoTitle || uploadingToPlaylist}
+                    className="w-full"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    {uploadingToPlaylist ? "Uploading..." : "Upload & Add to Playlist"}
+                  </Button>
+                </div>
+              </TabsContent>
+            </Tabs>
           </DialogContent>
         </Dialog>
       </div>
