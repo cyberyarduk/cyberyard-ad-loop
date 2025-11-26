@@ -1,0 +1,2 @@
+-- Add source column to videos table to differentiate AI-generated from manually uploaded
+ALTER TABLE videos ADD COLUMN IF NOT EXISTS source text DEFAULT 'manual' CHECK (source IN ('manual', 'ai_generated'));

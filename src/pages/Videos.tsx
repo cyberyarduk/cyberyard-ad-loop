@@ -262,10 +262,16 @@ const Videos = () => {
                 <TableRow key={video.id}>
                   <TableCell className="font-medium">{video.title}</TableCell>
                   <TableCell>
-                    <Badge variant="secondary">
-                      <Sparkles className="h-3 w-3 mr-1" />
-                      AI Generated
-                    </Badge>
+                    {video.source === 'ai_generated' ? (
+                      <Badge variant="secondary">
+                        <Sparkles className="h-3 w-3 mr-1" />
+                        AI Generated
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline">
+                        Manual Upload
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Badge className="bg-green-500">Active</Badge>

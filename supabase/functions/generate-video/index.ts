@@ -242,7 +242,8 @@ serve(async (req) => {
       title: mainText || 'AI Generated Video',
       video_url: videoUrl,
       user_id: userId,
-      company_id: companyId
+      company_id: companyId,
+      source: 'ai_generated'
     };
     
     console.log('Inserting video with data:', videoData);
