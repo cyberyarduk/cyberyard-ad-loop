@@ -1,3 +1,4 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
@@ -16,21 +17,61 @@ serve(async (req) => {
     console.log('Generating video with params:', { imageUrl, mainText, subtext, duration, style, playlistId, deviceToken: !!deviceToken });
 
     const SHOTSTACK_API_KEY = Deno.env.get('SHOTSTACK_API_KEY');
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    
     if (!SHOTSTACK_API_KEY) {
       throw new Error('SHOTSTACK_API_KEY not configured');
     }
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY not configured');
+    }
 
-    // Use Shotstack's native title assets which are more reliable
-    const styleConfig: Record<string, { color: string; background: string; size: string }> = {
-      boom: { color: '#ffffff', background: '#ff0844', size: 'large' },
-      sparkle: { color: '#ffffff', background: '#667eea', size: 'large' },
-      stars: { color: '#ffffff', background: '#ff1493', size: 'large' },
-      minimal: { color: '#000000', background: '#ffffff', size: 'medium' }
+    // Generate text overlay images using Lovable AI
+    console.log('Generating text overlay with AI...');
+    
+    const stylePrompts: Record<string, string> = {
+      boom: `Create a bold text overlay image (1080x400px transparent background) with the text "${mainText}" in huge bold letters with a vibrant red-to-pink gradient background, dramatic shadows, and an explosive, energetic style. Make it eye-catching and dynamic.`,
+      sparkle: `Create a magical text overlay image (1080x400px transparent background) with the text "${mainText}" in elegant letters with purple-to-blue gradients, sparkles, and a dreamy, enchanting style.`,
+      stars: `Create a glamorous text overlay image (1080x400px transparent background) with the text "${mainText}" in stylish letters with hot pink colors, star decorations, and a dazzling celebrity style.`,
+      minimal: `Create a clean text overlay image (1080x400px transparent background) with the text "${mainText}" in modern sans-serif font, simple black text on white background, minimalist and professional.`
     };
 
-    const config = styleConfig[style] || styleConfig.boom;
+    const textPrompt = stylePrompts[style] || stylePrompts.boom;
+    
+    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-3-pro-image-preview',
+        messages: [
+          {
+            role: 'user',
+            content: textPrompt
+          }
+        ],
+        modalities: ['image', 'text']
+      })
+    });
 
-    // Build tracks - simpler approach using title assets
+    if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      console.error('Lovable AI error:', errorText);
+      throw new Error(`Failed to generate text overlay: ${errorText}`);
+    }
+
+    const aiData = await aiResponse.json();
+    const textOverlayBase64 = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    
+    if (!textOverlayBase64) {
+      throw new Error('No image generated from AI');
+    }
+
+    console.log('Text overlay generated successfully');
+
+    // Build tracks with background image and AI-generated text overlay
     const tracks = [
       // Background image with zoom
       {
@@ -48,43 +89,78 @@ serve(async (req) => {
           }
         ]
       },
-      // Main text using Shotstack title (more reliable than HTML)
+      // AI-generated text overlay
       {
         clips: [
           {
             asset: {
-              type: "title",
-              text: mainText.toUpperCase(),
-              style: "blockbuster",
-              color: config.color,
-              size: config.size
+              type: "image",
+              src: textOverlayBase64
             },
             start: 0,
             length: parseFloat(duration),
+            fit: "none",
+            position: "center",
+            offset: {
+              x: 0,
+              y: -0.1
+            },
+            opacity: 1,
             effect: "slideUp"
           }
         ]
       }
     ];
 
-    // Add subtext if provided
+    // Add subtext overlay if provided
     if (subtext && subtext.trim()) {
-      tracks.push({
-        clips: [
-          {
-            asset: {
-              type: "title",
-              text: subtext,
-              style: "subtitle",
-              color: "#ffffff",
-              size: "small"
-            },
-            start: 0.5,
-            length: parseFloat(duration) - 0.5,
-            effect: "slideUp"
-          }
-        ]
+      const subtextPrompt = `Create a simple text overlay image (1080x200px transparent background) with the text "${subtext}" in medium-sized white letters with subtle shadow for readability.`;
+      
+      const subtextAiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-3-pro-image-preview',
+          messages: [
+            {
+              role: 'user',
+              content: subtextPrompt
+            }
+          ],
+          modalities: ['image', 'text']
+        })
       });
+
+      if (subtextAiResponse.ok) {
+        const subtextAiData = await subtextAiResponse.json();
+        const subtextOverlayBase64 = subtextAiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+        
+        if (subtextOverlayBase64) {
+          tracks.push({
+            clips: [
+              {
+                asset: {
+                  type: "image",
+                  src: subtextOverlayBase64
+                },
+                start: 0.3,
+                length: parseFloat(duration) - 0.3,
+                fit: "none",
+                position: "center",
+                offset: {
+                  x: 0,
+                  y: 0.3
+                },
+                opacity: 1,
+                effect: "slideUp"
+              }
+            ]
+          });
+        }
+      }
     }
 
     // Create Shotstack edit
