@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Video, List, Monitor, MapPin, LogOut, Building2 } from "lucide-react";
+import { LayoutDashboard, Video, List, Monitor, MapPin, LogOut, Building2, Settings } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -68,6 +68,12 @@ const DashboardLayout = ({
               </p>
             </div>
           )}
+          <Link to="/settings">
+            <Button variant="ghost" className="w-full justify-start">
+              <Settings className="mr-2 h-4 w-4" />
+              Settings
+            </Button>
+          </Link>
           <Button variant="ghost" className="w-full justify-start" onClick={signOut}>
             <LogOut className="mr-2 h-4 w-4" />
             Sign Out
