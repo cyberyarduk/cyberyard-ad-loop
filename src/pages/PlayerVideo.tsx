@@ -21,7 +21,6 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const [loading, setLoading] = useState(true);
   const [showAdmin, setShowAdmin] = useState(false);
   const [tapCount, setTapCount] = useState(0);
-  const [pendingPlaylistChange, setPendingPlaylistChange] = useState<Video[] | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const tapTimerRef = useRef<NodeJS.Timeout | null>(null);
   const tapCountRef = useRef(0);
@@ -104,10 +103,19 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
             const newVideos = data.videos;
             
             if (newVideos.length > 0 && JSON.stringify(newVideos) !== JSON.stringify(videos)) {
-              console.log('New playlist detected, queuing switch after current video ends');
-              // Queue the new playlist - it will switch when current video ends
-              setPendingPlaylistChange(newVideos);
-              toast.info('New playlist ready - switching after current video');
+              console.log('New playlist detected - switching immediately');
+              setVideos(newVideos);
+              setCurrentIndex(0);
+              
+              // Force immediate playback of first video in new playlist
+              setTimeout(() => {
+                if (videoRef.current) {
+                  videoRef.current.load();
+                  videoRef.current.play().catch(e => console.error('Failed to autoplay new playlist:', e));
+                }
+              }, 50);
+              
+              toast.success('Playlist switched!');
             }
           }
         }
@@ -127,24 +135,6 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   }, [authToken, deviceInfo.id]);
 
   const handleVideoEnd = () => {
-    // Check if there's a pending playlist change
-    if (pendingPlaylistChange) {
-      console.log('Switching to new playlist after video ended');
-      setVideos(pendingPlaylistChange);
-      setCurrentIndex(0);
-      setPendingPlaylistChange(null);
-      toast.success('Playlist updated!');
-      
-      // Force video to play after state update
-      setTimeout(() => {
-        if (videoRef.current) {
-          console.log('Force playing new playlist video');
-          videoRef.current.play().catch(e => console.error('Failed to autoplay after playlist switch:', e));
-        }
-      }, 100);
-      return;
-    }
-
     if (videos.length === 0) return;
     
     // Move to next video, loop back to start if at end
