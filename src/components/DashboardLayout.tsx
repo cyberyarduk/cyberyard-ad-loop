@@ -1,10 +1,8 @@
 import { ReactNode } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Video, List, Monitor, MapPin, LogOut } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import logo from "@/assets/logo-dark.png";
+import { LayoutDashboard, Video, List, Monitor, MapPin, LogOut, Building2 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 interface DashboardLayoutProps {
   children: ReactNode;
 }
@@ -12,12 +10,8 @@ const DashboardLayout = ({
   children
 }: DashboardLayoutProps) => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    toast.success("Signed out successfully");
-    navigate("/auth");
-  };
+  const { isSuperAdmin, signOut, profile, company } = useAuth();
+
   const navItems = [{
     path: "/dashboard",
     icon: LayoutDashboard,
@@ -38,11 +32,18 @@ const DashboardLayout = ({
     path: "/playlists",
     icon: List,
     label: "Playlists"
-  }];
+  }, ...(isSuperAdmin ? [{
+    path: "/companies",
+    icon: Building2,
+    label: "Companies"
+  }] : [])];
   return <div className="min-h-screen bg-background">
       <aside className="fixed left-0 top-0 h-full w-64 border-r border-border bg-card p-4 flex flex-col">
         <div className="mb-8">
           <img alt="Cyberyard" src="/lovable-uploads/3d9a1351-c885-486a-b21b-eaea718cc995.png" className="h-12 object-fill" />
+          {!isSuperAdmin && company && (
+            <p className="text-xs text-muted-foreground mt-2">{company.name}</p>
+          )}
         </div>
 
         <nav className="flex-1 space-y-2">
@@ -58,10 +59,20 @@ const DashboardLayout = ({
         })}
         </nav>
 
-        <Button variant="ghost" className="w-full justify-start" onClick={handleSignOut}>
-          <LogOut className="mr-2 h-4 w-4" />
-          Sign Out
-        </Button>
+        <div className="border-t pt-4 space-y-2">
+          {profile && (
+            <div className="px-2 mb-2">
+              <p className="text-sm font-medium">{profile.full_name || profile.email}</p>
+              <p className="text-xs text-muted-foreground capitalize">
+                {profile.role.replace('_', ' ')}
+              </p>
+            </div>
+          )}
+          <Button variant="ghost" className="w-full justify-start" onClick={signOut}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Sign Out
+          </Button>
+        </div>
       </aside>
 
       <main className="ml-64 p-8">{children}</main>
