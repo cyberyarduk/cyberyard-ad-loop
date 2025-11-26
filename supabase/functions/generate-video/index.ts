@@ -166,6 +166,8 @@ serve(async (req) => {
 
     // Save video to database
     const authHeader = req.headers.get('Authorization');
+    console.log('Auth header received:', authHeader ? 'Yes' : 'No');
+    
     if (!authHeader) {
       throw new Error('No authorization header');
     }
@@ -180,7 +182,9 @@ serve(async (req) => {
       }
     );
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    console.log('User retrieved:', user ? user.id : 'null', 'Error:', userError);
+    
     if (!user) {
       throw new Error('User not authenticated');
     }
