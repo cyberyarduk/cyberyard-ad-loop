@@ -20,70 +20,77 @@ serve(async (req) => {
       throw new Error('SHOTSTACK_API_KEY not configured');
     }
 
+    // Build tracks array
+    const tracks = [
+      {
+        clips: [
+          {
+            asset: {
+              type: "image",
+              src: imageUrl
+            },
+            start: 0,
+            length: parseFloat(duration),
+            fit: "cover",
+            scale: 1
+          }
+        ]
+      },
+      {
+        clips: [
+          {
+            asset: {
+              type: "html",
+              html: `<p style="color: white; font-size: 80px; font-weight: bold; text-align: center; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">${mainText}</p>`,
+              width: 1080,
+              height: 300,
+              position: "center"
+            },
+            start: 0,
+            length: parseFloat(duration),
+            offset: {
+              y: -0.25
+            },
+            transition: {
+              in: "fade",
+              out: "fade"
+            }
+          }
+        ]
+      }
+    ];
+
+    // Add subtext track only if subtext exists
+    if (subtext && subtext.trim()) {
+      tracks.push({
+        clips: [
+          {
+            asset: {
+              type: "html",
+              html: `<p style="color: white; font-size: 50px; text-align: center; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">${subtext}</p>`,
+              width: 1080,
+              height: 200,
+              position: "center"
+            },
+            start: 0,
+            length: parseFloat(duration),
+            offset: {
+              y: 0.25
+            },
+            transition: {
+              in: "fade",
+              out: "fade"
+            }
+          }
+        ]
+      });
+    }
+
     // Create Shotstack edit
     const shotstackEdit = {
       timeline: {
         background: "#000000",
-        tracks: [
-          {
-            clips: [
-              {
-                asset: {
-                  type: "image",
-                  src: imageUrl
-                },
-                start: 0,
-                length: parseFloat(duration),
-                fit: "cover",
-                scale: 1
-              }
-            ]
-          },
-          {
-            clips: [
-              {
-                asset: {
-                  type: "html",
-                  html: `<p style="color: white; font-size: 80px; font-weight: bold; text-align: center; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">${mainText}</p>`,
-                  width: 1080,
-                  height: 300,
-                  position: "center"
-                },
-                start: 0,
-                length: parseFloat(duration),
-                offset: {
-                  y: -0.25
-                },
-                transition: {
-                  in: "fade",
-                  out: "fade"
-                }
-              }
-            ]
-          },
-          ...(subtext ? [{
-            clips: [
-              {
-                asset: {
-                  type: "html",
-                  html: `<p style="color: white; font-size: 50px; text-align: center; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">${subtext}</p>`,
-                  width: 1080,
-                  height: 200,
-                  position: "center"
-                },
-                start: 0,
-                length: parseFloat(duration),
-                offset: {
-                  y: 0.25
-                },
-                transition: {
-                  in: "fade",
-                  out: "fade"
-                }
-              }
-            ]
-          }] : [])
-        ]
+        tracks
       },
       output: {
         format: "mp4",
