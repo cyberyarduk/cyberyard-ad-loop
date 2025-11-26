@@ -164,8 +164,8 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       tapCountRef.current = 0;
     }, 2000);
 
-    if (tapCountRef.current >= 3) {
-      console.log('Triple tap detected!');
+    if (tapCountRef.current >= 4) {
+      console.log('Four taps detected!');
       tapCountRef.current = 0;
       setShowAdmin(true);
       if (videoRef.current) {
@@ -176,11 +176,9 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
 
   const handleExitAdmin = () => {
     setShowAdmin(false);
-    if (videoRef.current) {
-      videoRef.current.play();
-    }
     // Refresh playlist in case new videos were added
     fetchPlaylist();
+    // Don't try to play here - let the video element handle it
   };
 
   if (showAdmin) {
@@ -239,6 +237,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           src={currentVideo.video_url}
           className="w-full h-full object-contain"
           autoPlay
+          muted={false}
           playsInline
           crossOrigin="anonymous"
           preload="auto"
@@ -248,7 +247,6 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
             console.error('Failed video URL:', currentVideo.video_url);
             console.error('Video error details:', videoRef.current?.error);
             toast.error(`Error playing video: ${currentVideo.title}`);
-            // Skip to next video on error
             handleVideoEnd();
           }}
           onLoadStart={() => {
@@ -256,12 +254,31 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           }}
           onLoadedMetadata={() => {
             console.log('Video metadata loaded:', currentVideo.video_url);
+            // Ensure autoplay
+            if (videoRef.current) {
+              videoRef.current.play().catch(e => {
+                console.error('Autoplay failed:', e);
+                // Try again with muted if autoplay fails
+                if (videoRef.current) {
+                  videoRef.current.muted = true;
+                  videoRef.current.play().catch(err => console.error('Muted autoplay also failed:', err));
+                }
+              });
+            }
           }}
           onCanPlay={() => {
             console.log('Video can play:', currentVideo.video_url);
           }}
           onPlay={() => {
             console.log('Video started playing:', currentVideo.video_url);
+          }}
+          onPause={() => {
+            console.log('Video paused:', currentVideo.video_url);
+            // If video pauses unexpectedly, try to resume
+            if (!showAdmin && videoRef.current && !videoRef.current.ended) {
+              console.log('Attempting to resume playback...');
+              videoRef.current.play().catch(e => console.error('Resume failed:', e));
+            }
           }}
           onStalled={() => {
             console.warn('Video playback stalled:', currentVideo.video_url);

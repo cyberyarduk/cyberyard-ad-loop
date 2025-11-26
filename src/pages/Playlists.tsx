@@ -287,43 +287,60 @@ const Playlists = () => {
   };
 
   const handlePushToDevice = async (playlistId: string, playlistName: string) => {
-    // Fetch devices for selection
-    const { data: devices } = await supabase
-      .from("devices")
-      .select("*")
-      .order("name");
+    try {
+      // Fetch devices for selection
+      const { data: devices, error: fetchError } = await supabase
+        .from("devices")
+        .select("*")
+        .order("name");
 
-    if (!devices || devices.length === 0) {
-      toast.error("No devices available");
-      return;
+      if (fetchError) {
+        console.error('Error fetching devices:', fetchError);
+        toast.error("Failed to fetch devices");
+        return;
+      }
+
+      if (!devices || devices.length === 0) {
+        toast.error("No devices available");
+        return;
+      }
+
+      // Show device selection dialog
+      const deviceId = prompt(
+        `Push "${playlistName}" to device:\n\n${devices.map((d, i) => `${i + 1}. ${d.name} (${d.device_code})`).join("\n")}\n\nEnter device number:`
+      );
+
+      if (!deviceId) return;
+
+      const deviceIndex = parseInt(deviceId) - 1;
+      if (isNaN(deviceIndex) || deviceIndex < 0 || deviceIndex >= devices.length) {
+        toast.error("Invalid device selection");
+        return;
+      }
+
+      const selectedDevice = devices[deviceIndex];
+      
+      if (!selectedDevice || !selectedDevice.id) {
+        toast.error("Invalid device selected");
+        return;
+      }
+
+      const { error } = await supabase
+        .from("devices")
+        .update({ playlist_id: playlistId })
+        .eq("id", selectedDevice.id);
+
+      if (error) {
+        console.error('Error updating device:', error);
+        toast.error("Failed to push playlist to device");
+        return;
+      }
+
+      toast.success(`Pushed "${playlistName}" to ${selectedDevice.name}`);
+    } catch (error) {
+      console.error('Error in handlePushToDevice:', error);
+      toast.error('Failed to push playlist');
     }
-
-    // Show device selection dialog
-    const deviceId = prompt(
-      `Push "${playlistName}" to device:\n\n${devices.map((d, i) => `${i + 1}. ${d.name} (${d.device_code})`).join("\n")}\n\nEnter device number:`
-    );
-
-    if (!deviceId) return;
-
-    const deviceIndex = parseInt(deviceId) - 1;
-    if (deviceIndex < 0 || deviceIndex >= devices.length) {
-      toast.error("Invalid device selection");
-      return;
-    }
-
-    const selectedDevice = devices[deviceIndex];
-
-    const { error } = await supabase
-      .from("devices")
-      .update({ playlist_id: playlistId })
-      .eq("id", selectedDevice.id);
-
-    if (error) {
-      toast.error("Failed to push playlist to device");
-      return;
-    }
-
-    toast.success(`Pushed "${playlistName}" to ${selectedDevice.name}`);
   };
 
   const handlePushToAllDevices = async (playlistId: string, playlistName: string) => {
