@@ -13,8 +13,8 @@ serve(async (req) => {
   }
 
   try {
-    const { imageUrl, mainText, subtext, duration, style = 'boom', playlistId, deviceToken } = await req.json();
-    console.log('Generating video with params:', { imageUrl, mainText, subtext, duration, style, playlistId, deviceToken: !!deviceToken });
+    const { imageUrl, imageData, mainText, subtext, duration, style = 'boom', playlistId, deviceToken } = await req.json();
+    console.log('Generating video with params:', { hasImageUrl: !!imageUrl, hasImageData: !!imageData, mainText, subtext, duration, style, playlistId, deviceToken: !!deviceToken });
 
     const SHOTSTACK_API_KEY = Deno.env.get('SHOTSTACK_API_KEY');
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -33,6 +33,44 @@ serve(async (req) => {
 
     // Create Supabase client for storage operations
     const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    // Upload base64 image to storage if provided
+    let finalImageUrl = imageUrl;
+    
+    if (imageData && !imageUrl) {
+      console.log('Uploading base64 image to storage...');
+      
+      const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
+      const buffer = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+      
+      const fileName = `${crypto.randomUUID()}.jpg`;
+      const filePath = `offer-images/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await supabase
+        .storage
+        .from('videos')
+        .upload(filePath, buffer, {
+          contentType: 'image/jpeg',
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        throw new Error(`Failed to upload image: ${uploadError.message}`);
+      }
+
+      const { data: { publicUrl } } = supabase
+        .storage
+        .from('videos')
+        .getPublicUrl(filePath);
+
+      finalImageUrl = publicUrl;
+      console.log('Image uploaded successfully:', finalImageUrl);
+    }
+
+    if (!finalImageUrl) {
+      throw new Error('No image provided (imageUrl or imageData required)');
+    }
 
     // Generate complete promotional image with text using Lovable AI
     console.log('Generating complete promotional image with AI...');
@@ -65,7 +103,7 @@ serve(async (req) => {
               {
                 type: 'image_url',
                 image_url: {
-                  url: imageUrl
+                  url: finalImageUrl
                 }
               }
             ]
