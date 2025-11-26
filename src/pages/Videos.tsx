@@ -31,9 +31,11 @@ const Videos = () => {
   const [open, setOpen] = useState(false);
   const [videos, setVideos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
 
   useEffect(() => {
     fetchVideos();
@@ -56,25 +58,66 @@ const Videos = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement file upload with Supabase Storage
-    const newVideo = {
-      id: crypto.randomUUID(),
-      title,
-      description,
-      file_url: "https://example.com/video.mp4", // Placeholder
-      thumbnail_url: null,
-      is_active: isActive,
-      source_type: "upload",
-      created_at: new Date().toISOString(),
-    };
-    setVideos([...videos, newVideo]);
-    toast.success("Video uploaded successfully");
-    setOpen(false);
-    setTitle("");
-    setDescription("");
-    setIsActive(true);
+
+    if (!videoFile) {
+      toast.error("Please select a video file");
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("company_id")
+        .eq("id", user.id)
+        .single();
+
+      // Upload file to storage
+      const fileExt = videoFile.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('videos')
+        .upload(fileName, videoFile);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('videos')
+        .getPublicUrl(fileName);
+
+      // Insert video record
+      const { error: insertError } = await supabase
+        .from('videos')
+        .insert({
+          title,
+          video_url: publicUrl,
+          user_id: user.id,
+          company_id: profile?.company_id,
+        });
+
+      if (insertError) throw insertError;
+
+      toast.success("Video uploaded successfully");
+      setOpen(false);
+      setTitle("");
+      setDescription("");
+      setIsActive(true);
+      setVideoFile(null);
+      fetchVideos();
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast.error(error.message || "Failed to upload video");
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -133,10 +176,12 @@ const Videos = () => {
                     <Input
                       id="file"
                       type="file"
-                      accept="video/mp4"
+                      accept="video/mp4,video/quicktime,video/x-msvideo"
+                      onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+                      required
                     />
                     <p className="text-sm text-muted-foreground">
-                      Recommended: 9:16 portrait orientation for wearable screens
+                      Recommended: 9:16 portrait orientation for device screens
                     </p>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -147,8 +192,8 @@ const Videos = () => {
                     />
                     <Label htmlFor="active">Active</Label>
                   </div>
-                  <Button type="submit" className="w-full">
-                    Upload Video
+                  <Button type="submit" className="w-full" disabled={uploading}>
+                    {uploading ? "Uploading..." : "Upload Video"}
                   </Button>
                 </form>
               </DialogContent>
@@ -199,7 +244,60 @@ const Videos = () => {
                     <Button 
                       variant="ghost" 
                       size="sm"
-                      onClick={() => window.open(video.video_url, '_blank')}
+                      onClick={() => {
+                        const videoElement = document.createElement('video');
+                        videoElement.src = video.video_url;
+                        videoElement.controls = true;
+                        videoElement.style.width = '100%';
+                        videoElement.style.maxWidth = '600px';
+                        
+                        const dialog = document.createElement('div');
+                        dialog.style.position = 'fixed';
+                        dialog.style.top = '50%';
+                        dialog.style.left = '50%';
+                        dialog.style.transform = 'translate(-50%, -50%)';
+                        dialog.style.backgroundColor = 'black';
+                        dialog.style.padding = '20px';
+                        dialog.style.borderRadius = '8px';
+                        dialog.style.zIndex = '9999';
+                        dialog.style.boxShadow = '0 4px 20px rgba(0,0,0,0.5)';
+                        
+                        const closeBtn = document.createElement('button');
+                        closeBtn.textContent = '×';
+                        closeBtn.style.position = 'absolute';
+                        closeBtn.style.top = '10px';
+                        closeBtn.style.right = '10px';
+                        closeBtn.style.background = 'rgba(255,255,255,0.2)';
+                        closeBtn.style.color = 'white';
+                        closeBtn.style.border = 'none';
+                        closeBtn.style.fontSize = '24px';
+                        closeBtn.style.cursor = 'pointer';
+                        closeBtn.style.width = '30px';
+                        closeBtn.style.height = '30px';
+                        closeBtn.style.borderRadius = '50%';
+                        
+                        const backdrop = document.createElement('div');
+                        backdrop.style.position = 'fixed';
+                        backdrop.style.top = '0';
+                        backdrop.style.left = '0';
+                        backdrop.style.width = '100%';
+                        backdrop.style.height = '100%';
+                        backdrop.style.backgroundColor = 'rgba(0,0,0,0.8)';
+                        backdrop.style.zIndex = '9998';
+                        
+                        const closeDialog = () => {
+                          document.body.removeChild(dialog);
+                          document.body.removeChild(backdrop);
+                        };
+                        
+                        closeBtn.onclick = closeDialog;
+                        backdrop.onclick = closeDialog;
+                        
+                        dialog.appendChild(closeBtn);
+                        dialog.appendChild(videoElement);
+                        document.body.appendChild(backdrop);
+                        document.body.appendChild(dialog);
+                      }}
                     >
                       <Video className="h-4 w-4" />
                     </Button>

@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, List, Edit, Trash2, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, List, Edit, Trash2, ArrowUp, ArrowDown, Send } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -198,6 +198,46 @@ const Playlists = () => {
     fetchPlaylists();
   };
 
+  const handlePushToDevice = async (playlistId: string, playlistName: string) => {
+    // Fetch devices for selection
+    const { data: devices } = await supabase
+      .from("devices")
+      .select("*")
+      .order("name");
+
+    if (!devices || devices.length === 0) {
+      toast.error("No devices available");
+      return;
+    }
+
+    // Show device selection dialog
+    const deviceId = prompt(
+      `Push "${playlistName}" to device:\n\n${devices.map((d, i) => `${i + 1}. ${d.name} (${d.device_code})`).join("\n")}\n\nEnter device number:`
+    );
+
+    if (!deviceId) return;
+
+    const deviceIndex = parseInt(deviceId) - 1;
+    if (deviceIndex < 0 || deviceIndex >= devices.length) {
+      toast.error("Invalid device selection");
+      return;
+    }
+
+    const selectedDevice = devices[deviceIndex];
+
+    const { error } = await supabase
+      .from("devices")
+      .update({ playlist_id: playlistId })
+      .eq("id", selectedDevice.id);
+
+    if (error) {
+      toast.error("Failed to push playlist to device");
+      return;
+    }
+
+    toast.success(`Pushed "${playlistName}" to ${selectedDevice.name}`);
+  };
+
   const handleRemoveVideo = async (playlistId: string, videoId: string) => {
     const { error } = await supabase
       .from("playlist_videos")
@@ -321,6 +361,14 @@ const Playlists = () => {
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Add Videos
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handlePushToDevice(playlist.id, playlist.name)}
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      Push to Device
                     </Button>
                     <Button 
                       variant="ghost" 

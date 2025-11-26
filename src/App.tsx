@@ -16,6 +16,7 @@ import CreateAIVideo from "./pages/CreateAIVideo";
 import Player from "./pages/Player";
 import Companies from "./pages/Companies";
 import CompanyForm from "./pages/CompanyForm";
+import Settings from "./pages/Settings";
 import { toast } from "sonner";
 
 const queryClient = new QueryClient();
@@ -120,6 +121,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Playlists />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <Settings />
                 </ProtectedRoute>
               }
             />
