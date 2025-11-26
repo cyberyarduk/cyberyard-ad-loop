@@ -232,10 +232,18 @@ serve(async (req) => {
       console.log('Profile fetched:', profile);
     }
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    // Create service role client to bypass RLS
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    
+    console.log('Service role key exists:', !!serviceRoleKey);
+    console.log('Supabase URL exists:', !!supabaseUrl);
+    
+    if (!serviceRoleKey || !supabaseUrl) {
+      throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY or SUPABASE_URL');
+    }
+
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     // Insert video record
     const videoData = {
