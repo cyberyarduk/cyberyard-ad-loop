@@ -9,5 +9,8 @@ verify_jwt = false
 [functions.device-playlist]
 verify_jwt = false
 
+[functions.device-playlists]
+verify_jwt = false
+
 [functions.device-check-pin]
 verify_jwt = false
