@@ -100,32 +100,47 @@ export type Database = {
       }
       devices: {
         Row: {
+          admin_pin: string | null
+          auth_token: string | null
           company_id: string | null
           created_at: string
+          device_code: string | null
           id: string
           last_seen_at: string | null
           name: string
+          pairing_qr_token: string | null
           playlist_id: string | null
+          status: string | null
           user_id: string
           venue_id: string | null
         }
         Insert: {
+          admin_pin?: string | null
+          auth_token?: string | null
           company_id?: string | null
           created_at?: string
+          device_code?: string | null
           id?: string
           last_seen_at?: string | null
           name: string
+          pairing_qr_token?: string | null
           playlist_id?: string | null
+          status?: string | null
           user_id: string
           venue_id?: string | null
         }
         Update: {
+          admin_pin?: string | null
+          auth_token?: string | null
           company_id?: string | null
           created_at?: string
+          device_code?: string | null
           id?: string
           last_seen_at?: string | null
           name?: string
+          pairing_qr_token?: string | null
           playlist_id?: string | null
+          status?: string | null
           user_id?: string
           venue_id?: string | null
         }
@@ -340,6 +355,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_device_code: { Args: never; Returns: string }
+      generate_secure_token: { Args: never; Returns: string }
       get_user_role: {
         Args: { user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
