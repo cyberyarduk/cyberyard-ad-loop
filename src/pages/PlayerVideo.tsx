@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import PlayerAdminMode from "./PlayerAdminMode";
 
 interface Video {
@@ -56,17 +57,38 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   useEffect(() => {
     fetchPlaylist();
 
-    // Refresh playlist every 5 minutes
+    // Refresh playlist every 30 seconds (reduced from 5 minutes)
     refreshIntervalRef.current = setInterval(() => {
       fetchPlaylist();
-    }, 5 * 60 * 1000);
+    }, 30 * 1000);
+
+    // Set up realtime listener for device changes
+    const channel = supabase
+      .channel('device-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'devices',
+          filter: `id=eq.${deviceInfo.id}`
+        },
+        (payload) => {
+          console.log('Device updated, refreshing playlist:', payload);
+          // Immediately fetch new playlist when device is updated
+          fetchPlaylist();
+          toast.success('Playlist updated!');
+        }
+      )
+      .subscribe();
 
     return () => {
       if (refreshIntervalRef.current) {
         clearInterval(refreshIntervalRef.current);
       }
+      supabase.removeChannel(channel);
     };
-  }, [authToken]);
+  }, [authToken, deviceInfo.id]);
 
   const handleVideoEnd = () => {
     if (videos.length === 0) return;
