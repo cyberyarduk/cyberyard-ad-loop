@@ -87,7 +87,6 @@ serve(async (req) => {
       },
       output: {
         format: "mp4",
-        resolution: "sd",
         aspectRatio: "9:16",
         size: {
           width: 1080,
