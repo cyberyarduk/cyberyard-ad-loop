@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 const CreateAIVideo = () => {
   const navigate = useNavigate();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [playlists, setPlaylists] = useState<any[]>([]);
   const [playlistId, setPlaylistId] = useState("");
   const [mainText, setMainText] = useState("");
   const [subtext, setSubtext] = useState("");
@@ -29,6 +30,34 @@ const CreateAIVideo = () => {
   const [music, setMusic] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
+
+  // Fetch playlists on mount
+  useEffect(() => {
+    const fetchPlaylists = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("playlists")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Failed to fetch playlists:", error);
+        toast.error("Failed to load playlists");
+        return;
+      }
+
+      setPlaylists(data || []);
+      // Set first playlist as default
+      if (data && data.length > 0) {
+        setPlaylistId(data[0].id);
+      }
+    };
+
+    fetchPlaylists();
+  }, []);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -136,8 +165,16 @@ const CreateAIVideo = () => {
                   <SelectTrigger>
                     <SelectValue placeholder="Select a playlist" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="default">Default Playlist</SelectItem>
+                  <SelectContent className="z-[100] bg-background">
+                    {playlists.length === 0 ? (
+                      <SelectItem value="none" disabled>No playlists available</SelectItem>
+                    ) : (
+                      playlists.map((playlist) => (
+                        <SelectItem key={playlist.id} value={playlist.id}>
+                          {playlist.name}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
                 <p className="text-sm text-muted-foreground">

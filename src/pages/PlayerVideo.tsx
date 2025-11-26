@@ -157,24 +157,38 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
     const x = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
     const y = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
 
-    // Check if tap is in top-right corner (within 100px from top and right edges)
-    const isTopRight = x > rect.width - 100 && y < 100;
+    // Check if tap is in top-right corner (within 80px from top and right edges - tighter area)
+    const isTopRight = x > rect.width - 80 && y < 80;
 
-    if (!isTopRight) return;
+    if (!isTopRight) {
+      // Reset count if tapping outside the corner
+      tapCountRef.current = 0;
+      if (tapTimerRef.current) {
+        clearTimeout(tapTimerRef.current);
+      }
+      return;
+    }
 
     tapCountRef.current += 1;
+    console.log(`Tap ${tapCountRef.current} in corner detected`);
 
     if (tapTimerRef.current) {
       clearTimeout(tapTimerRef.current);
     }
 
+    // Reset after 1.5 seconds of no taps (tighter window)
     tapTimerRef.current = setTimeout(() => {
+      console.log('Tap timeout, resetting count');
       tapCountRef.current = 0;
-    }, 2000);
+    }, 1500);
 
-    if (tapCountRef.current >= 4) {
-      console.log('Four taps detected!');
+    // Require exactly 4 taps
+    if (tapCountRef.current === 4) {
+      console.log('Four taps detected - opening admin mode!');
       tapCountRef.current = 0;
+      if (tapTimerRef.current) {
+        clearTimeout(tapTimerRef.current);
+      }
       setShowAdmin(true);
       if (videoRef.current) {
         videoRef.current.pause();
