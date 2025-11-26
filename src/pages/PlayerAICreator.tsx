@@ -6,6 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Camera, ArrowLeft, Wand2 } from "lucide-react";
 import { toast } from "sonner";
+import { Camera as CapCamera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { Capacitor } from '@capacitor/core';
 
 interface PlayerAICreatorProps {
   authToken: string;
@@ -21,11 +23,31 @@ const PlayerAICreator = ({ authToken, deviceInfo, onBack, onComplete }: PlayerAI
   const [generating, setGenerating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleCapture = () => {
-    // In a real mobile app with Capacitor, we'd use the Camera API
-    // For web, we'll use file input as fallback
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
+  const handleCapture = async () => {
+    // Check if running on native platform
+    if (!Capacitor.isNativePlatform()) {
+      // Fallback to file input on web
+      if (fileInputRef.current) {
+        fileInputRef.current.click();
+      }
+      return;
+    }
+
+    try {
+      // Use native camera
+      const image = await CapCamera.getPhoto({
+        quality: 90,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Camera
+      });
+
+      if (image.dataUrl) {
+        setCapturedImage(image.dataUrl);
+      }
+    } catch (error) {
+      console.error('Camera error:', error);
+      toast.error("Failed to capture photo");
     }
   };
 

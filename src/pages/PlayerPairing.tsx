@@ -5,6 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { QrCode, Keyboard } from "lucide-react";
 import { toast } from "sonner";
+import { BarcodeScanner } from '@capacitor-mlkit/barcode-scanning';
+import { Capacitor } from '@capacitor/core';
 
 interface PlayerPairingProps {
   onPaired: (authToken: string, deviceInfo: any) => void;
@@ -56,11 +58,82 @@ const PlayerPairing = ({ onPaired }: PlayerPairingProps) => {
     }
   };
 
-  const handleQRScan = () => {
-    // In a real implementation, this would open the camera for QR scanning
-    // For now, we'll show a message
-    toast.info("QR scanning would open the camera here. Use manual entry for now.");
-    setMode('manual');
+  const handleQRScan = async () => {
+    // Check if running on native platform
+    if (!Capacitor.isNativePlatform()) {
+      toast.info("QR scanning only works on mobile devices. Use manual entry.");
+      setMode('manual');
+      return;
+    }
+
+    try {
+      // Request permissions
+      const { camera } = await BarcodeScanner.requestPermissions();
+      
+      if (camera !== 'granted') {
+        toast.error("Camera permission required for QR scanning");
+        setMode('manual');
+        return;
+      }
+
+      // Make background transparent for camera view
+      document.querySelector('body')?.classList.add('barcode-scanner-active');
+
+      // Start scanning
+      const result = await BarcodeScanner.scan();
+      
+      // Restore background
+      document.querySelector('body')?.classList.remove('barcode-scanner-active');
+
+      if (result.barcodes.length > 0) {
+        const qrCode = result.barcodes[0].rawValue;
+        console.log('QR Code scanned:', qrCode);
+        
+        // Try to pair with the scanned token
+        setLoading(true);
+        try {
+          const response = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/device-pair`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+              },
+              body: JSON.stringify({ pairing_qr_token: qrCode })
+            }
+          );
+
+          const data = await response.json();
+
+          if (!response.ok || !data.success) {
+            throw new Error(data.error || 'Pairing failed');
+          }
+
+          toast.success("Device paired successfully!");
+          onPaired(data.auth_token, {
+            device_id: data.device_id,
+            device_name: data.device_name,
+            company_id: data.company_id,
+            playlist_id: data.playlist_id
+          });
+        } catch (error) {
+          console.error('Pairing error:', error);
+          toast.error(error instanceof Error ? error.message : 'Failed to pair device');
+          setMode('manual');
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        toast.info("No QR code detected. Try again or use manual entry.");
+        setMode('manual');
+      }
+    } catch (error) {
+      console.error('QR scanning error:', error);
+      document.querySelector('body')?.classList.remove('barcode-scanner-active');
+      toast.error("Failed to scan QR code");
+      setMode('manual');
+    }
   };
 
   if (mode === 'choose') {

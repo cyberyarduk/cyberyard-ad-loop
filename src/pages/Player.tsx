@@ -2,11 +2,15 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import PlayerPairing from "./PlayerPairing";
 import PlayerVideo from "./PlayerVideo";
+import { useNativeApp } from "@/hooks/useNativeApp";
 
 const Player = () => {
   const { deviceId } = useParams();
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [deviceInfo, setDeviceInfo] = useState<any>(null);
+  
+  // Initialize native app features (fullscreen, orientation lock, etc.)
+  useNativeApp();
 
   // Load saved device credentials from localStorage
   useEffect(() => {

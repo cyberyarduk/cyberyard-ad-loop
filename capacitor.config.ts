@@ -1,12 +1,23 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.cyberyard',
-  appName: 'Cyberyard',
+  appId: 'app.cyberyard.player',
+  appName: 'Cyberyard Player',
   webDir: 'dist',
-  server: {
-    url: 'https://7ab66e3b-b88a-49c6-a3bc-db9036b58b8e.lovableproject.com?forceHideBadge=true',
-    cleartext: true
+  android: {
+    allowMixedContent: true,
+    captureInput: true
+  },
+  plugins: {
+    SplashScreen: {
+      launchAutoHide: false,
+      androidScaleType: 'CENTER_CROP',
+      backgroundColor: '#000000'
+    },
+    StatusBar: {
+      style: 'DARK',
+      backgroundColor: '#000000'
+    }
   }
 };
 
