@@ -30,28 +30,35 @@ const PlayerAICreator = ({ authToken, deviceInfo, onBack, onComplete }: PlayerAI
   useEffect(() => {
     const fetchPlaylists = async () => {
       try {
+        console.log('Fetching playlists for device');
         const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/playlists?select=*&order=created_at.desc`,
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/device-playlists`,
           {
+            method: 'GET',
             headers: {
-              'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-              'authorization': `Bearer ${authToken}`,
+              'Authorization': `Bearer ${authToken}`,
+              'Content-Type': 'application/json',
             }
           }
         );
         
         if (response.ok) {
           const data = await response.json();
-          setPlaylists(data);
+          console.log('Playlists fetched:', data.playlists?.length || 0);
+          setPlaylists(data.playlists || []);
           // Default to device's current playlist if available
           if (deviceInfo.playlist_id) {
             setSelectedPlaylist(deviceInfo.playlist_id);
-          } else if (data.length > 0) {
-            setSelectedPlaylist(data[0].id);
+          } else if (data.playlists && data.playlists.length > 0) {
+            setSelectedPlaylist(data.playlists[0].id);
           }
+        } else {
+          console.error('Failed to fetch playlists:', response.status);
+          toast.error("Failed to load playlists");
         }
       } catch (error) {
         console.error('Failed to fetch playlists:', error);
+        toast.error("Failed to load playlists");
       }
     };
     
