@@ -4,6 +4,7 @@ import { App } from '@capacitor/app';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { Capacitor } from '@capacitor/core';
+import { KeepAwake } from '@capacitor-community/keep-awake';
 
 export const useNativeApp = () => {
   useEffect(() => {
@@ -16,6 +17,9 @@ export const useNativeApp = () => {
       try {
         // Hide splash screen
         await SplashScreen.hide();
+        
+        // Keep screen awake - prevent screen from turning off
+        await KeepAwake.keepAwake();
         
         // Hide status bar for fullscreen experience
         await StatusBar.hide();

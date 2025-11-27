@@ -208,11 +208,15 @@ const Devices = () => {
   const unpairDevice = async (deviceId: string) => {
     if (!confirm('Are you sure you want to unpair this device? You will need to pair it again to use it.')) return;
 
+    // Generate new pairing token when unpairing so device can be re-paired
+    const newPairingToken = crypto.randomUUID();
+    
     const { error } = await supabase
       .from('devices')
       .update({ 
         status: 'unpaired',
-        auth_token: null
+        auth_token: null,
+        pairing_qr_token: newPairingToken // Reset pairing token so device can pair again
       })
       .eq('id', deviceId);
 
