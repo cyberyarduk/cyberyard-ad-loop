@@ -40,14 +40,14 @@ const DashboardLayout = ({
   }] : [])];
   return <div className="min-h-screen bg-background">
       <aside className="fixed left-0 top-0 h-full w-64 border-r border-border bg-card p-4 flex flex-col">
-        <div className="mb-4 -mt-2">
-          <img alt="Cyberyard" src={logo} className="h-96 w-full object-contain" />
+        <div className="mb-2">
+          <img alt="Cyberyard" src={logo} className="h-48 w-full object-contain" />
           {!isSuperAdmin && company && (
-            <p className="text-sm text-muted-foreground mt-2">{company.name}</p>
+            <p className="text-xs text-muted-foreground mt-1">{company.name}</p>
           )}
         </div>
 
-        <nav className="flex-1 space-y-2">
+        <nav className="flex-1 space-y-1 overflow-y-auto">
           {navItems.map(item => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
@@ -60,7 +60,7 @@ const DashboardLayout = ({
         })}
         </nav>
 
-        <div className="border-t pt-4 space-y-2">
+        <div className="border-t pt-2 space-y-1">
           {profile && (
             <div className="px-2 mb-2">
               <p className="text-sm font-medium">{profile.full_name || profile.email}</p>
