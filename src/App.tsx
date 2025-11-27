@@ -17,6 +17,12 @@ import Player from "./pages/Player";
 import Companies from "./pages/Companies";
 import CompanyForm from "./pages/CompanyForm";
 import Settings from "./pages/Settings";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
+import CookiesPolicy from "./pages/CookiesPolicy";
+import DataProcessingAddendum from "./pages/DataProcessingAddendum";
+import RefundPolicy from "./pages/RefundPolicy";
+import AcceptableUsePolicy from "./pages/AcceptableUsePolicy";
 import { toast } from "sonner";
 
 const queryClient = new QueryClient();
@@ -157,6 +163,12 @@ const App = () => (
               }
             />
             <Route path="/player/:deviceId" element={<Player />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
+            <Route path="/cookies-policy" element={<CookiesPolicy />} />
+            <Route path="/data-processing-addendum" element={<DataProcessingAddendum />} />
+            <Route path="/refund-policy" element={<RefundPolicy />} />
+            <Route path="/acceptable-use-policy" element={<AcceptableUsePolicy />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
