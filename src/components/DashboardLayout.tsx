@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { LayoutDashboard, Video, List, Monitor, MapPin, LogOut, Building2, Settings } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import logo from "@/assets/logo-transparent.png";
 interface DashboardLayoutProps {
   children: ReactNode;
 }
@@ -40,7 +41,7 @@ const DashboardLayout = ({
   return <div className="min-h-screen bg-background">
       <aside className="fixed left-0 top-0 h-full w-64 border-r border-border bg-card p-4 flex flex-col">
         <div className="mb-8">
-          <img alt="Cyberyard" src="/lovable-uploads/3d9a1351-c885-486a-b21b-eaea718cc995.png" className="h-96 w-full object-contain" />
+          <img alt="Cyberyard" src={logo} className="h-96 w-full object-contain" />
           {!isSuperAdmin && company && (
             <p className="text-sm text-muted-foreground mt-3">{company.name}</p>
           )}
