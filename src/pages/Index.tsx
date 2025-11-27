@@ -248,27 +248,60 @@ const Index = () => {
       {/* Footer */}
       <footer className="py-12 px-6 border-t border-border bg-muted/30">
         <div className="container mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex flex-col md:flex-row justify-between items-start gap-8">
             <div className="flex items-center gap-3">
               <img src={logo} alt="Cyberyard" className="h-12" />
             </div>
-            <div className="flex gap-8">
-              <a href="#about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                About
-              </a>
-              <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                How It Works
-              </a>
-              <a href="#contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Contact
-              </a>
-              <Link to="/auth" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Login
-              </Link>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+              <div>
+                <h3 className="font-semibold mb-3">Company</h3>
+                <div className="space-y-2">
+                  <a href="#about" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    About
+                  </a>
+                  <a href="#how-it-works" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    How It Works
+                  </a>
+                  <a href="#contact" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    Contact
+                  </a>
+                </div>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-3">Legal</h3>
+                <div className="space-y-2">
+                  <Link to="/privacy-policy" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    Privacy Policy
+                  </Link>
+                  <Link to="/terms-of-service" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    Terms of Service
+                  </Link>
+                  <Link to="/cookies-policy" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    Cookies Policy
+                  </Link>
+                  <Link to="/refund-policy" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    Refund Policy
+                  </Link>
+                </div>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-3">Resources</h3>
+                <div className="space-y-2">
+                  <Link to="/data-processing-addendum" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    Data Processing
+                  </Link>
+                  <Link to="/acceptable-use-policy" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    Acceptable Use
+                  </Link>
+                  <Link to="/auth" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    Login
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
-          <div className="text-center mt-8 text-sm text-muted-foreground">
-            © 2024 Cyberyard. All rights reserved.
+          <div className="text-center mt-8 pt-8 border-t border-border text-sm text-muted-foreground">
+            <p>© 2024 Cyberyard Limited. Registered in England and Wales. All rights reserved.</p>
           </div>
         </div>
       </footer>

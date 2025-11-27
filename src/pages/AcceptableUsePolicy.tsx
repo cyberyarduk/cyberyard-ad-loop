@@ -1,0 +1,94 @@
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+import logo from "@/assets/logo.png";
+
+const AcceptableUsePolicy = () => {
+  const today = new Date().toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  return (
+    <div className="min-h-screen bg-background">
+      <nav className="border-b border-border">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <Link to="/" className="flex items-center gap-3">
+              <img src={logo} alt="Cyberyard" className="h-12" />
+            </Link>
+            <Link to="/">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Home
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      <main className="container mx-auto px-6 py-12 max-w-4xl">
+        <h1 className="text-4xl font-bold mb-4">Acceptable Use Policy (AUP)</h1>
+        <p className="text-muted-foreground mb-8">Last updated: {today}</p>
+
+        <div className="prose prose-lg max-w-none space-y-8">
+          <p>
+            This Acceptable Use Policy governs the use of the Cyberyard platform and services. All users must comply with this policy.
+          </p>
+
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">Prohibited Content</h2>
+            <p className="mb-4">Users must NOT use Cyberyard to create or distribute:</p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>Illegal content</li>
+              <li>Harassment or hate content</li>
+              <li>Violent or explicit material</li>
+              <li>Misleading promotions</li>
+              <li>Content violating copyright</li>
+              <li>Malware or scripts that interfere with the Service</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">Prohibited Activities</h2>
+            <p className="mb-4">Users must NOT:</p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>Attempt to gain unauthorized access to the platform</li>
+              <li>Reverse engineer or decompile any part of the service</li>
+              <li>Use automated systems to access the service without permission</li>
+              <li>Interfere with other users or the operation of the platform</li>
+              <li>Bypass device pairing or authentication mechanisms</li>
+              <li>Upload excessive amounts of content to overwhelm the system</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">Consequences of Violations</h2>
+            <p>
+              Cyberyard may suspend or terminate accounts or devices that violate this Acceptable Use Policy.
+            </p>
+            <p>
+              We reserve the right to remove content that violates this policy without prior notice.
+            </p>
+            <p>
+              Serious violations may be reported to relevant authorities.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">Reporting Violations</h2>
+            <p>
+              If you believe a user is violating this policy, please report it to <a href="mailto:support@cyberyard.co.uk" className="text-primary hover:underline">support@cyberyard.co.uk</a>
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">Updates to This Policy</h2>
+            <p>
+              We may update this Acceptable Use Policy from time to time. Continued use of the service after updates constitutes acceptance of the revised policy.
+            </p>
+          </section>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default AcceptableUsePolicy;
