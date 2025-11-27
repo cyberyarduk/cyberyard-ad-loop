@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { App } from '@capacitor/app';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
+import { SplashScreen } from '@capacitor/splash-screen';
 import { Capacitor } from '@capacitor/core';
 
 export const useNativeApp = () => {
@@ -13,6 +14,9 @@ export const useNativeApp = () => {
 
     const setupNativeApp = async () => {
       try {
+        // Hide splash screen
+        await SplashScreen.hide();
+        
         // Hide status bar for fullscreen experience
         await StatusBar.hide();
         
