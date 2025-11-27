@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import logo from "@/assets/logo-dark.png";
-import { Info } from "lucide-react";
+import { Info, ArrowLeft } from "lucide-react";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -49,7 +49,14 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+      <div className="w-full max-w-md space-y-4">
+        <Link to="/">
+          <Button variant="ghost" size="sm" className="mb-4">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Homepage
+          </Button>
+        </Link>
+        <Card className="w-full">
         <CardHeader className="text-center">
           <img src={logo} alt="Cyberyard" className="h-16 mx-auto mb-4" />
           <CardTitle>Welcome to Cyberyard</CardTitle>
@@ -88,6 +95,7 @@ const Auth = () => {
           </Alert>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 };
