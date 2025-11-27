@@ -1,58 +1,34 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo-dark.png";
+import { Info } from "lucide-react";
 
 const Auth = () => {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // Redirect if already logged in
   useEffect(() => {
-    const checkUser = async () => {
+    const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         navigate("/dashboard");
       }
     };
-    checkUser();
+
+    checkAuth();
   }, [navigate]);
-
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
-        },
-      });
-
-      if (error) throw error;
-
-      toast.success("Account created successfully!");
-      navigate("/dashboard");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to sign up");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setLoading(true);
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -65,88 +41,51 @@ const Auth = () => {
       toast.success("Welcome back!");
       navigate("/dashboard");
     } catch (error: any) {
-      toast.error(error.message || "Failed to sign in");
+      toast.error(error.message);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md border-border">
-        <CardHeader className="space-y-4 text-center">
-          <img src={logo} alt="Cyberyard" className="h-20 mx-auto" />
-          <CardTitle className="text-2xl">Welcome to Cyberyard</CardTitle>
-          <CardDescription>
-            Manage your wearable digital billboard platform
-          </CardDescription>
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <img src={logo} alt="Cyberyard" className="h-16 mx-auto mb-4" />
+          <CardTitle>Welcome to Cyberyard</CardTitle>
+          <CardDescription>Sign in to manage your wearable digital billboards</CardDescription>
         </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
+        <CardContent className="space-y-6">
+          <form onSubmit={handleSignIn} className="space-y-4">
+            <div>
+              <Input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <Input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Signing in..." : "Sign In"}
+            </Button>
+          </form>
 
-            <TabsContent value="signin">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
-                  <Input
-                    id="signin-email"
-                    type="email"
-                    placeholder="admin@cyberyard.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signin-password">Password</Label>
-                  <Input
-                    id="signin-password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Signing in..." : "Sign In"}
-                </Button>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="admin@cyberyard.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    minLength={6}
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Creating account..." : "Create Account"}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Need an account?</strong> Contact your Cyberyard representative to get access.
+            </AlertDescription>
+          </Alert>
         </CardContent>
       </Card>
     </div>
