@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Link } from "react-router-dom";
 import { Video, Monitor, Zap, Mail } from "lucide-react";
-import logo from "@/assets/logo-transparent.png";
+import logo from "@/assets/logo.png";
 import dashboardMockup from "@/assets/dashboard-mockup.jpg";
 import deviceMockup from "@/assets/device-mockup.jpg";
 import playlistMockup from "@/assets/playlist-mockup.jpg";
@@ -17,7 +17,7 @@ const Index = () => {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center gap-3">
-              <img src={logo} alt="Cyberyard" className="h-10" />
+              <img src={logo} alt="Cyberyard" className="h-16 md:h-20" />
             </Link>
             <div className="flex items-center gap-8">
               <a href="#about" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
@@ -250,7 +250,7 @@ const Index = () => {
         <div className="container mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-3">
-              <img src={logo} alt="Cyberyard" className="h-8" />
+              <img src={logo} alt="Cyberyard" className="h-12" />
             </div>
             <div className="flex gap-8">
               <a href="#about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
