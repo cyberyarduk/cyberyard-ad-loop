@@ -40,10 +40,10 @@ const DashboardLayout = ({
   }] : [])];
   return <div className="min-h-screen bg-background">
       <aside className="fixed left-0 top-0 h-full w-64 border-r border-border bg-card p-4 flex flex-col">
-        <div className="mb-8">
+        <div className="mb-4 -mt-2">
           <img alt="Cyberyard" src={logo} className="h-96 w-full object-contain" />
           {!isSuperAdmin && company && (
-            <p className="text-sm text-muted-foreground mt-3">{company.name}</p>
+            <p className="text-sm text-muted-foreground mt-2">{company.name}</p>
           )}
         </div>
 
