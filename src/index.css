@@ -8,33 +8,33 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Cyberyard brand colors - vibrant yellow on dark navy */
-    --background: 220 80% 8%;
-    --foreground: 0 0% 98%;
+    /* Cyberyard brand colors - Apple-style light theme */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 10%;
 
-    --card: 220 75% 12%;
-    --card-foreground: 0 0% 98%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
 
-    --popover: 220 75% 12%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
 
     --primary: 45 98% 52%;
-    --primary-foreground: 220 80% 8%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 70% 20%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 10%;
 
-    --muted: 220 70% 15%;
-    --muted-foreground: 220 20% 65%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
 
     --accent: 45 98% 52%;
-    --accent-foreground: 220 80% 8%;
+    --accent-foreground: 0 0% 10%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 220 70% 20%;
-    --input: 220 70% 20%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
     --ring: 45 98% 52%;
 
     --radius: 0.75rem;
@@ -42,21 +42,25 @@ All colors MUST be HSL.
     /* Custom Cyberyard colors */
     --yellow-bright: 45 98% 52%;
     --yellow-dark: 38 92% 50%;
-    --navy-darker: 220 85% 5%;
-    --navy-lighter: 220 70% 25%;
+    --grey-light: 0 0% 96%;
+    --grey-border: 0 0% 90%;
 
-    --sidebar-background: 220 85% 5%;
-    --sidebar-foreground: 0 0% 98%;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 0 0% 10%;
     --sidebar-primary: 45 98% 52%;
-    --sidebar-primary-foreground: 220 80% 8%;
-    --sidebar-accent: 220 70% 20%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 220 70% 15%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-border: 0 0% 90%;
     --sidebar-ring: 45 98% 52%;
   }
 
   .dark {
-    /* Already dark by default */
+    /* Dark theme (for dashboard only if needed) */
+    --background: 0 0% 10%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 98%;
   }
 }
 

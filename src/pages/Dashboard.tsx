@@ -43,7 +43,7 @@ const Dashboard = () => {
         <DashboardAnalytics />
 
         <div className="grid gap-6 md:grid-cols-2">
-          <Card className="hover:shadow-lg transition-all hover:-translate-y-1">
+          <Card className="border border-border shadow-sm hover:shadow-md transition-shadow">
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-primary/10 rounded-xl">
@@ -76,7 +76,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-all hover:-translate-y-1">
+          <Card className="border border-border shadow-sm hover:shadow-md transition-shadow">
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-primary/10 rounded-xl">

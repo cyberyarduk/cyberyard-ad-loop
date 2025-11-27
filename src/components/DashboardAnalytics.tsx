@@ -1,14 +1,21 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, TrendingUp, Monitor, Video, Activity } from "lucide-react";
+import { Monitor, Video, Activity, TrendingUp, Clock, Zap, List, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { format, subDays } from "date-fns";
 
 interface AnalyticsData {
   totalDevices: number;
   activeDevices: number;
-  totalVideos: number;
+  offlineDevices: number;
+  recentlyPairedDevices: number;
   totalPlaylists: number;
+  totalVideos: number;
+  aiGeneratedVideos: number;
+  videosAddedThisWeek: number;
+  mostUsedPlaylist: string;
+  recentlyUpdatedPlaylist: string;
 }
 
 export function DashboardAnalytics() {
@@ -16,8 +23,14 @@ export function DashboardAnalytics() {
   const [analytics, setAnalytics] = useState<AnalyticsData>({
     totalDevices: 0,
     activeDevices: 0,
-    totalVideos: 0,
+    offlineDevices: 0,
+    recentlyPairedDevices: 0,
     totalPlaylists: 0,
+    totalVideos: 0,
+    aiGeneratedVideos: 0,
+    videosAddedThisWeek: 0,
+    mostUsedPlaylist: "N/A",
+    recentlyUpdatedPlaylist: "N/A",
   });
 
   useEffect(() => {
@@ -28,40 +41,79 @@ export function DashboardAnalytics() {
     if (!profile) return;
 
     const isSuper = profile.role === 'super_admin';
+    const oneWeekAgo = subDays(new Date(), 7);
+    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
 
     // Fetch devices
-    let devicesQuery = supabase.from('devices').select('status', { count: 'exact' });
+    let devicesQuery = supabase.from('devices').select('*, playlist_id, last_seen_at', { count: 'exact' });
     if (!isSuper && profile.company_id) {
       devicesQuery = devicesQuery.eq('company_id', profile.company_id);
     }
-    const { count: totalDevices } = await devicesQuery;
+    const { data: devices, count: totalDevices } = await devicesQuery;
 
-    let activeDevicesQuery = supabase.from('devices').select('status', { count: 'exact' }).eq('status', 'active');
-    if (!isSuper && profile.company_id) {
-      activeDevicesQuery = activeDevicesQuery.eq('company_id', profile.company_id);
+    const activeDevices = devices?.filter(d => 
+      d.last_seen_at && new Date(d.last_seen_at) > fifteenMinutesAgo
+    ).length || 0;
+
+    const offlineDevices = (totalDevices || 0) - activeDevices;
+
+    const recentlyPairedDevices = devices?.filter(d =>
+      d.created_at && new Date(d.created_at) > oneWeekAgo
+    ).length || 0;
+
+    // Most used playlist
+    const playlistCounts: Record<string, number> = {};
+    devices?.forEach(d => {
+      if (d.playlist_id) {
+        playlistCounts[d.playlist_id] = (playlistCounts[d.playlist_id] || 0) + 1;
+      }
+    });
+    const mostUsedPlaylistId = Object.keys(playlistCounts).reduce((a, b) => 
+      playlistCounts[a] > playlistCounts[b] ? a : b, ""
+    );
+
+    let mostUsedPlaylistName = "N/A";
+    if (mostUsedPlaylistId) {
+      const { data: playlist } = await supabase
+        .from('playlists')
+        .select('name')
+        .eq('id', mostUsedPlaylistId)
+        .single();
+      mostUsedPlaylistName = playlist?.name || "N/A";
     }
-    const { count: activeDevices } = await activeDevicesQuery;
 
     // Fetch videos
-    let videosQuery = supabase.from('videos').select('id', { count: 'exact' });
+    let videosQuery = supabase.from('videos').select('id, created_at, source', { count: 'exact' });
     if (!isSuper && profile.company_id) {
       videosQuery = videosQuery.eq('company_id', profile.company_id);
     }
-    const { count: totalVideos } = await videosQuery;
+    const { data: videos, count: totalVideos } = await videosQuery;
+
+    const aiGeneratedVideos = videos?.filter(v => v.source === 'ai').length || 0;
+    const videosAddedThisWeek = videos?.filter(v =>
+      v.created_at && new Date(v.created_at) > oneWeekAgo
+    ).length || 0;
 
     // Fetch playlists
     const { data: { user } } = await supabase.auth.getUser();
-    let playlistsQuery = supabase.from('playlists').select('id', { count: 'exact' });
+    let playlistsQuery = supabase.from('playlists').select('id, name, created_at', { count: 'exact' }).order('created_at', { ascending: false }).limit(1);
     if (user) {
       playlistsQuery = playlistsQuery.eq('user_id', user.id);
     }
-    const { count: totalPlaylists } = await playlistsQuery;
+    const { data: playlists, count: totalPlaylists } = await playlistsQuery;
+    const recentlyUpdatedPlaylist = playlists?.[0]?.name || "N/A";
 
     setAnalytics({
       totalDevices: totalDevices || 0,
-      activeDevices: activeDevices || 0,
-      totalVideos: totalVideos || 0,
+      activeDevices,
+      offlineDevices,
+      recentlyPairedDevices,
       totalPlaylists: totalPlaylists || 0,
+      totalVideos: totalVideos || 0,
+      aiGeneratedVideos,
+      videosAddedThisWeek,
+      mostUsedPlaylist: mostUsedPlaylistName,
+      recentlyUpdatedPlaylist,
     });
   };
 
@@ -71,65 +123,148 @@ export function DashboardAnalytics() {
       value: analytics.totalDevices,
       icon: Monitor,
       description: "Registered devices",
-      color: "text-blue-500",
-      bgColor: "bg-blue-500/10",
     },
     {
       title: "Active Devices",
       value: analytics.activeDevices,
       icon: Activity,
-      description: "Currently online",
-      color: "text-green-500",
-      bgColor: "bg-green-500/10",
-      percentage: analytics.totalDevices > 0 ? Math.round((analytics.activeDevices / analytics.totalDevices) * 100) : 0,
+      description: "Online now",
+      trend: analytics.totalDevices > 0 ? Math.round((analytics.activeDevices / analytics.totalDevices) * 100) + "%" : "0%",
+    },
+    {
+      title: "Offline Devices",
+      value: analytics.offlineDevices,
+      icon: Clock,
+      description: "Last seen > 15 min",
+    },
+    {
+      title: "Recently Paired",
+      value: analytics.recentlyPairedDevices,
+      icon: TrendingUp,
+      description: "Paired this week",
     },
     {
       title: "Total Videos",
       value: analytics.totalVideos,
       icon: Video,
       description: "In your library",
-      color: "text-purple-500",
-      bgColor: "bg-purple-500/10",
     },
     {
-      title: "Playlists",
+      title: "AI-Generated Videos",
+      value: analytics.aiGeneratedVideos,
+      icon: Zap,
+      description: `${analytics.totalVideos > 0 ? Math.round((analytics.aiGeneratedVideos / analytics.totalVideos) * 100) : 0}% of total`,
+    },
+    {
+      title: "Videos Added This Week",
+      value: analytics.videosAddedThisWeek,
+      icon: Calendar,
+      description: "New content",
+    },
+    {
+      title: "Total Playlists",
       value: analytics.totalPlaylists,
-      icon: BarChart3,
+      icon: List,
       description: "Active playlists",
-      color: "text-primary",
-      bgColor: "bg-primary/10",
+    },
+  ];
+
+  const engagementStats = [
+    {
+      title: "Most Used Playlist",
+      value: analytics.mostUsedPlaylist,
+      icon: List,
+      description: "Assigned to most devices",
+    },
+    {
+      title: "Recently Updated",
+      value: analytics.recentlyUpdatedPlaylist,
+      icon: Clock,
+      description: "Latest playlist created",
     },
   ];
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-      {stats.map((stat, index) => {
-        const Icon = stat.icon;
-        return (
-          <Card key={index} className="hover:shadow-lg transition-all hover:-translate-y-1 border-border/50">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {stat.title}
-              </CardTitle>
-              <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                <Icon className={`h-5 w-5 ${stat.color}`} />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold mb-1">{stat.value}</div>
-              <p className="text-xs text-muted-foreground flex items-center gap-2">
-                {stat.description}
-                {stat.percentage !== undefined && (
-                  <span className="flex items-center text-green-500">
-                    <TrendingUp className="h-3 w-3 mr-1" />
-                    {stat.percentage}%
-                  </span>
-                )}
-              </p>
-            </CardContent>
-          </Card>
-        );
-      })}
+    <div className="space-y-6 mb-8">
+      <div>
+        <h2 className="text-2xl font-bold mb-1">Analytics Overview</h2>
+        <p className="text-sm text-muted-foreground">Real-time insights into your digital advertising network</p>
+      </div>
+
+      {/* Device Analytics */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4">Device Analytics</h3>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {stats.slice(0, 4).map((stat, index) => {
+            const Icon = stat.icon;
+            return (
+              <Card key={index} className="border border-border shadow-sm hover:shadow-md transition-shadow">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    {stat.title}
+                  </CardTitle>
+                  <Icon className="h-4 w-4 text-primary" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold mb-1">{stat.value}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {stat.description}
+                    {stat.trend && <span className="ml-2 text-primary font-medium">{stat.trend}</span>}
+                  </p>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Content Analytics */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4">Content Analytics</h3>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {stats.slice(4, 8).map((stat, index) => {
+            const Icon = stat.icon;
+            return (
+              <Card key={index} className="border border-border shadow-sm hover:shadow-md transition-shadow">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    {stat.title}
+                  </CardTitle>
+                  <Icon className="h-4 w-4 text-primary" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold mb-1">{stat.value}</div>
+                  <p className="text-xs text-muted-foreground">{stat.description}</p>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Engagement Metrics */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4">Engagement Metrics</h3>
+        <div className="grid gap-4 md:grid-cols-2">
+          {engagementStats.map((stat, index) => {
+            const Icon = stat.icon;
+            return (
+              <Card key={index} className="border border-border shadow-sm hover:shadow-md transition-shadow">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    {stat.title}
+                  </CardTitle>
+                  <Icon className="h-4 w-4 text-primary" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl font-bold mb-1 truncate">{stat.value}</div>
+                  <p className="text-xs text-muted-foreground">{stat.description}</p>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
