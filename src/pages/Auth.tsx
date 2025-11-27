@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
-import logo from "@/assets/logo-dark.png";
+import logo from "@/assets/logo-transparent.png";
 import { Info, ArrowLeft } from "lucide-react";
 
 const Auth = () => {
@@ -58,7 +58,7 @@ const Auth = () => {
         </Link>
         <Card className="w-full">
         <CardHeader className="text-center">
-          <img src={logo} alt="Cyberyard" className="h-16 mx-auto mb-4" />
+          <img src={logo} alt="Cyberyard" className="h-20 md:h-24 mx-auto mb-4" />
           <CardTitle>Welcome to Cyberyard</CardTitle>
           <CardDescription>Sign in to manage your wearable digital billboards</CardDescription>
         </CardHeader>
