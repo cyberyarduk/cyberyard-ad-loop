@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { LayoutDashboard, Video, List, Monitor, MapPin, LogOut, Building2, Settings } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import logo from "@/assets/logo-transparent.png";
+import logo from "@/assets/logo.png";
 interface DashboardLayoutProps {
   children: ReactNode;
 }
