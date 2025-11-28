@@ -17,9 +17,9 @@ const Index = () => {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center gap-3">
-              <img src={logo} alt="Cyberyard" className="h-12 md:h-20 w-auto" />
+              <img src={logo} alt="Cyberyard" className="h-10 md:h-16 w-auto" />
             </Link>
-            <div className="flex items-center gap-8">
+            <div className="hidden md:flex items-center gap-8">
               <a href="#about" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                 About
               </a>
@@ -36,6 +36,9 @@ const Index = () => {
                 <Button variant="outline" size="sm">Login</Button>
               </Link>
             </div>
+            <Link to="/auth" className="md:hidden">
+              <Button variant="outline" size="sm">Login</Button>
+            </Link>
           </div>
         </div>
       </nav>
