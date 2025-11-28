@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Monitor, Video, Activity, TrendingUp, Clock, Zap, List, Calendar } from "lucide-react";
+import { Monitor, Video, Activity, TrendingUp, Clock, Zap, List, Calendar, Battery, BatteryWarning } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format, subDays } from "date-fns";
@@ -10,6 +10,7 @@ interface AnalyticsData {
   activeDevices: number;
   offlineDevices: number;
   recentlyPairedDevices: number;
+  lowBatteryDevices: number;
   totalPlaylists: number;
   totalVideos: number;
   aiGeneratedVideos: number;
@@ -25,6 +26,7 @@ export function DashboardAnalytics() {
     activeDevices: 0,
     offlineDevices: 0,
     recentlyPairedDevices: 0,
+    lowBatteryDevices: 0,
     totalPlaylists: 0,
     totalVideos: 0,
     aiGeneratedVideos: 0,
@@ -45,7 +47,7 @@ export function DashboardAnalytics() {
     const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
 
     // Fetch devices
-    let devicesQuery = supabase.from('devices').select('*, playlist_id, last_seen_at', { count: 'exact' });
+    let devicesQuery = supabase.from('devices').select('*, playlist_id, last_seen_at, battery_level', { count: 'exact' });
     if (!isSuper && profile.company_id) {
       devicesQuery = devicesQuery.eq('company_id', profile.company_id);
     }
@@ -59,6 +61,10 @@ export function DashboardAnalytics() {
 
     const recentlyPairedDevices = devices?.filter(d =>
       d.created_at && new Date(d.created_at) > oneWeekAgo
+    ).length || 0;
+
+    const lowBatteryDevices = devices?.filter(d =>
+      d.battery_level !== null && d.battery_level !== undefined && d.battery_level < 20
     ).length || 0;
 
     // Most used playlist
@@ -108,6 +114,7 @@ export function DashboardAnalytics() {
       activeDevices,
       offlineDevices,
       recentlyPairedDevices,
+      lowBatteryDevices,
       totalPlaylists: totalPlaylists || 0,
       totalVideos: totalVideos || 0,
       aiGeneratedVideos,
@@ -142,6 +149,13 @@ export function DashboardAnalytics() {
       value: analytics.recentlyPairedDevices,
       icon: TrendingUp,
       description: "Paired this week",
+    },
+    {
+      title: "Low Battery Devices",
+      value: analytics.lowBatteryDevices,
+      icon: BatteryWarning,
+      description: "Battery below 20%",
+      alert: analytics.lowBatteryDevices > 0,
     },
     {
       title: "Total Videos",
@@ -194,22 +208,22 @@ export function DashboardAnalytics() {
       {/* Device Analytics */}
       <div>
         <h3 className="text-lg font-semibold mb-4">Device Analytics</h3>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {stats.slice(0, 4).map((stat, index) => {
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+          {stats.slice(0, 5).map((stat, index) => {
             const Icon = stat.icon;
             return (
-              <Card key={index} className="border border-border shadow-sm hover:shadow-md transition-shadow">
+              <Card key={index} className={`border shadow-sm hover:shadow-md transition-shadow ${(stat as any).alert ? 'border-red-500 bg-red-50 dark:bg-red-950' : 'border-border'}`}>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                  <CardTitle className={`text-sm font-medium ${(stat as any).alert ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
                     {stat.title}
                   </CardTitle>
-                  <Icon className="h-4 w-4 text-primary" />
+                  <Icon className={`h-4 w-4 ${(stat as any).alert ? 'text-red-600 dark:text-red-400' : 'text-primary'}`} />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold mb-1">{stat.value}</div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className={`text-xs ${(stat as any).alert ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
                     {stat.description}
-                    {stat.trend && <span className="ml-2 text-primary font-medium">{stat.trend}</span>}
+                    {(stat as any).trend && <span className="ml-2 text-primary font-medium">{(stat as any).trend}</span>}
                   </p>
                 </CardContent>
               </Card>
@@ -222,7 +236,7 @@ export function DashboardAnalytics() {
       <div>
         <h3 className="text-lg font-semibold mb-4">Content Analytics</h3>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {stats.slice(4, 8).map((stat, index) => {
+          {stats.slice(5, 9).map((stat, index) => {
             const Icon = stat.icon;
             return (
               <Card key={index} className="border border-border shadow-sm hover:shadow-md transition-shadow">

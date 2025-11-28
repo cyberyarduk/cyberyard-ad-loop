@@ -428,7 +428,7 @@ const Devices = () => {
                     </div>
                   </div>
                   
-                  {device.pairing_qr_token && device.status === 'unpaired' && (
+                   {device.pairing_qr_token && device.status === 'unpaired' && (
                     <div>
                       <Button
                         variant="outline"
@@ -454,6 +454,20 @@ const Devices = () => {
                         : 'None'}
                     </div>
                   </div>
+
+                  {device.battery_level !== null && device.battery_level !== undefined && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-muted-foreground">Battery:</span>
+                      <div className="flex items-center gap-1">
+                        <span className={device.battery_level < 20 ? 'text-red-600 font-bold' : ''}>
+                          {device.battery_level}%
+                        </span>
+                        {device.battery_level < 20 && (
+                          <Badge variant="destructive" className="text-xs">Low</Badge>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex gap-2">
                     {device.status === 'active' && (

@@ -102,6 +102,7 @@ export type Database = {
         Row: {
           admin_pin: string | null
           auth_token: string | null
+          battery_level: number | null
           company_id: string | null
           created_at: string
           device_code: string | null
@@ -117,6 +118,7 @@ export type Database = {
         Insert: {
           admin_pin?: string | null
           auth_token?: string | null
+          battery_level?: number | null
           company_id?: string | null
           created_at?: string
           device_code?: string | null
@@ -132,6 +134,7 @@ export type Database = {
         Update: {
           admin_pin?: string | null
           auth_token?: string | null
+          battery_level?: number | null
           company_id?: string | null
           created_at?: string
           device_code?: string | null
