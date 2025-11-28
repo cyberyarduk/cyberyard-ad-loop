@@ -17,7 +17,7 @@ const Index = () => {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center gap-3">
-              <img src={logo} alt="Cyberyard" className="h-16 md:h-20" />
+              <img src={logo} alt="Cyberyard" className="h-12 md:h-20 w-auto" />
             </Link>
             <div className="flex items-center gap-8">
               <a href="#about" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
