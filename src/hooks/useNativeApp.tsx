@@ -5,6 +5,7 @@ import { ScreenOrientation } from '@capacitor/screen-orientation';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { Capacitor } from '@capacitor/core';
 import { KeepAwake } from '@capacitor-community/keep-awake';
+import { Device } from '@capacitor/device';
 
 export const useNativeApp = () => {
   useEffect(() => {
@@ -20,6 +21,16 @@ export const useNativeApp = () => {
         
         // Keep screen awake - prevent screen from turning off
         await KeepAwake.keepAwake();
+        
+        // Set screen brightness to maximum (1.0 = 100%)
+        try {
+          // @ts-ignore - setBrightness is available on Android
+          if (Capacitor.getPlatform() === 'android') {
+            await (window as any).Brightness?.setBrightness({ brightness: 1.0 });
+          }
+        } catch (error) {
+          console.log('Brightness control not available:', error);
+        }
         
         // Hide status bar for fullscreen experience
         await StatusBar.hide();
@@ -46,10 +57,6 @@ export const useNativeApp = () => {
           }
         });
 
-        // Keep screen awake during playback
-        // Note: This is handled automatically by video playback in most cases,
-        // but you can add @capacitor-community/keep-awake plugin if needed
-
         return () => {
           backButtonListener.remove();
         };
@@ -60,5 +67,18 @@ export const useNativeApp = () => {
 
     setupNativeApp();
   }, []);
+
+  // Get battery info for monitoring
+  const getBatteryInfo = async () => {
+    try {
+      const info = await Device.getBatteryInfo();
+      return info.batteryLevel ? Math.round(info.batteryLevel * 100) : null;
+    } catch (error) {
+      console.log('Battery info not available:', error);
+      return null;
+    }
+  };
+
+  return { getBatteryInfo };
 };
 

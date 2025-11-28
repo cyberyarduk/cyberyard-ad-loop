@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-device-token',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-device-token, x-battery-level',
 };
 
 serve(async (req) => {
@@ -13,7 +13,8 @@ serve(async (req) => {
 
   try {
     const authToken = req.headers.get('x-device-token');
-    console.log('Device playlist request, token present:', !!authToken);
+    const batteryLevelHeader = req.headers.get('x-battery-level');
+    console.log('Device playlist request, token present:', !!authToken, 'battery:', batteryLevelHeader);
 
     if (!authToken) {
       throw new Error('Device authentication token required');
@@ -39,10 +40,18 @@ serve(async (req) => {
 
     console.log('Device authenticated:', device.id, 'Company:', device.company_id);
 
-    // Update last_seen_at
+    // Parse battery level
+    const batteryLevel = batteryLevelHeader ? parseInt(batteryLevelHeader, 10) : null;
+
+    // Update last_seen_at and battery_level
+    const updateData: any = { last_seen_at: new Date().toISOString() };
+    if (batteryLevel !== null && !isNaN(batteryLevel) && batteryLevel >= 0 && batteryLevel <= 100) {
+      updateData.battery_level = batteryLevel;
+    }
+
     await supabase
       .from('devices')
-      .update({ last_seen_at: new Date().toISOString() })
+      .update(updateData)
       .eq('id', device.id);
 
     // Determine which playlist to use

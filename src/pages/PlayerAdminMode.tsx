@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { KeyRound, Video, ArrowLeft, Phone } from "lucide-react";
+import { KeyRound, Video, ArrowLeft, Phone, Wifi } from "lucide-react";
+import { Capacitor } from '@capacitor/core';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,6 +47,23 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
     // Trigger emergency call
     window.location.href = 'tel:999';
     toast.error('Calling Emergency Services (999)');
+  };
+
+  const handleOpenWiFiSettings = () => {
+    if (Capacitor.isNativePlatform()) {
+      // Open Android WiFi settings
+      if (Capacitor.getPlatform() === 'android') {
+        (window as any).cordova?.plugins?.settings?.open('wifi', 
+          () => toast.success('Opening WiFi settings...'),
+          () => {
+            // Fallback: Try to open settings via intent
+            window.location.href = 'android.settings.WIFI_SETTINGS';
+          }
+        );
+      }
+    } else {
+      toast.info('WiFi settings are only available on mobile devices');
+    }
   };
 
   const handlePINSubmit = async (e: React.FormEvent) => {
@@ -213,6 +231,21 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
               <CardTitle>Force Sync Content</CardTitle>
               <CardDescription>
                 {syncing ? 'Syncing...' : 'Refresh playlist and check for new videos'}
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card 
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={handleOpenWiFiSettings}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Wifi className="h-5 w-5" />
+                WiFi Settings
+              </CardTitle>
+              <CardDescription>
+                Connect device to WiFi network
               </CardDescription>
             </CardHeader>
           </Card>

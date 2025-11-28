@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import PlayerAdminMode from "./PlayerAdminMode";
+import { Capacitor } from '@capacitor/core';
+import { Device } from '@capacitor/device';
 
 interface Video {
   id: string;
@@ -28,6 +30,17 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
 
   const fetchPlaylist = async () => {
     try {
+      // Get battery info if on native platform
+      let batteryLevel = null;
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const info = await Device.getBatteryInfo();
+          batteryLevel = info.batteryLevel ? Math.round(info.batteryLevel * 100) : null;
+        } catch (error) {
+          console.log('Battery info not available:', error);
+        }
+      }
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/device-playlist`,
         {
@@ -35,6 +48,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           headers: {
             'x-device-token': authToken,
             'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            ...(batteryLevel !== null && { 'x-battery-level': batteryLevel.toString() })
           }
         }
       );
