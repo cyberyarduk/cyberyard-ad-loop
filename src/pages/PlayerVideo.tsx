@@ -107,6 +107,15 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
         async (payload) => {
           console.log('Device updated, fetching new playlist:', payload);
           
+          // Check if device was unpaired (status changed to 'unpaired' or auth_token cleared)
+          if (payload.new && (payload.new.status === 'unpaired' || !payload.new.auth_token)) {
+            console.log('Device was unpaired - clearing credentials and returning to pairing');
+            localStorage.removeItem('cyberyard_device_token');
+            localStorage.removeItem('cyberyard_device_info');
+            window.location.reload();
+            return;
+          }
+          
           // Fetch new playlist
           const response = await fetch(
             `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/device-playlist`,
