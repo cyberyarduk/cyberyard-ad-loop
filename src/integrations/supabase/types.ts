@@ -367,7 +367,12 @@ export type Database = {
         Args: { user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      hash_pin: { Args: { pin: string }; Returns: string }
       is_super_admin: { Args: { user_id: string }; Returns: boolean }
+      verify_pin: {
+        Args: { hashed_pin: string; pin: string }
+        Returns: boolean
+      }
     }
     Enums: {
       company_status: "pending" | "active" | "expired" | "suspended"

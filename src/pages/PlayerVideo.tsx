@@ -56,6 +56,14 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
+        // If device is invalid (401), clear credentials and return to pairing
+        if (response.status === 401) {
+          console.log('Device authentication failed - clearing credentials');
+          localStorage.removeItem('cyberyard_device_token');
+          localStorage.removeItem('cyberyard_device_info');
+          window.location.reload();
+          return;
+        }
         throw new Error(data.error || 'Failed to fetch playlist');
       }
 
@@ -112,6 +120,15 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           );
 
           const data = await response.json();
+          
+          // If device is invalid, clear credentials
+          if (!response.ok || response.status === 401) {
+            console.log('Device authentication failed during realtime update - clearing credentials');
+            localStorage.removeItem('cyberyard_device_token');
+            localStorage.removeItem('cyberyard_device_info');
+            window.location.reload();
+            return;
+          }
           
           if (data.success && data.videos) {
             const newVideos = data.videos;
