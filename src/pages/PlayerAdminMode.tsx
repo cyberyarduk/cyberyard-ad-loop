@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { KeyRound, Video, ArrowLeft, Phone, Wifi, List } from "lucide-react";
+import { KeyRound, Video, ArrowLeft, Phone, Wifi, List, Activity, AlertTriangle, RefreshCw, QrCode } from "lucide-react";
 import { Capacitor } from '@capacitor/core';
 import {
   AlertDialog,
@@ -16,8 +16,12 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import PlayerAICreator from "./PlayerAICreator";
 import PlayerPlaylistManager from "./PlayerPlaylistManager";
+import DeviceHealthMonitor from "@/components/DeviceHealthMonitor";
+import ConnectionDiagnostics from "@/components/ConnectionDiagnostics";
+import QRCode from 'qrcode';
 
 interface PlayerAdminModeProps {
   authToken: string;
@@ -31,7 +35,12 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
   const [loading, setLoading] = useState(false);
   const [showAICreator, setShowAICreator] = useState(false);
   const [showPlaylistManager, setShowPlaylistManager] = useState(false);
+  const [showHealthMonitor, setShowHealthMonitor] = useState(false);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [showRepairQR, setShowRepairQR] = useState(false);
+  const [repairQRCode, setRepairQRCode] = useState<string>('');
   const [syncing, setSyncing] = useState(false);
+  const [reportingProblem, setReportingProblem] = useState(false);
 
   const handleForceSync = async () => {
     setSyncing(true);
@@ -112,8 +121,80 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
     }
   };
 
-  // Auto-lock after 5 minutes of inactivity
-  useState(() => {
+  const handleReportProblem = async () => {
+    setReportingProblem(true);
+    try {
+      // Collect diagnostics
+      const diagnostics = {
+        device_id: deviceInfo.device_id,
+        device_name: deviceInfo.device_name,
+        timestamp: new Date().toISOString(),
+        battery: localStorage.getItem('last_battery_level'),
+        last_sync: localStorage.getItem('last_playlist_sync'),
+        user_agent: navigator.userAgent,
+      };
+
+      console.log('Problem report:', diagnostics);
+      toast.success("Problem report logged to console");
+    } catch (error) {
+      console.error('Report error:', error);
+      toast.error("Failed to generate report");
+    } finally {
+      setReportingProblem(false);
+    }
+  };
+
+  const handleSafeMode = async () => {
+    try {
+      toast.info("Entering Safe Mode...");
+      
+      // Clear all caches
+      localStorage.removeItem('cached_videos');
+      localStorage.removeItem('last_playlist_sync');
+      
+      // Clear video cache if available
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(
+          cacheNames.map(cacheName => caches.delete(cacheName))
+        );
+      }
+      
+      toast.success("Safe Mode activated. Reloading...");
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (error) {
+      console.error('Safe mode error:', error);
+      toast.error("Failed to activate Safe Mode");
+    }
+  };
+
+  const handleShowRepairQR = async () => {
+    try {
+      // Generate QR code from device pairing token
+      const { data: device } = await supabase
+        .from('devices')
+        .select('pairing_qr_token, device_code')
+        .eq('id', deviceInfo.device_id)
+        .single();
+
+      if (device?.pairing_qr_token) {
+        const qrDataUrl = await QRCode.toDataURL(device.pairing_qr_token, {
+          width: 300,
+          margin: 2,
+        });
+        setRepairQRCode(qrDataUrl);
+        setShowRepairQR(true);
+      } else {
+        toast.error("Unable to generate QR code");
+      }
+    } catch (error) {
+      console.error('QR generation error:', error);
+      toast.error("Failed to generate QR code");
+    }
+  };
+
+  // Auto-lock after 2 minutes of inactivity
+  useEffect(() => {
     let timeout: NodeJS.Timeout;
     
     const resetTimeout = () => {
@@ -123,7 +204,7 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
           toast.info("Admin session timed out");
           onExit();
         }
-      }, 5 * 60 * 1000); // 5 minutes
+      }, 2 * 60 * 1000); // 2 minutes
     };
 
     if (authenticated) {
@@ -140,7 +221,7 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
         window.removeEventListener('click', handleActivity);
       };
     }
-  });
+  }, [authenticated, onExit]);
 
   if (showAICreator) {
     return (
@@ -160,6 +241,69 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
         deviceInfo={deviceInfo}
         onBack={() => setShowPlaylistManager(false)}
       />
+    );
+  }
+
+  if (showHealthMonitor) {
+    return (
+      <div className="min-h-screen bg-background p-4">
+        <div className="max-w-2xl mx-auto space-y-6 py-8">
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold">Device Health</h1>
+            <Button variant="outline" onClick={() => setShowHealthMonitor(false)}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+          </div>
+          <DeviceHealthMonitor />
+        </div>
+      </div>
+    );
+  }
+
+  if (showDiagnostics) {
+    return (
+      <div className="min-h-screen bg-background p-4">
+        <div className="max-w-2xl mx-auto space-y-6 py-8">
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold">Connection Diagnostics</h1>
+            <Button variant="outline" onClick={() => setShowDiagnostics(false)}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+          </div>
+          <ConnectionDiagnostics />
+        </div>
+      </div>
+    );
+  }
+
+  if (showRepairQR) {
+    return (
+      <div className="min-h-screen bg-background p-4 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle>Re-Pair Device</CardTitle>
+            <CardDescription>
+              Scan this QR code to re-pair this device
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {repairQRCode && (
+              <div className="flex justify-center">
+                <img src={repairQRCode} alt="Pairing QR Code" className="rounded-lg" />
+              </div>
+            )}
+            <Button
+              onClick={() => setShowRepairQR(false)}
+              variant="outline"
+              className="w-full"
+            >
+              Close
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
@@ -250,14 +394,92 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
             </CardHeader>
           </Card>
 
+          <Card 
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => setShowHealthMonitor(true)}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Device Health
+              </CardTitle>
+              <CardDescription>
+                View battery, signal, and sync status
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card 
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => setShowDiagnostics(true)}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Wifi className="h-5 w-5" />
+                Connection Diagnostics
+              </CardTitle>
+              <CardDescription>
+                Test WiFi, latency, and cloud connection
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
           <Card
             className="cursor-pointer hover:shadow-lg transition-shadow"
             onClick={handleForceSync}
           >
             <CardHeader>
-              <CardTitle>Force Sync Content</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <RefreshCw className="h-5 w-5" />
+                Force Sync Content
+              </CardTitle>
               <CardDescription>
                 {syncing ? 'Syncing...' : 'Refresh playlist and check for new videos'}
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card 
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={handleReportProblem}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Report a Problem
+              </CardTitle>
+              <CardDescription>
+                {reportingProblem ? 'Sending report...' : 'Send diagnostics to support'}
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card 
+            className="cursor-pointer hover:shadow-lg transition-shadow border-yellow-500 bg-yellow-50 dark:bg-yellow-950"
+            onClick={handleSafeMode}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-yellow-600 dark:text-yellow-400">
+                <AlertTriangle className="h-5 w-5" />
+                Safe Mode / Repair
+              </CardTitle>
+              <CardDescription className="text-yellow-600 dark:text-yellow-400">
+                Clear cache and reset device
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card 
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={handleShowRepairQR}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <QrCode className="h-5 w-5" />
+                Re-Pair Device
+              </CardTitle>
+              <CardDescription>
+                Show QR code for re-pairing
               </CardDescription>
             </CardHeader>
           </Card>

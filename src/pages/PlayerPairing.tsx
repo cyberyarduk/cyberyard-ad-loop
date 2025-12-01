@@ -59,7 +59,6 @@ const PlayerPairing = ({ onPaired }: PlayerPairingProps) => {
   };
 
   const handleQRScan = async () => {
-    // Check if running on native platform
     if (!Capacitor.isNativePlatform()) {
       toast.info("QR scanning only works on mobile devices. Use manual entry.");
       setMode('manual');
@@ -67,7 +66,6 @@ const PlayerPairing = ({ onPaired }: PlayerPairingProps) => {
     }
 
     try {
-      // Request permissions
       const { camera } = await BarcodeScanner.requestPermissions();
       
       if (camera !== 'granted') {
@@ -76,20 +74,16 @@ const PlayerPairing = ({ onPaired }: PlayerPairingProps) => {
         return;
       }
 
-      // Make background transparent for camera view
       document.querySelector('body')?.classList.add('barcode-scanner-active');
-
-      // Start scanning
+      
       const result = await BarcodeScanner.scan();
       
-      // Restore background
       document.querySelector('body')?.classList.remove('barcode-scanner-active');
 
-      if (result.barcodes.length > 0) {
+      if (result.barcodes && result.barcodes.length > 0) {
         const qrCode = result.barcodes[0].rawValue;
         console.log('QR Code scanned:', qrCode);
         
-        // Try to pair with the scanned token
         setLoading(true);
         try {
           const response = await fetch(
@@ -131,7 +125,7 @@ const PlayerPairing = ({ onPaired }: PlayerPairingProps) => {
     } catch (error) {
       console.error('QR scanning error:', error);
       document.querySelector('body')?.classList.remove('barcode-scanner-active');
-      toast.error("Failed to scan QR code");
+      toast.error("Failed to scan QR code. Try manual entry.");
       setMode('manual');
     }
   };

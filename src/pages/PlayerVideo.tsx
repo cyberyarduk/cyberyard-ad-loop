@@ -1,9 +1,11 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import PlayerAdminMode from "./PlayerAdminMode";
 import { Capacitor } from '@capacitor/core';
 import { Device } from '@capacitor/device';
+import { Network } from '@capacitor/network';
+import { Loader2, WifiOff } from "lucide-react";
 
 interface Video {
   id: string;
@@ -23,19 +25,46 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const [loading, setLoading] = useState(true);
   const [showAdmin, setShowAdmin] = useState(false);
   const [tapCount, setTapCount] = useState(0);
+  const [isOffline, setIsOffline] = useState(false);
+  const [cachedVideos, setCachedVideos] = useState<Video[]>([]);
+  const [isPullingToRefresh, setIsPullingToRefresh] = useState(false);
+  const [pullStartY, setPullStartY] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const tapTimerRef = useRef<NodeJS.Timeout | null>(null);
   const tapCountRef = useRef(0);
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchPlaylist = async () => {
+  const fetchPlaylist = useCallback(async () => {
     try {
+      // Check network status
+      if (Capacitor.isNativePlatform()) {
+        const networkStatus = await Network.getStatus();
+        if (!networkStatus.connected) {
+          setIsOffline(true);
+          // Load cached videos if available
+          const cached = localStorage.getItem('cached_videos');
+          if (cached) {
+            const parsedVideos = JSON.parse(cached);
+            setVideos(parsedVideos);
+            setCachedVideos(parsedVideos);
+            toast.info("Playing cached videos (offline mode)");
+          }
+          setLoading(false);
+          return;
+        } else {
+          setIsOffline(false);
+        }
+      }
+
       // Get battery info if on native platform
       let batteryLevel = null;
       if (Capacitor.isNativePlatform()) {
         try {
           const info = await Device.getBatteryInfo();
           batteryLevel = info.batteryLevel ? Math.round(info.batteryLevel * 100) : null;
+          if (batteryLevel !== null) {
+            localStorage.setItem('last_battery_level', batteryLevel.toString());
+          }
         } catch (error) {
           console.log('Battery info not available:', error);
         }
@@ -53,17 +82,18 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
         }
       );
 
+      if (response.status === 401) {
+        console.log('Device authentication failed - clearing credentials');
+        localStorage.removeItem('cyberyard_device_token');
+        localStorage.removeItem('cyberyard_device_info');
+        localStorage.removeItem('cached_videos');
+        window.location.reload();
+        return;
+      }
+
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        // If device is invalid (401), clear credentials and return to pairing
-        if (response.status === 401) {
-          console.log('Device authentication failed - clearing credentials');
-          localStorage.removeItem('cyberyard_device_token');
-          localStorage.removeItem('cyberyard_device_info');
-          window.location.reload();
-          return;
-        }
         throw new Error(data.error || 'Failed to fetch playlist');
       }
 
@@ -77,21 +107,91 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       }
       
       setVideos(newVideos);
+      setCachedVideos(newVideos);
+      
+      // Cache videos for offline mode
+      localStorage.setItem('cached_videos', JSON.stringify(newVideos));
+      localStorage.setItem('last_playlist_sync', new Date().toISOString());
+      
       setLoading(false);
     } catch (error) {
       console.error('Playlist fetch error:', error);
-      toast.error('Failed to load videos');
+      
+      // Try to use cached videos on error
+      const cached = localStorage.getItem('cached_videos');
+      if (cached) {
+        const parsedVideos = JSON.parse(cached);
+        setVideos(parsedVideos);
+        setCachedVideos(parsedVideos);
+        toast.error('Using cached videos (connection issue)');
+      } else {
+        toast.error('Failed to load videos');
+      }
       setLoading(false);
     }
+  }, [authToken, videos]);
+
+  // Network listener
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    let networkListener: any;
+    
+    const setupListener = async () => {
+      networkListener = await Network.addListener('networkStatusChange', async (status) => {
+        if (status.connected && isOffline) {
+          setIsOffline(false);
+          toast.success("Back online - refreshing content");
+          await fetchPlaylist();
+        } else if (!status.connected) {
+          setIsOffline(true);
+          toast.info("Offline mode - playing cached videos");
+        }
+      });
+    };
+
+    setupListener();
+
+    return () => {
+      if (networkListener) {
+        networkListener.remove();
+      }
+    };
+  }, [isOffline, fetchPlaylist]);
+
+  // Pull-to-refresh handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (window.scrollY === 0 && !showAdmin) {
+      setPullStartY(e.touches[0].clientY);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (pullStartY > 0) {
+      const currentY = e.touches[0].clientY;
+      const diff = currentY - pullStartY;
+      if (diff > 100) {
+        setIsPullingToRefresh(true);
+      }
+    }
+  };
+
+  const handleTouchEnd = async () => {
+    if (isPullingToRefresh) {
+      await fetchPlaylist();
+      toast.success("Content refreshed");
+    }
+    setPullStartY(0);
+    setIsPullingToRefresh(false);
   };
 
   useEffect(() => {
     fetchPlaylist();
 
-    // Refresh playlist every 30 seconds (reduced from 5 minutes)
+    // Refresh playlist every 5 minutes
     refreshIntervalRef.current = setInterval(() => {
       fetchPlaylist();
-    }, 30 * 1000);
+    }, 5 * 60 * 1000);
 
     // Set up realtime listener for device changes
     const channel = supabase
@@ -172,7 +272,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       }
       supabase.removeChannel(channel);
     };
-  }, [authToken, deviceInfo.id]);
+  }, [authToken, deviceInfo.id, fetchPlaylist, videos]);
 
   const handleVideoEnd = () => {
     if (videos.length === 0) return;
@@ -251,7 +351,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white text-2xl">Loading videos...</div>
+        <Loader2 className="h-12 w-12 animate-spin text-white" />
       </div>
     );
   }
@@ -259,15 +359,18 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   if (videos.length === 0) {
     return (
       <div 
-        className="min-h-screen bg-black flex items-center justify-center"
+        className="min-h-screen bg-black flex flex-col items-center justify-center"
         onTouchStart={handleTripleTap}
         onClick={handleTripleTap}
       >
+        {isOffline && <WifiOff className="h-16 w-16 text-white mb-4" />}
         <div className="text-white text-center p-8">
-          <div className="text-2xl mb-4">No videos in playlist</div>
-          <div className="text-muted-foreground">
-            Add videos to your playlist from the admin dashboard
-          </div>
+          <div className="text-2xl mb-4">{isOffline ? 'Offline - No cached videos' : 'No videos in playlist'}</div>
+          {!isOffline && (
+            <div className="text-muted-foreground">
+              Add videos to your playlist from the admin dashboard
+            </div>
+          )}
         </div>
       </div>
     );
@@ -284,12 +387,32 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   return (
     <div 
       className="fixed inset-0 bg-black overflow-hidden"
-      onTouchStart={handleTripleTap}
+      onTouchStart={(e) => {
+        handleTripleTap(e);
+        handleTouchStart(e);
+      }}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       onClick={handleTripleTap}
     >
+      {/* Pull to refresh indicator */}
+      {isPullingToRefresh && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white/90 text-black px-4 py-2 rounded-full text-sm font-medium z-50">
+          Release to refresh
+        </div>
+      )}
+      
+      {/* Offline indicator */}
+      {isOffline && (
+        <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2 z-50">
+          <WifiOff className="h-4 w-4" />
+          Offline
+        </div>
+      )}
+      
       {/* Tap counter - only show when actively tapping */}
       {tapCount > 0 && (
-        <div className="absolute top-4 right-4 z-50 bg-white/20 backdrop-blur-sm rounded-full w-12 h-12 flex items-center justify-center">
+        <div className="absolute top-20 right-4 z-50 bg-white/20 backdrop-blur-sm rounded-full w-12 h-12 flex items-center justify-center">
           <span className="text-white text-2xl font-bold">{tapCount}</span>
         </div>
       )}
@@ -301,7 +424,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           src={currentVideo.video_url}
           className="w-full h-full object-contain"
           autoPlay
-          muted={false}
+          muted
           playsInline
           crossOrigin="anonymous"
           preload="auto"

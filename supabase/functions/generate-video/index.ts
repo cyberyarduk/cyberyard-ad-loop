@@ -135,12 +135,13 @@ serve(async (req) => {
     const timestamp = Date.now();
     const promoImagePath = `promo-images/${timestamp}.png`;
     
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('videos')
-      .upload(promoImagePath, binaryData, {
-        contentType: 'image/png',
-        upsert: false
-      });
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('videos')
+        .upload(promoImagePath, binaryData, {
+          contentType: 'image/png',
+          upsert: false,
+          cacheControl: '31536000' // 1 year cache
+        });
     
     if (uploadError) {
       console.error('Upload error:', uploadError);
