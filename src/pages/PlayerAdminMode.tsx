@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { KeyRound, Video, ArrowLeft, Phone, Wifi } from "lucide-react";
+import { KeyRound, Video, ArrowLeft, Phone, Wifi, List } from "lucide-react";
 import { Capacitor } from '@capacitor/core';
 import {
   AlertDialog,
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import PlayerAICreator from "./PlayerAICreator";
+import PlayerPlaylistManager from "./PlayerPlaylistManager";
 
 interface PlayerAdminModeProps {
   authToken: string;
@@ -29,6 +30,7 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
   const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showAICreator, setShowAICreator] = useState(false);
+  const [showPlaylistManager, setShowPlaylistManager] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
   const handleForceSync = async () => {
@@ -151,6 +153,16 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
     );
   }
 
+  if (showPlaylistManager) {
+    return (
+      <PlayerPlaylistManager
+        authToken={authToken}
+        deviceInfo={deviceInfo}
+        onBack={() => setShowPlaylistManager(false)}
+      />
+    );
+  }
+
   if (!authenticated) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -224,6 +236,21 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
           </Card>
 
           <Card 
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => setShowPlaylistManager(true)}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <List className="h-5 w-5" />
+                Manage Playlist Videos
+              </CardTitle>
+              <CardDescription>
+                Remove expired offers from your playlist
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card
             className="cursor-pointer hover:shadow-lg transition-shadow"
             onClick={handleForceSync}
           >
