@@ -196,10 +196,10 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   useEffect(() => {
     fetchPlaylist();
 
-    // Refresh playlist every 5 minutes
+    // Refresh playlist every 30 seconds for faster updates
     refreshIntervalRef.current = setInterval(() => {
       fetchPlaylist();
-    }, 5 * 60 * 1000);
+    }, 30 * 1000);
 
     // Set up realtime listener for device changes
     const channel = supabase
@@ -501,6 +501,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           controls={false}
           preload="auto"
           webkit-playsinline="true"
+          poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
           onClick={() => {
             if (videoRef.current) {
               videoRef.current.muted = true;
