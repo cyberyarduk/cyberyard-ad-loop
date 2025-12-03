@@ -489,7 +489,6 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           autoPlay
           muted
           playsInline
-          crossOrigin="anonymous"
           preload="auto"
           onEnded={handleVideoEnd}
           onError={(e) => {
