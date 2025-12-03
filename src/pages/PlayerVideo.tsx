@@ -529,8 +529,9 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           onLoadStart={() => {
             console.log('Video loading started:', currentVideo.video_url);
           }}
-          onLoadedMetadata={() => {
-            console.log('Video metadata loaded:', currentVideo.video_url);
+          onLoadedData={() => {
+            console.log('Video loaded:', currentVideo.video_url);
+            // Single play attempt when video data is ready
             if (videoRef.current && videoRef.current.paused) {
               videoRef.current.muted = true;
               videoRef.current.play().catch(e => {
@@ -538,28 +539,9 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
               });
             }
           }}
-          onCanPlay={() => {
-            console.log('Video can play:', currentVideo.video_url);
-            // Try to play when ready
-            if (videoRef.current && videoRef.current.paused) {
-              videoRef.current.play().catch(e => console.error('CanPlay autoplay failed:', e));
-            }
-          }}
           onPlay={() => {
             console.log('Video started playing:', currentVideo.video_url);
             errorCountRef.current = 0;
-          }}
-          onPause={() => {
-            console.log('Video paused:', currentVideo.video_url);
-            if (!showAdmin && videoRef.current && !videoRef.current.ended) {
-              videoRef.current.play().catch(e => console.error('Resume failed:', e));
-            }
-          }}
-          onStalled={() => {
-            console.warn('Video playback stalled:', currentVideo.video_url);
-          }}
-          onSuspend={() => {
-            console.warn('Video loading suspended:', currentVideo.video_url);
           }}
         />
       )}
