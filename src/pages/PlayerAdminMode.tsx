@@ -30,6 +30,9 @@ interface PlayerAdminModeProps {
 }
 
 const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps) => {
+  // DEBUG: Log to verify latest code is running - v2024-12-03
+  console.log('[PlayerAdminMode] Component loaded - version 2024-12-03 with Manage Playlist Videos');
+  
   const [pin, setPin] = useState("");
   const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
