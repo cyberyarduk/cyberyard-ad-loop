@@ -9,7 +9,11 @@ const Player = () => {
   const { deviceId } = useParams();
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [deviceInfo, setDeviceInfo] = useState<any>(null);
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(() => {
+    // Only show splash if we haven't shown it this session
+    const splashShown = sessionStorage.getItem('splash_shown');
+    return !splashShown;
+  });
   
   // Initialize native app features (fullscreen, orientation lock, etc.)
   useNativeApp();
@@ -35,6 +39,7 @@ const Player = () => {
   };
 
   const handleSplashComplete = () => {
+    sessionStorage.setItem('splash_shown', 'true');
     setShowSplash(false);
   };
 

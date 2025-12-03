@@ -33,6 +33,8 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const tapTimerRef = useRef<NodeJS.Timeout | null>(null);
   const tapCountRef = useRef(0);
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const errorCountRef = useRef(0);
+  const lastErrorToastRef = useRef(0);
 
   const fetchPlaylist = useCallback(async () => {
     try {
@@ -494,8 +496,27 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
             console.error('Video playback error:', e);
             console.error('Failed video URL:', currentVideo.video_url);
             console.error('Video error details:', videoRef.current?.error);
-            toast.error(`Error playing video: ${currentVideo.title}`);
-            handleVideoEnd();
+            
+            // Limit error toasts - only show once every 10 seconds
+            const now = Date.now();
+            if (now - lastErrorToastRef.current > 10000) {
+              toast.error(`Error playing video: ${currentVideo.title}`);
+              lastErrorToastRef.current = now;
+            }
+            
+            // Track consecutive errors to prevent infinite loops
+            errorCountRef.current += 1;
+            if (errorCountRef.current >= 3) {
+              console.error('Too many consecutive errors, pausing playback');
+              errorCountRef.current = 0;
+              // Don't try to play next video, just wait for refresh
+              return;
+            }
+            
+            // Only try next video if we have more than 1
+            if (videos.length > 1) {
+              handleVideoEnd();
+            }
           }}
           onLoadStart={() => {
             console.log('Video loading started:', currentVideo.video_url);
@@ -525,6 +546,8 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           }}
           onPlay={() => {
             console.log('Video started playing:', currentVideo.video_url);
+            // Reset error count on successful play
+            errorCountRef.current = 0;
           }}
           onPause={() => {
             console.log('Video paused:', currentVideo.video_url);
