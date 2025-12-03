@@ -105,16 +105,29 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
         throw new Error(data.error || 'Failed to fetch playlist');
       }
 
-      console.log('Fetched videos:', data.videos);
+      console.log('Fetched videos:', data.videos, 'playlist_id:', data.playlist_id);
       const newVideos = data.videos || [];
       
-      // If videos changed, reset to first video
-      if (JSON.stringify(newVideos) !== JSON.stringify(videos)) {
-        console.log('Playlist changed, resetting to first video');
+      // If videos changed, reset to first video and force playback
+      if (JSON.stringify(newVideos) !== JSON.stringify(videosRef.current)) {
+        console.log('Playlist changed! Switching to new playlist');
+        setVideos(newVideos);
         setCurrentIndex(0);
+        
+        // Force immediate playback of first video in new playlist
+        setTimeout(() => {
+          if (videoRef.current) {
+            videoRef.current.load();
+            videoRef.current.play().catch(e => console.error('Failed to autoplay new playlist:', e));
+          }
+        }, 50);
+        
+        if (videosRef.current.length > 0) {
+          toast.success('Playlist updated!');
+        }
+      } else {
+        setVideos(newVideos);
       }
-      
-      setVideos(newVideos);
       setCachedVideos(newVideos);
       
       // Cache videos for offline mode
