@@ -4,11 +4,6 @@ const config: CapacitorConfig = {
   appId: 'app.cyberyard.player',
   appName: 'Cyberyard Player',
   webDir: 'dist',
-  // DEV MODE: Remove this server block for production APK builds
-  server: {
-    url: 'https://7ab66e3b-b88a-49c6-a3bc-db9036b58b8e.lovableproject.com?forceHideBadge=true',
-    cleartext: true
-  },
   android: {
     allowMixedContent: true,
     captureInput: true
