@@ -43,10 +43,13 @@ const Playlists = () => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [addVideosOpen, setAddVideosOpen] = useState(false);
+  const [deviceSelectOpen, setDeviceSelectOpen] = useState(false);
   const [playlists, setPlaylists] = useState<any[]>([]);
   const [videos, setVideos] = useState<any[]>([]);
+  const [devices, setDevices] = useState<any[]>([]);
   const [name, setName] = useState("");
   const [selectedPlaylist, setSelectedPlaylist] = useState<string | null>(null);
+  const [selectedPlaylistName, setSelectedPlaylistName] = useState<string>("");
   const [selectedVideos, setSelectedVideos] = useState<string[]>([]);
   const [uploadingToPlaylist, setUploadingToPlaylist] = useState(false);
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -292,88 +295,76 @@ const Playlists = () => {
     }
   };
 
-  const handlePushToDevice = async (playlistId: string, playlistName: string) => {
-    try {
-      // Fetch devices for selection
-      const { data: devices, error: fetchError } = await supabase
-        .from("devices")
-        .select("*")
-        .order("name");
+  const fetchDevices = async () => {
+    const { data, error } = await supabase
+      .from("devices")
+      .select("*")
+      .order("name");
 
-      if (fetchError) {
-        console.error('Error fetching devices:', fetchError);
-        toast.error("Failed to fetch devices");
-        return;
-      }
-
-      if (!devices || devices.length === 0) {
-        toast.error("No devices available");
-        return;
-      }
-
-      // Show device selection dialog
-      const deviceId = prompt(
-        `Push "${playlistName}" to device:\n\n${devices.map((d, i) => `${i + 1}. ${d.name} (${d.device_code})`).join("\n")}\n\nEnter device number:`
-      );
-
-      if (!deviceId) return;
-
-      const deviceIndex = parseInt(deviceId) - 1;
-      if (isNaN(deviceIndex) || deviceIndex < 0 || deviceIndex >= devices.length) {
-        toast.error("Invalid device selection");
-        return;
-      }
-
-      const selectedDevice = devices[deviceIndex];
-      
-      if (!selectedDevice || !selectedDevice.id) {
-        toast.error("Invalid device selected");
-        return;
-      }
-
-      const { error } = await supabase
-        .from("devices")
-        .update({ playlist_id: playlistId })
-        .eq("id", selectedDevice.id);
-
-      if (error) {
-        console.error('Error updating device:', error);
-        toast.error("Failed to push playlist to device");
-        return;
-      }
-
-      toast.success(`Pushed "${playlistName}" to ${selectedDevice.name}`);
-    } catch (error) {
-      console.error('Error in handlePushToDevice:', error);
-      toast.error('Failed to push playlist');
+    if (error) {
+      console.error('Error fetching devices:', error);
+      return;
     }
+
+    setDevices(data || []);
+  };
+
+  const handlePushToDevice = async (playlistId: string, playlistName: string) => {
+    await fetchDevices();
+    setSelectedPlaylist(playlistId);
+    setSelectedPlaylistName(playlistName);
+    setDeviceSelectOpen(true);
+  };
+
+  const handleSelectDevice = async (deviceId: string) => {
+    if (!selectedPlaylist) return;
+
+    const { error } = await supabase
+      .from("devices")
+      .update({ playlist_id: selectedPlaylist })
+      .eq("id", deviceId);
+
+    if (error) {
+      console.error('Error updating device:', error);
+      toast.error("Failed to push playlist to device");
+      return;
+    }
+
+    const device = devices.find(d => d.id === deviceId);
+    toast.success(`Pushed "${selectedPlaylistName}" to ${device?.name || 'device'}`);
+    setDeviceSelectOpen(false);
+    setSelectedPlaylist(null);
+    setSelectedPlaylistName("");
   };
 
   const handlePushToAllDevices = async (playlistId: string, playlistName: string) => {
-    const { data: devices } = await supabase
+    const { data: allDevices, error: fetchError } = await supabase
       .from("devices")
-      .select("*");
+      .select("id");
 
-    if (!devices || devices.length === 0) {
+    if (fetchError || !allDevices || allDevices.length === 0) {
       toast.error("No devices available");
       return;
     }
 
-    if (!confirm(`Push "${playlistName}" to ALL ${devices.length} device(s)?`)) {
+    if (!confirm(`Push "${playlistName}" to ALL ${allDevices.length} device(s)?`)) {
       return;
     }
 
+    // Update each device individually to ensure it works with RLS
+    const deviceIds = allDevices.map(d => d.id);
     const { error } = await supabase
       .from("devices")
       .update({ playlist_id: playlistId })
-      .neq("id", "00000000-0000-0000-0000-000000000000"); // Update all devices
+      .in("id", deviceIds);
 
     if (error) {
+      console.error('Error updating devices:', error);
       toast.error("Failed to push playlist to devices");
       return;
     }
 
-    toast.success(`Pushed "${playlistName}" to all ${devices.length} device(s)`);
+    toast.success(`Pushed "${playlistName}" to all ${allDevices.length} device(s)`);
   };
 
   const handleRemoveVideo = async (playlistId: string, videoId: string) => {
@@ -592,6 +583,7 @@ const Playlists = () => {
           </Accordion>
         )}
 
+        {/* Add Videos Dialog */}
         <Dialog open={addVideosOpen} onOpenChange={(open) => {
           setAddVideosOpen(open);
           if (!open) {
@@ -686,6 +678,38 @@ const Playlists = () => {
                 </div>
               </TabsContent>
             </Tabs>
+          </DialogContent>
+        </Dialog>
+
+        {/* Device Selection Dialog */}
+        <Dialog open={deviceSelectOpen} onOpenChange={setDeviceSelectOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Select Device</DialogTitle>
+              <DialogDescription>
+                Choose a device to push "{selectedPlaylistName}" to
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {devices.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">
+                  No devices available
+                </p>
+              ) : (
+                devices.map((device) => (
+                  <button
+                    key={device.id}
+                    onClick={() => handleSelectDevice(device.id)}
+                    className="w-full p-4 text-left border border-border rounded-lg hover:bg-accent hover:border-primary transition-colors"
+                  >
+                    <div className="font-medium">{device.name}</div>
+                    <div className="text-sm text-muted-foreground">
+                      Code: {device.device_code} • Status: {device.status}
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
           </DialogContent>
         </Dialog>
       </div>
