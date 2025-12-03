@@ -401,6 +401,13 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
     return () => clearInterval(interval);
   }, [videos.length, loading, authToken]);
 
+  // If index is out of bounds, reset to 0 (must be before conditional returns)
+  useEffect(() => {
+    if (currentIndex >= videos.length && videos.length > 0) {
+      setCurrentIndex(0);
+    }
+  }, [currentIndex, videos.length]);
+
   if (showAdmin) {
     return (
       <PlayerAdminMode
@@ -442,13 +449,6 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   // Safety check: compute safe index without setting state during render
   const safeIndex = currentIndex < videos.length ? currentIndex : 0;
   const currentVideo = videos[safeIndex];
-  
-  // If index was out of bounds, update it via effect (not during render)
-  useEffect(() => {
-    if (currentIndex >= videos.length && videos.length > 0) {
-      setCurrentIndex(0);
-    }
-  }, [currentIndex, videos.length]);
 
   return (
     <div 
