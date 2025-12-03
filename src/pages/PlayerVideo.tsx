@@ -209,10 +209,10 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   useEffect(() => {
     fetchPlaylist();
 
-    // Refresh playlist every 30 seconds for faster updates
+    // Refresh playlist every 5 seconds for near-instant updates
     refreshIntervalRef.current = setInterval(() => {
       fetchPlaylist();
-    }, 30 * 1000);
+    }, 5 * 1000);
 
     // Set up realtime listener for device changes
     const channel = supabase
