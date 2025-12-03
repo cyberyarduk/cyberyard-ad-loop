@@ -40,7 +40,7 @@ const Player = () => {
 
   // Show splash screen on initial load
   if (showSplash) {
-    return <PlayerSplash onComplete={handleSplashComplete} duration={3000} />;
+    return <PlayerSplash onComplete={handleSplashComplete} />;
   }
 
   // If device is paired, show video player
