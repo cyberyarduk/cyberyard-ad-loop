@@ -35,6 +35,12 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const errorCountRef = useRef(0);
   const lastErrorToastRef = useRef(0);
+  const videosRef = useRef<Video[]>([]);
+  
+  // Keep videosRef in sync with videos state
+  useEffect(() => {
+    videosRef.current = videos;
+  }, [videos]);
 
   const fetchPlaylist = useCallback(async () => {
     try {
@@ -244,7 +250,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           if (data.success && data.videos) {
             const newVideos = data.videos;
             
-            if (newVideos.length > 0 && JSON.stringify(newVideos) !== JSON.stringify(videos)) {
+            if (newVideos.length > 0 && JSON.stringify(newVideos) !== JSON.stringify(videosRef.current)) {
               console.log('New playlist detected - switching immediately');
               setVideos(newVideos);
               setCurrentIndex(0);
@@ -492,6 +498,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           autoPlay
           muted
           playsInline
+          controls={false}
           preload="auto"
           webkit-playsinline="true"
           onClick={() => {
