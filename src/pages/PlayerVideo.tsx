@@ -275,19 +275,32 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   }, [authToken, deviceInfo.id, fetchPlaylist, videos]);
 
   const handleVideoEnd = () => {
+    console.log('[VideoEnd] Video ended, current index:', currentIndex, 'total videos:', videos.length);
+    
     if (videos.length === 0) return;
     
-    // If only one video, restart it manually (React won't re-render same key)
+    // If only one video, restart it manually
     if (videos.length === 1) {
+      console.log('[VideoEnd] Single video - restarting');
       if (videoRef.current) {
         videoRef.current.currentTime = 0;
-        videoRef.current.play().catch(e => console.error('Failed to loop single video:', e));
+        videoRef.current.play()
+          .then(() => console.log('[VideoEnd] Single video restarted successfully'))
+          .catch(e => {
+            console.error('[VideoEnd] Failed to loop single video:', e);
+            // Fallback: reload the video
+            if (videoRef.current) {
+              videoRef.current.load();
+              videoRef.current.play().catch(err => console.error('[VideoEnd] Fallback play failed:', err));
+            }
+          });
       }
       return;
     }
     
     // Move to next video, loop back to start if at end
     const nextIndex = (currentIndex + 1) % videos.length;
+    console.log('[VideoEnd] Moving to next video, index:', nextIndex);
     setCurrentIndex(nextIndex);
   };
 
