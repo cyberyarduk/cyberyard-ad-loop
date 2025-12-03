@@ -6,6 +6,7 @@ interface PlayerSplashProps {
 
 const PlayerSplash = ({ onComplete }: PlayerSplashProps) => {
   const [fadeOut, setFadeOut] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const handleVideoEnd = () => {
@@ -16,11 +17,17 @@ const PlayerSplash = ({ onComplete }: PlayerSplashProps) => {
   };
 
   const handleVideoError = () => {
-    // If video fails to load, skip splash after 2 seconds
     console.error('Splash video failed to load');
     setTimeout(() => {
       onComplete();
     }, 2000);
+  };
+
+  const handleCanPlay = () => {
+    setVideoReady(true);
+    videoRef.current?.play().catch(() => {
+      setTimeout(() => onComplete(), 1000);
+    });
   };
 
   return (
@@ -30,10 +37,13 @@ const PlayerSplash = ({ onComplete }: PlayerSplashProps) => {
       <video
         ref={videoRef}
         src="/splash-video.mp4"
-        className="w-full h-full object-cover"
+        className={`w-full h-full object-cover transition-opacity duration-300 ${videoReady ? 'opacity-100' : 'opacity-0'}`}
         autoPlay
         muted
         playsInline
+        controls={false}
+        preload="auto"
+        onCanPlay={handleCanPlay}
         onEnded={handleVideoEnd}
         onError={handleVideoError}
       />
