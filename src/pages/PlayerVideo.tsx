@@ -131,7 +131,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       }
       setLoading(false);
     }
-  }, [authToken, videos]);
+  }, [authToken]);
 
   // Network listener
   useEffect(() => {
@@ -274,7 +274,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       }
       supabase.removeChannel(channel);
     };
-  }, [authToken, deviceInfo.id, fetchPlaylist, videos]);
+  }, [authToken, deviceInfo.id]);
 
   const handleVideoEnd = () => {
     console.log('[VideoEnd] Video ended, current index:', currentIndex, 'total videos:', videos.length);
