@@ -439,13 +439,16 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
     );
   }
 
-  const currentVideo = videos[currentIndex];
-
-  // Safety check: if currentIndex is out of bounds, reset to 0
-  if (!currentVideo && videos.length > 0) {
-    setCurrentIndex(0);
-    return null;
-  }
+  // Safety check: compute safe index without setting state during render
+  const safeIndex = currentIndex < videos.length ? currentIndex : 0;
+  const currentVideo = videos[safeIndex];
+  
+  // If index was out of bounds, update it via effect (not during render)
+  useEffect(() => {
+    if (currentIndex >= videos.length && videos.length > 0) {
+      setCurrentIndex(0);
+    }
+  }, [currentIndex, videos.length]);
 
   return (
     <div 
@@ -483,7 +486,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       {currentVideo && (
         <video
           ref={videoRef}
-          key={`${currentVideo.id}-${currentIndex}`}
+          key={`${currentVideo.id}-${safeIndex}`}
           src={currentVideo.video_url}
           className="w-full h-full object-contain"
           autoPlay
