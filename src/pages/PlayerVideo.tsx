@@ -360,25 +360,8 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
     // Don't try to play here - let the video element handle it
   };
 
-  if (showAdmin) {
-    return (
-      <PlayerAdminMode
-        authToken={authToken}
-        deviceInfo={deviceInfo}
-        onExit={handleExitAdmin}
-      />
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-white" />
-      </div>
-    );
-  }
-
   // Periodic device validity check when no videos (check every 30 seconds)
+  // MUST be before conditional returns to follow React hooks rules
   useEffect(() => {
     if (videos.length > 0 || loading) return;
     
@@ -415,6 +398,24 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
     
     return () => clearInterval(interval);
   }, [videos.length, loading, authToken]);
+
+  if (showAdmin) {
+    return (
+      <PlayerAdminMode
+        authToken={authToken}
+        deviceInfo={deviceInfo}
+        onExit={handleExitAdmin}
+      />
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-white" />
+      </div>
+    );
+  }
 
   if (videos.length === 0) {
     return (
