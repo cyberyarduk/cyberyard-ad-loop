@@ -277,6 +277,15 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const handleVideoEnd = () => {
     if (videos.length === 0) return;
     
+    // If only one video, restart it manually (React won't re-render same key)
+    if (videos.length === 1) {
+      if (videoRef.current) {
+        videoRef.current.currentTime = 0;
+        videoRef.current.play().catch(e => console.error('Failed to loop single video:', e));
+      }
+      return;
+    }
+    
     // Move to next video, loop back to start if at end
     const nextIndex = (currentIndex + 1) % videos.length;
     setCurrentIndex(nextIndex);
