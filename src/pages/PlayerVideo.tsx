@@ -356,6 +356,44 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
     );
   }
 
+  // Periodic device validity check when no videos (check every 30 seconds)
+  useEffect(() => {
+    if (videos.length > 0 || loading) return;
+    
+    const checkDeviceValidity = async () => {
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/device-playlist`,
+          {
+            method: 'GET',
+            headers: {
+              'x-device-token': authToken,
+              'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            }
+          }
+        );
+
+        if (response.status === 401) {
+          console.log('Device unpaired - clearing credentials and returning to pairing');
+          localStorage.removeItem('cyberyard_device_token');
+          localStorage.removeItem('cyberyard_device_info');
+          localStorage.removeItem('cached_videos');
+          window.location.reload();
+        }
+      } catch (error) {
+        console.error('Device validity check failed:', error);
+      }
+    };
+
+    // Check immediately
+    checkDeviceValidity();
+    
+    // Then check every 30 seconds
+    const interval = setInterval(checkDeviceValidity, 30000);
+    
+    return () => clearInterval(interval);
+  }, [videos.length, loading, authToken]);
+
   if (videos.length === 0) {
     return (
       <div 
