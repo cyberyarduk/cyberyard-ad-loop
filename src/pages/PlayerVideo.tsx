@@ -490,6 +490,13 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           muted
           playsInline
           preload="auto"
+          webkit-playsinline="true"
+          onClick={() => {
+            if (videoRef.current) {
+              videoRef.current.muted = true;
+              videoRef.current.play().catch(e => console.error('Manual play failed:', e));
+            }
+          }}
           onEnded={handleVideoEnd}
           onError={(e) => {
             console.error('Video playback error:', e);
@@ -499,7 +506,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
             // Limit error toasts - only show once every 10 seconds
             const now = Date.now();
             if (now - lastErrorToastRef.current > 10000) {
-              toast.error(`Error playing video: ${currentVideo.title}`);
+              toast.error(`Tap screen to play video`);
               lastErrorToastRef.current = now;
             }
             
@@ -508,7 +515,6 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
             if (errorCountRef.current >= 3) {
               console.error('Too many consecutive errors, pausing playback');
               errorCountRef.current = 0;
-              // Don't try to play next video, just wait for refresh
               return;
             }
             
@@ -522,37 +528,27 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           }}
           onLoadedMetadata={() => {
             console.log('Video metadata loaded:', currentVideo.video_url);
-            // Ensure autoplay - try immediately
             if (videoRef.current && videoRef.current.paused) {
-              console.log('Video is paused, attempting to play...');
+              videoRef.current.muted = true;
               videoRef.current.play().catch(e => {
                 console.error('Autoplay failed:', e);
-                // Try again with muted if autoplay fails (browser restriction)
-                if (videoRef.current) {
-                  console.log('Trying muted autoplay...');
-                  videoRef.current.muted = true;
-                  videoRef.current.play().catch(err => {
-                    console.error('Muted autoplay also failed:', err);
-                    // As last resort, show play button to user
-                    toast.error('Tap the video to play');
-                  });
-                }
               });
             }
           }}
           onCanPlay={() => {
             console.log('Video can play:', currentVideo.video_url);
+            // Try to play when ready
+            if (videoRef.current && videoRef.current.paused) {
+              videoRef.current.play().catch(e => console.error('CanPlay autoplay failed:', e));
+            }
           }}
           onPlay={() => {
             console.log('Video started playing:', currentVideo.video_url);
-            // Reset error count on successful play
             errorCountRef.current = 0;
           }}
           onPause={() => {
             console.log('Video paused:', currentVideo.video_url);
-            // If video pauses unexpectedly, try to resume
             if (!showAdmin && videoRef.current && !videoRef.current.ended) {
-              console.log('Attempting to resume playback...');
               videoRef.current.play().catch(e => console.error('Resume failed:', e));
             }
           }}
