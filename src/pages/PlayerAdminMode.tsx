@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { KeyRound, Video, ArrowLeft, Phone, Wifi, List, Activity, AlertTriangle, RefreshCw, QrCode } from "lucide-react";
+import { KeyRound, Video, ArrowLeft, Phone, Wifi, List, Activity, AlertTriangle, RefreshCw, QrCode, PlayCircle } from "lucide-react";
 import { Capacitor } from '@capacitor/core';
 import {
   AlertDialog,
@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import PlayerAICreator from "./PlayerAICreator";
 import PlayerPlaylistManager from "./PlayerPlaylistManager";
+import PlayerPlaylistSelector from "./PlayerPlaylistSelector";
 import DeviceHealthMonitor from "@/components/DeviceHealthMonitor";
 import ConnectionDiagnostics from "@/components/ConnectionDiagnostics";
 import QRCode from 'qrcode';
@@ -38,6 +39,7 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
   const [loading, setLoading] = useState(false);
   const [showAICreator, setShowAICreator] = useState(false);
   const [showPlaylistManager, setShowPlaylistManager] = useState(false);
+  const [showPlaylistSelector, setShowPlaylistSelector] = useState(false);
   const [showHealthMonitor, setShowHealthMonitor] = useState(false);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const [showRepairQR, setShowRepairQR] = useState(false);
@@ -247,6 +249,17 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
     );
   }
 
+  if (showPlaylistSelector) {
+    return (
+      <PlayerPlaylistSelector
+        authToken={authToken}
+        deviceInfo={deviceInfo}
+        onBack={() => setShowPlaylistSelector(false)}
+        onPlaylistChanged={onExit}
+      />
+    );
+  }
+
   if (showHealthMonitor) {
     return (
       <div className="min-h-screen bg-background p-4">
@@ -393,6 +406,21 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
               </CardTitle>
               <CardDescription>
                 Remove expired offers from your playlist
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card 
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => setShowPlaylistSelector(true)}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <PlayCircle className="h-5 w-5" />
+                Change Playlist
+              </CardTitle>
+              <CardDescription>
+                Switch to a different playlist
               </CardDescription>
             </CardHeader>
           </Card>
