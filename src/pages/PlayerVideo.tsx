@@ -29,12 +29,26 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const [cachedVideos, setCachedVideos] = useState<Video[]>([]);
   const [isPullingToRefresh, setIsPullingToRefresh] = useState(false);
   const [pullStartY, setPullStartY] = useState(0);
+  const [userGestureReceived, setUserGestureReceived] = useState(() => {
+    return sessionStorage.getItem('cyberyard_gesture_received') === 'true';
+  });
   const videoRef = useRef<HTMLVideoElement>(null);
   const tapTimerRef = useRef<NodeJS.Timeout | null>(null);
   const tapCountRef = useRef(0);
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const errorCountRef = useRef(0);
   const lastErrorToastRef = useRef(0);
+
+  const handleStartPlayback = () => {
+    sessionStorage.setItem('cyberyard_gesture_received', 'true');
+    setUserGestureReceived(true);
+    // Immediately try to play after gesture
+    setTimeout(() => {
+      if (videoRef.current) {
+        videoRef.current.play().catch(e => console.error('Play after gesture failed:', e));
+      }
+    }, 100);
+  };
 
   const fetchPlaylist = useCallback(async () => {
     try {
@@ -415,6 +429,23 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-white" />
+      </div>
+    );
+  }
+
+  // Show tap-to-start screen if user gesture not yet received (Android WebView requirement)
+  if (!userGestureReceived && videos.length > 0) {
+    return (
+      <div 
+        className="min-h-screen bg-black flex flex-col items-center justify-center cursor-pointer"
+        onClick={handleStartPlayback}
+        onTouchStart={handleStartPlayback}
+      >
+        <div className="text-white text-center p-8">
+          <div className="text-4xl mb-6">▶</div>
+          <div className="text-2xl mb-2">Tap to Start</div>
+          <div className="text-muted-foreground text-sm">Content will play automatically</div>
+        </div>
       </div>
     );
   }
