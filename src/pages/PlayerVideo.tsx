@@ -26,6 +26,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const [showAdmin, setShowAdmin] = useState(false);
   const [tapCount, setTapCount] = useState(0);
   const [isOffline, setIsOffline] = useState(false);
+  const [isSuspended, setIsSuspended] = useState(false);
   const [cachedVideos, setCachedVideos] = useState<Video[]>([]);
   const [isPullingToRefresh, setIsPullingToRefresh] = useState(false);
   const [pullStartY, setPullStartY] = useState(0);
@@ -105,6 +106,18 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
         throw new Error(data.error || 'Failed to fetch playlist');
       }
 
+      // Check if device is suspended
+      if (data.suspended) {
+        console.log('Device is suspended');
+        setIsSuspended(true);
+        setVideos([]);
+        setLoading(false);
+        return;
+      }
+
+      // Device is active - clear suspended state if it was set
+      setIsSuspended(false);
+      
       console.log('Fetched videos:', data.videos, 'playlist_id:', data.playlist_id);
       const newVideos = data.videos || [];
       
@@ -441,6 +454,27 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-white" />
+      </div>
+    );
+  }
+
+  // Show suspended screen
+  if (isSuspended) {
+    return (
+      <div 
+        className="min-h-screen bg-black flex flex-col items-center justify-center"
+        onTouchStart={handleTripleTap}
+        onClick={handleTripleTap}
+      >
+        <div className="text-white text-center p-8">
+          <div className="text-3xl mb-4 font-semibold">Device Suspended</div>
+          <div className="text-muted-foreground text-lg">
+            This device has been temporarily suspended by an administrator.
+          </div>
+          <div className="text-muted-foreground text-sm mt-4">
+            The device will automatically resume when reactivated.
+          </div>
+        </div>
       </div>
     );
   }

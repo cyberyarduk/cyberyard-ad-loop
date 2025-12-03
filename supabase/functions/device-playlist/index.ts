@@ -25,20 +25,35 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Find device by auth token
+    // Find device by auth token - accept both active and suspended
     const { data: device, error: deviceError } = await supabase
       .from('devices')
       .select('id, company_id, playlist_id, name, status')
       .eq('auth_token', authToken)
-      .eq('status', 'active')
+      .in('status', ['active', 'suspended'])
       .single();
 
     if (deviceError || !device) {
-      console.error('Device not found or inactive:', deviceError);
+      console.error('Device not found or invalid:', deviceError);
       throw new Error('Invalid or inactive device');
     }
 
-    console.log('Device authenticated:', device.id, 'Company:', device.company_id);
+    console.log('Device authenticated:', device.id, 'Company:', device.company_id, 'Status:', device.status);
+
+    // If device is suspended, return suspended status without videos
+    if (device.status === 'suspended') {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          suspended: true,
+          device_id: device.id,
+          device_name: device.name,
+          company_id: device.company_id,
+          videos: []
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Parse battery level
     const batteryLevel = batteryLevelHeader ? parseInt(batteryLevelHeader, 10) : null;
@@ -120,6 +135,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
+        suspended: false,
         device_id: device.id,
         device_name: device.name,
         company_id: device.company_id,
