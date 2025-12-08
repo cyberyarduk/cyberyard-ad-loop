@@ -17,6 +17,7 @@ import CreateAIVideo from "./pages/CreateAIVideo";
 import Player from "./pages/Player";
 import Companies from "./pages/Companies";
 import CompanyForm from "./pages/CompanyForm";
+import CompanyDetail from "./pages/CompanyDetail";
 import Settings from "./pages/Settings";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
@@ -160,6 +161,14 @@ const App = () => (
             />
             <Route
               path="/companies/:id"
+              element={
+                <ProtectedRoute requireSuperAdmin>
+                  <CompanyDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/companies/:id/edit"
               element={
                 <ProtectedRoute requireSuperAdmin>
                   <CompanyForm />
