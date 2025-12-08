@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { addMonths, format } from 'date-fns';
+import { ArrowLeft } from 'lucide-react';
+import type { Tables } from '@/integrations/supabase/types';
+
+type Company = Tables<'companies'>;
 
 export default function CompanyForm() {
   const navigate = useNavigate();
@@ -50,6 +54,55 @@ export default function CompanyForm() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [fetchingCompany, setFetchingCompany] = useState(false);
+
+  useEffect(() => {
+    if (isEditing && id) {
+      fetchCompany();
+    }
+  }, [id, isEditing]);
+
+  const fetchCompany = async () => {
+    setFetchingCompany(true);
+    const { data, error } = await supabase
+      .from('companies')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      console.error('Error fetching company:', error);
+      toast.error('Failed to load company');
+      navigate('/companies');
+    } else {
+      setFormData({
+        name: data.name,
+        slug: data.slug,
+        primary_contact_name: data.primary_contact_name,
+        primary_contact_email: data.primary_contact_email,
+        primary_contact_phone: data.primary_contact_phone || '',
+        billing_email: data.billing_email,
+        address_line1: data.address_line1,
+        address_line2: data.address_line2 || '',
+        city: data.city,
+        postcode: data.postcode,
+        country: data.country,
+        plan_type: data.plan_type,
+        price_per_device: data.price_per_device.toString(),
+        billing_cycle: data.billing_cycle,
+        device_limit: data.device_limit?.toString() || '',
+        term_months: data.term_months,
+        start_date: data.start_date,
+        status: data.status,
+        connectivity_type: data.connectivity_type,
+        notes: data.notes || '',
+        admin_email: '',
+        admin_name: '',
+        admin_password: '',
+      });
+    }
+    setFetchingCompany(false);
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -57,8 +110,8 @@ export default function CompanyForm() {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
 
-    // Auto-generate slug from company name
-    if (name === 'name') {
+    // Auto-generate slug from company name (only when creating)
+    if (name === 'name' && !isEditing) {
       const slug = value
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
@@ -85,82 +138,113 @@ export default function CompanyForm() {
       // Calculate end date
       const endDate = calculateEndDate(formData.start_date, formData.term_months);
 
-      // Create company
-      const { data: company, error: companyError } = await supabase
-        .from('companies')
-        .insert({
-          name: formData.name,
-          slug: formData.slug,
-          primary_contact_name: formData.primary_contact_name,
-          primary_contact_email: formData.primary_contact_email,
-          primary_contact_phone: formData.primary_contact_phone,
-          billing_email: formData.billing_email,
-          address_line1: formData.address_line1,
-          address_line2: formData.address_line2,
-          city: formData.city,
-          postcode: formData.postcode,
-          country: formData.country,
-          plan_type: formData.plan_type,
-          price_per_device: parseFloat(formData.price_per_device),
-          billing_cycle: formData.billing_cycle,
-          device_limit: formData.device_limit ? parseInt(formData.device_limit) : null,
-          term_months: formData.term_months,
-          start_date: formData.start_date,
-          end_date: endDate,
-          status: formData.status,
-          connectivity_type: formData.connectivity_type,
-          notes: formData.notes,
-          created_by_user_id: user.id,
-        })
-        .select()
-        .single();
+      const companyData = {
+        name: formData.name,
+        slug: formData.slug,
+        primary_contact_name: formData.primary_contact_name,
+        primary_contact_email: formData.primary_contact_email,
+        primary_contact_phone: formData.primary_contact_phone || null,
+        billing_email: formData.billing_email,
+        address_line1: formData.address_line1,
+        address_line2: formData.address_line2 || null,
+        city: formData.city,
+        postcode: formData.postcode,
+        country: formData.country,
+        plan_type: formData.plan_type,
+        price_per_device: parseFloat(formData.price_per_device),
+        billing_cycle: formData.billing_cycle,
+        device_limit: formData.device_limit ? parseInt(formData.device_limit) : null,
+        term_months: formData.term_months,
+        start_date: formData.start_date,
+        end_date: endDate,
+        status: formData.status,
+        connectivity_type: formData.connectivity_type,
+        notes: formData.notes || null,
+      };
 
-      if (companyError) throw companyError;
+      if (isEditing) {
+        // Update existing company
+        const { error: updateError } = await supabase
+          .from('companies')
+          .update(companyData)
+          .eq('id', id);
 
-      // Create company admin user
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: formData.admin_email,
-        password: formData.admin_password,
-        email_confirm: true,
-        user_metadata: {
-          full_name: formData.admin_name,
-          role: 'company_admin',
-        },
-      });
+        if (updateError) throw updateError;
 
-      if (authError) throw authError;
+        toast.success('Company updated successfully!');
+        navigate(`/companies/${id}`);
+      } else {
+        // Create new company
+        const { data: company, error: companyError } = await supabase
+          .from('companies')
+          .insert({
+            ...companyData,
+            created_by_user_id: user.id,
+          })
+          .select()
+          .single();
 
-      // Update the profile with company_id
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          company_id: company.id,
-          role: 'company_admin',
-        })
-        .eq('id', authData.user.id);
+        if (companyError) throw companyError;
 
-      if (profileError) throw profileError;
+        // Create company admin user via edge function
+        if (formData.admin_email && formData.admin_password) {
+          const { data: adminResult, error: adminError } = await supabase.functions.invoke(
+            'create-company-admin',
+            {
+              body: {
+                company_id: company.id,
+                admin_email: formData.admin_email,
+                admin_name: formData.admin_name,
+                admin_password: formData.admin_password,
+              },
+            }
+          );
 
-      toast.success('Company created successfully!');
-      navigate('/companies');
+          if (adminError) {
+            console.error('Error creating admin:', adminError);
+            toast.warning('Company created but admin account failed. Please try adding the admin manually.');
+          } else {
+            toast.success('Company and admin account created successfully! The admin will receive an email to confirm their account.');
+          }
+        } else {
+          toast.success('Company created successfully!');
+        }
+
+        navigate('/companies');
+      }
     } catch (error: any) {
-      console.error('Error creating company:', error);
-      toast.error(error.message || 'Failed to create company');
+      console.error('Error saving company:', error);
+      toast.error(error.message || 'Failed to save company');
     } finally {
       setLoading(false);
     }
   };
 
+  if (fetchingCompany) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-muted-foreground">Loading company...</div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">
-            {isEditing ? 'Edit Company' : 'Create New Company'}
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Add a new customer company and create their admin account
-          </p>
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate(isEditing ? `/companies/${id}` : '/companies')}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">
+              {isEditing ? 'Edit Company' : 'Create New Company'}
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              {isEditing ? 'Update company details' : 'Add a new customer company and create their admin account'}
+            </p>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
@@ -187,6 +271,7 @@ export default function CompanyForm() {
                   value={formData.slug}
                   onChange={handleChange}
                   required
+                  disabled={isEditing}
                 />
               </div>
             </div>
@@ -430,10 +515,13 @@ export default function CompanyForm() {
             </div>
           </div>
 
-          {/* Company Admin User */}
+          {/* Company Admin User - Only show when creating */}
           {!isEditing && (
             <div className="border rounded-lg p-6 space-y-4">
               <h2 className="text-xl font-semibold">Company Admin Account</h2>
+              <p className="text-sm text-muted-foreground">
+                Create an admin account for this company. They will receive an email to confirm their account.
+              </p>
               
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
@@ -466,6 +554,7 @@ export default function CompanyForm() {
                     value={formData.admin_password}
                     onChange={handleChange}
                     required
+                    minLength={6}
                   />
                 </div>
               </div>
@@ -474,12 +563,12 @@ export default function CompanyForm() {
 
           <div className="flex gap-4">
             <Button type="submit" disabled={loading}>
-              {loading ? 'Creating...' : 'Create Company'}
+              {loading ? (isEditing ? 'Saving...' : 'Creating...') : (isEditing ? 'Save Changes' : 'Create Company')}
             </Button>
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate('/companies')}
+              onClick={() => navigate(isEditing ? `/companies/${id}` : '/companies')}
             >
               Cancel
             </Button>
