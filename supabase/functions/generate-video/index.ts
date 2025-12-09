@@ -212,37 +212,23 @@ serve(async (req) => {
     // Create Shotstack edits for both formats with sparkle overlay
     const videoDuration = parseFloat(duration);
     
-    // Sparkle/flash overlay configuration - using luma matte with animated particles
+    // Sparkle/flash overlay configuration - bokeh overlay video
     const sparkleOverlayClip = {
-      asset: { 
-        type: "luma", 
-        src: "https://shotstack-assets.s3.ap-southeast-2.amazonaws.com/luma-mattes/circles-1.mp4"
-      },
-      start: 0,
-      length: videoDuration,
-      opacity: 0.3,
-      blend: "screen"
-    };
-    
-    // Flash/light leak overlay for extra appeal
-    const lightLeakClip = {
       asset: { 
         type: "video", 
         src: "https://shotstack-assets.s3.ap-southeast-2.amazonaws.com/overlays/bokeh-1.mp4"
       },
       start: 0,
       length: videoDuration,
-      opacity: 0.25,
-      blend: "screen"
+      opacity: 0.35,
+      fit: "cover"
     };
 
     const portraitEdit = {
       timeline: {
         background: "#000000",
         tracks: [
-          // Top track: Light leak overlay (renders on top)
-          { clips: [lightLeakClip] },
-          // Middle track: Sparkle overlay
+          // Top track: Sparkle/bokeh overlay (renders on top of main image)
           { clips: [sparkleOverlayClip] },
           // Bottom track: Main promotional image with zoomOut (starts zoomed, ends at full frame)
           {
@@ -268,9 +254,7 @@ serve(async (req) => {
       timeline: {
         background: "#000000",
         tracks: [
-          // Top track: Light leak overlay (renders on top)
-          { clips: [lightLeakClip] },
-          // Middle track: Sparkle overlay
+          // Top track: Sparkle/bokeh overlay
           { clips: [sparkleOverlayClip] },
           // Bottom track: Main promotional image with zoomOut
           {
