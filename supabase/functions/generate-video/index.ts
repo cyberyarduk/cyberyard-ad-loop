@@ -209,36 +209,20 @@ serve(async (req) => {
     
     console.log('Promotional images uploaded:', { portrait: portraitImageUrl, landscape: landscapeImageUrl });
 
-    // Create Shotstack edits for both formats with sparkle overlay
+    // Create Shotstack edits for both formats
     const videoDuration = parseFloat(duration);
-    
-    // Sparkle/flash overlay configuration - bokeh overlay video
-    const sparkleOverlayClip = {
-      asset: { 
-        type: "video", 
-        src: "https://shotstack-assets.s3.ap-southeast-2.amazonaws.com/overlays/bokeh-1.mp4"
-      },
-      start: 0,
-      length: videoDuration,
-      opacity: 0.35,
-      fit: "cover"
-    };
 
+    // Simple portrait edit - just the image with gentle zoom
     const portraitEdit = {
       timeline: {
         background: "#000000",
         tracks: [
-          // Top track: Sparkle/bokeh overlay (renders on top of main image)
-          { clips: [sparkleOverlayClip] },
-          // Bottom track: Main promotional image with zoomOut (starts zoomed, ends at full frame)
           {
             clips: [{
               asset: { type: "image", src: portraitImageUrl },
               start: 0,
               length: videoDuration,
-              fit: "contain",
-              scale: 1.0,
-              effect: "zoomOut"
+              effect: "slideUp"
             }]
           }
         ]
@@ -250,21 +234,17 @@ serve(async (req) => {
       }
     };
 
+    // Simple landscape edit
     const landscapeEdit = landscapeImageUrl ? {
       timeline: {
         background: "#000000",
         tracks: [
-          // Top track: Sparkle/bokeh overlay
-          { clips: [sparkleOverlayClip] },
-          // Bottom track: Main promotional image with zoomOut
           {
             clips: [{
               asset: { type: "image", src: landscapeImageUrl },
               start: 0,
               length: videoDuration,
-              fit: "contain",
-              scale: 1.0,
-              effect: "zoomOut"
+              effect: "slideUp"
             }]
           }
         ]
