@@ -422,7 +422,11 @@ serve(async (req) => {
       video_url: videoUrl,
       user_id: userId,
       company_id: companyId,
-      source: 'ai_generated'
+      source: 'ai_generated',
+      ai_prompt: mainText,
+      ai_style: style,
+      ai_duration: duration,
+      ai_image_url: finalImageUrl
     };
     
     // Add landscape URL if available
