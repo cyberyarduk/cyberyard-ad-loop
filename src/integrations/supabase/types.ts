@@ -329,6 +329,10 @@ export type Database = {
       }
       videos: {
         Row: {
+          ai_duration: string | null
+          ai_image_url: string | null
+          ai_prompt: string | null
+          ai_style: string | null
           company_id: string | null
           created_at: string
           id: string
@@ -339,6 +343,10 @@ export type Database = {
           video_url_landscape: string | null
         }
         Insert: {
+          ai_duration?: string | null
+          ai_image_url?: string | null
+          ai_prompt?: string | null
+          ai_style?: string | null
           company_id?: string | null
           created_at?: string
           id?: string
@@ -349,6 +357,10 @@ export type Database = {
           video_url_landscape?: string | null
         }
         Update: {
+          ai_duration?: string | null
+          ai_image_url?: string | null
+          ai_prompt?: string | null
+          ai_style?: string | null
           company_id?: string | null
           created_at?: string
           id?: string

@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Video, Edit, Trash2, Sparkles, Download } from "lucide-react";
+import { Plus, Video, Edit, Trash2, Sparkles, Download, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
@@ -32,6 +32,7 @@ const Videos = () => {
   const [videos, setVideos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [regenerating, setRegenerating] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(true);
@@ -150,6 +151,44 @@ const Videos = () => {
     } catch (error: any) {
       console.error('Delete error:', error);
       toast.error(error.message || "Failed to delete video");
+    }
+  };
+
+  const handleRegenerate = async (video: any) => {
+    if (!video.ai_prompt || !video.ai_image_url) {
+      toast.error("Cannot regenerate: missing original prompt data");
+      return;
+    }
+
+    setRegenerating(video.id);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-video`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          imageUrl: video.ai_image_url,
+          mainText: video.ai_prompt,
+          duration: video.ai_duration || '5',
+          style: video.ai_style || 'boom'
+        })
+      });
+
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error || 'Failed to regenerate');
+
+      toast.success("Video regenerated successfully");
+      fetchVideos();
+    } catch (error: any) {
+      console.error('Regenerate error:', error);
+      toast.error(error.message || "Failed to regenerate video");
+    } finally {
+      setRegenerating(null);
     }
   };
 
@@ -280,6 +319,17 @@ const Videos = () => {
                     {new Date(video.created_at).toLocaleDateString()}
                   </TableCell>
                   <TableCell className="text-right space-x-2">
+                    {video.source === 'ai_generated' && video.ai_prompt && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleRegenerate(video)}
+                        disabled={regenerating === video.id}
+                        title="Regenerate video"
+                      >
+                        <RefreshCw className={`h-4 w-4 ${regenerating === video.id ? 'animate-spin' : ''}`} />
+                      </Button>
+                    )}
                     <Button 
                       variant="ghost" 
                       size="sm"
