@@ -101,6 +101,7 @@ export type Database = {
       devices: {
         Row: {
           admin_pin: string | null
+          aspect_ratio: string | null
           auth_token: string | null
           battery_level: number | null
           company_id: string | null
@@ -111,12 +112,15 @@ export type Database = {
           name: string
           pairing_qr_token: string | null
           playlist_id: string | null
+          screen_height: number | null
+          screen_width: number | null
           status: string | null
           user_id: string
           venue_id: string | null
         }
         Insert: {
           admin_pin?: string | null
+          aspect_ratio?: string | null
           auth_token?: string | null
           battery_level?: number | null
           company_id?: string | null
@@ -127,12 +131,15 @@ export type Database = {
           name: string
           pairing_qr_token?: string | null
           playlist_id?: string | null
+          screen_height?: number | null
+          screen_width?: number | null
           status?: string | null
           user_id: string
           venue_id?: string | null
         }
         Update: {
           admin_pin?: string | null
+          aspect_ratio?: string | null
           auth_token?: string | null
           battery_level?: number | null
           company_id?: string | null
@@ -143,6 +150,8 @@ export type Database = {
           name?: string
           pairing_qr_token?: string | null
           playlist_id?: string | null
+          screen_height?: number | null
+          screen_width?: number | null
           status?: string | null
           user_id?: string
           venue_id?: string | null
@@ -327,6 +336,7 @@ export type Database = {
           title: string
           user_id: string
           video_url: string
+          video_url_landscape: string | null
         }
         Insert: {
           company_id?: string | null
@@ -336,6 +346,7 @@ export type Database = {
           title: string
           user_id: string
           video_url: string
+          video_url_landscape?: string | null
         }
         Update: {
           company_id?: string | null
@@ -345,6 +356,7 @@ export type Database = {
           title?: string
           user_id?: string
           video_url?: string
+          video_url_landscape?: string | null
         }
         Relationships: [
           {
