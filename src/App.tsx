@@ -175,6 +175,7 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route path="/player" element={<Player />} />
             <Route path="/player/:deviceId" element={<Player />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
