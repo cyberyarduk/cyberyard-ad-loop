@@ -79,6 +79,10 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
         }
       }
 
+      // Get screen dimensions
+      const screenWidth = window.screen.width * (window.devicePixelRatio || 1);
+      const screenHeight = window.screen.height * (window.devicePixelRatio || 1);
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/device-playlist`,
         {
@@ -86,7 +90,9 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           headers: {
             'x-device-token': authToken,
             'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-            ...(batteryLevel !== null && { 'x-battery-level': batteryLevel.toString() })
+            ...(batteryLevel !== null && { 'x-battery-level': batteryLevel.toString() }),
+            'x-screen-width': Math.round(screenWidth).toString(),
+            'x-screen-height': Math.round(screenHeight).toString()
           }
         }
       );

@@ -82,172 +82,264 @@ serve(async (req) => {
       minimal: `Take this product image and transform it into a clean promotional poster in 1080x1920 portrait format. Add modern text "${mainText}" in bold sans-serif font with simple, professional styling. Keep it minimal but impactful.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`
     };
 
+    const landscapeStylePrompts: Record<string, string> = {
+      boom: `Take this product image and transform it into an eye-catching promotional poster in 1920x1080 landscape format. Add bold, explosive text "${mainText}" in huge letters with vibrant red and pink gradients, dramatic shadows, and energy burst effects. Make it look like a dramatic product advertisement with WOW factor.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`,
+      sparkle: `Take this product image and transform it into a magical promotional poster in 1920x1080 landscape format. Add elegant text "${mainText}" with purple-to-blue gradients, sparkles, and dreamy glowing effects. Make it enchanting and eye-catching.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`,
+      stars: `Take this product image and transform it into a glamorous promotional poster in 1920x1080 landscape format. Add stylish text "${mainText}" with hot pink colors, star decorations, and dazzling celebrity-style effects. Make it fabulous and attention-grabbing.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`,
+      minimal: `Take this product image and transform it into a clean promotional poster in 1920x1080 landscape format. Add modern text "${mainText}" in bold sans-serif font with simple, professional styling. Keep it minimal but impactful.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`
+    };
+
     const textPrompt = stylePrompts[style] || stylePrompts.boom;
+    const landscapePrompt = landscapeStylePrompts[style] || landscapeStylePrompts.boom;
     
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-3-pro-image-preview',
-        messages: [
-          {
+    // Generate both portrait and landscape images in parallel
+    console.log('Generating portrait and landscape promotional images with AI...');
+    
+    const [portraitAiResponse, landscapeAiResponse] = await Promise.all([
+      fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-3-pro-image-preview',
+          messages: [{
             role: 'user',
             content: [
-              {
-                type: 'text',
-                text: textPrompt
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: finalImageUrl
-                }
-              }
+              { type: 'text', text: textPrompt },
+              { type: 'image_url', image_url: { url: finalImageUrl } }
             ]
-          }
-        ],
-        modalities: ['image', 'text']
+          }],
+          modalities: ['image', 'text']
+        })
+      }),
+      fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-3-pro-image-preview',
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'text', text: landscapePrompt },
+              { type: 'image_url', image_url: { url: finalImageUrl } }
+            ]
+          }],
+          modalities: ['image', 'text']
+        })
       })
-    });
+    ]);
 
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error('Lovable AI error:', errorText);
-      throw new Error(`Failed to generate text overlay: ${errorText}`);
+    if (!portraitAiResponse.ok) {
+      const errorText = await portraitAiResponse.text();
+      console.error('Portrait AI error:', errorText);
+      throw new Error(`Failed to generate portrait image: ${errorText}`);
     }
 
-    const aiData = await aiResponse.json();
-    const completeImageBase64 = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    const portraitData = await portraitAiResponse.json();
+    const portraitImageBase64 = portraitData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
     
-    if (!completeImageBase64) {
-      throw new Error('No promotional image generated from AI');
+    if (!portraitImageBase64) {
+      throw new Error('No portrait promotional image generated from AI');
     }
 
-    console.log('Complete promotional image generated, uploading to storage...');
+    // Landscape is optional - continue even if it fails
+    let landscapeImageBase64 = null;
+    if (landscapeAiResponse.ok) {
+      const landscapeData = await landscapeAiResponse.json();
+      landscapeImageBase64 = landscapeData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+      console.log('Landscape image generated:', !!landscapeImageBase64);
+    } else {
+      console.log('Landscape generation failed, continuing with portrait only');
+    }
+
+    console.log('Promotional images generated, uploading to storage...');
     
-    // Convert base64 to blob
-    const base64Data = completeImageBase64.split(',')[1];
-    const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
-    
+    // Upload both images
     const timestamp = Date.now();
-    const promoImagePath = `promo-images/${timestamp}.png`;
     
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('videos')
-        .upload(promoImagePath, binaryData, {
+    const portraitBase64Data = portraitImageBase64.split(',')[1];
+    const portraitBinaryData = Uint8Array.from(atob(portraitBase64Data), c => c.charCodeAt(0));
+    const portraitImagePath = `promo-images/${timestamp}-portrait.png`;
+    
+    const uploadPromises: Promise<any>[] = [
+      supabase.storage.from('videos').upload(portraitImagePath, portraitBinaryData, {
+        contentType: 'image/png',
+        upsert: false,
+        cacheControl: '31536000'
+      })
+    ];
+
+    let landscapeImagePath: string | null = null;
+    if (landscapeImageBase64) {
+      const landscapeBase64Data = landscapeImageBase64.split(',')[1];
+      const landscapeBinaryData = Uint8Array.from(atob(landscapeBase64Data), c => c.charCodeAt(0));
+      landscapeImagePath = `promo-images/${timestamp}-landscape.png`;
+      uploadPromises.push(
+        supabase.storage.from('videos').upload(landscapeImagePath, landscapeBinaryData, {
           contentType: 'image/png',
           upsert: false,
-          cacheControl: '31536000' // 1 year cache
-        });
+          cacheControl: '31536000'
+        })
+      );
+    }
+
+    const uploadResults = await Promise.all(uploadPromises);
     
-    if (uploadError) {
-      console.error('Upload error:', uploadError);
-      throw new Error(`Failed to upload promotional image: ${uploadError.message}`);
+    if (uploadResults[0].error) {
+      console.error('Portrait upload error:', uploadResults[0].error);
+      throw new Error(`Failed to upload portrait image: ${uploadResults[0].error.message}`);
     }
     
-    const { data: { publicUrl: promoImageUrl } } = supabase.storage
+    const { data: { publicUrl: portraitImageUrl } } = supabase.storage
       .from('videos')
-      .getPublicUrl(promoImagePath);
+      .getPublicUrl(portraitImagePath);
     
-    console.log('Promotional image uploaded successfully:', promoImageUrl);
+    let landscapeImageUrl: string | null = null;
+    if (landscapeImagePath && uploadResults[1] && !uploadResults[1].error) {
+      const { data: { publicUrl } } = supabase.storage
+        .from('videos')
+        .getPublicUrl(landscapeImagePath);
+      landscapeImageUrl = publicUrl;
+    }
+    
+    console.log('Promotional images uploaded:', { portrait: portraitImageUrl, landscape: landscapeImageUrl });
 
-    // Build simple track with just the complete promotional image
-    const tracks = [
-      {
-        clips: [
-          {
-            asset: {
-              type: "image",
-              src: promoImageUrl
-            },
+    // Create Shotstack edits for both formats
+    const portraitEdit = {
+      timeline: {
+        background: "#000000",
+        tracks: [{
+          clips: [{
+            asset: { type: "image", src: portraitImageUrl },
             start: 0,
             length: parseFloat(duration),
             fit: "cover",
             effect: "zoomIn"
-          }
-        ]
-      }
-    ];
-
-    // Create Shotstack edit
-    const shotstackEdit = {
-      timeline: {
-        background: "#000000",
-        tracks
+          }]
+        }]
       },
       output: {
         format: "mp4",
         aspectRatio: "9:16",
-        size: {
-          width: 1080,
-          height: 1920
-        }
+        size: { width: 1080, height: 1920 }
       }
     };
 
-    console.log('Sending request to Shotstack API');
-    
-    // Submit render to Shotstack
-    const renderResponse = await fetch('https://api.shotstack.io/v1/render', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': SHOTSTACK_API_KEY
+    const landscapeEdit = landscapeImageUrl ? {
+      timeline: {
+        background: "#000000",
+        tracks: [{
+          clips: [{
+            asset: { type: "image", src: landscapeImageUrl },
+            start: 0,
+            length: parseFloat(duration),
+            fit: "cover",
+            effect: "zoomIn"
+          }]
+        }]
       },
-      body: JSON.stringify(shotstackEdit)
-    });
+      output: {
+        format: "mp4",
+        aspectRatio: "16:9",
+        size: { width: 1920, height: 1080 }
+      }
+    } : null;
 
-    if (!renderResponse.ok) {
-      const error = await renderResponse.text();
-      console.error('Shotstack API error:', error);
-      throw new Error(`Shotstack API error: ${error}`);
+    console.log('Submitting render requests to Shotstack API');
+    
+    // Submit both renders in parallel
+    const renderPromises: Promise<Response>[] = [
+      fetch('https://api.shotstack.io/v1/render', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': SHOTSTACK_API_KEY },
+        body: JSON.stringify(portraitEdit)
+      })
+    ];
+
+    if (landscapeEdit) {
+      renderPromises.push(
+        fetch('https://api.shotstack.io/v1/render', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': SHOTSTACK_API_KEY },
+          body: JSON.stringify(landscapeEdit)
+        })
+      );
     }
 
-    const renderData = await renderResponse.json();
-    console.log('Render submitted:', renderData);
-    
-    const renderId = renderData.response.id;
+    const renderResponses = await Promise.all(renderPromises);
 
-    // Poll for completion
+    if (!renderResponses[0].ok) {
+      const error = await renderResponses[0].text();
+      console.error('Portrait Shotstack API error:', error);
+      throw new Error(`Portrait Shotstack API error: ${error}`);
+    }
+
+    const portraitRenderData = await renderResponses[0].json();
+    const portraitRenderId = portraitRenderData.response.id;
+    console.log('Portrait render submitted:', portraitRenderId);
+
+    let landscapeRenderId: string | null = null;
+    if (renderResponses[1] && renderResponses[1].ok) {
+      const landscapeRenderData = await renderResponses[1].json();
+      landscapeRenderId = landscapeRenderData.response.id;
+      console.log('Landscape render submitted:', landscapeRenderId);
+    }
+
+    // Poll for completion of both renders
     console.log('Polling for render completion...');
-    let videoUrl = null;
+    let videoUrl: string | null = null;
+    let videoUrlLandscape: string | null = null;
     let attempts = 0;
-    const maxAttempts = 60; // 5 minutes max (5 second intervals)
+    const maxAttempts = 60;
 
-    while (attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+    while (attempts < maxAttempts && (!videoUrl || (landscapeRenderId && !videoUrlLandscape))) {
+      await new Promise(resolve => setTimeout(resolve, 5000));
       
-      const statusResponse = await fetch(`https://api.shotstack.io/v1/render/${renderId}`, {
-        headers: {
-          'x-api-key': SHOTSTACK_API_KEY
+      // Check portrait status
+      if (!videoUrl) {
+        const statusResponse = await fetch(`https://api.shotstack.io/v1/render/${portraitRenderId}`, {
+          headers: { 'x-api-key': SHOTSTACK_API_KEY }
+        });
+        if (statusResponse.ok) {
+          const statusData = await statusResponse.json();
+          console.log('Portrait render status:', statusData.response.status);
+          if (statusData.response.status === 'done') {
+            videoUrl = statusData.response.url;
+            console.log('Portrait video ready:', videoUrl);
+          } else if (statusData.response.status === 'failed') {
+            throw new Error('Portrait video rendering failed');
+          }
         }
-      });
-
-      if (!statusResponse.ok) {
-        console.error('Status check failed:', await statusResponse.text());
-        attempts++;
-        continue;
       }
 
-      const statusData = await statusResponse.json();
-      console.log('Render status:', statusData.response.status);
-
-      if (statusData.response.status === 'done') {
-        videoUrl = statusData.response.url;
-        console.log('Video ready:', videoUrl);
-        break;
-      } else if (statusData.response.status === 'failed') {
-        throw new Error('Video rendering failed');
+      // Check landscape status
+      if (landscapeRenderId && !videoUrlLandscape) {
+        const statusResponse = await fetch(`https://api.shotstack.io/v1/render/${landscapeRenderId}`, {
+          headers: { 'x-api-key': SHOTSTACK_API_KEY }
+        });
+        if (statusResponse.ok) {
+          const statusData = await statusResponse.json();
+          console.log('Landscape render status:', statusData.response.status);
+          if (statusData.response.status === 'done') {
+            videoUrlLandscape = statusData.response.url;
+            console.log('Landscape video ready:', videoUrlLandscape);
+          } else if (statusData.response.status === 'failed') {
+            console.log('Landscape video rendering failed, continuing with portrait only');
+            landscapeRenderId = null; // Stop checking
+          }
+        }
       }
 
       attempts++;
     }
 
     if (!videoUrl) {
-      throw new Error('Video generation timed out');
+      throw new Error('Portrait video generation timed out');
     }
 
     // Save video to database
@@ -319,13 +411,18 @@ serve(async (req) => {
     }
 
     // Insert video record
-    const videoData = {
+    const videoData: any = {
       title: mainText || 'AI Generated Video',
       video_url: videoUrl,
       user_id: userId,
       company_id: companyId,
       source: 'ai_generated'
     };
+    
+    // Add landscape URL if available
+    if (videoUrlLandscape) {
+      videoData.video_url_landscape = videoUrlLandscape;
+    }
     
     console.log('Inserting video with data:', videoData);
     
@@ -372,6 +469,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         videoUrl,
+        videoUrlLandscape: videoUrlLandscape || null,
         videoId: video.id
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

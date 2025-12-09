@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-device-token, x-battery-level',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-device-token, x-battery-level, x-screen-width, x-screen-height',
 };
 
 serve(async (req) => {
@@ -14,7 +14,9 @@ serve(async (req) => {
   try {
     const authToken = req.headers.get('x-device-token');
     const batteryLevelHeader = req.headers.get('x-battery-level');
-    console.log('Device playlist request, token present:', !!authToken, 'battery:', batteryLevelHeader);
+    const screenWidthHeader = req.headers.get('x-screen-width');
+    const screenHeightHeader = req.headers.get('x-screen-height');
+    console.log('Device playlist request, token present:', !!authToken, 'battery:', batteryLevelHeader, 'screen:', screenWidthHeader, 'x', screenHeightHeader);
 
     if (!authToken) {
       throw new Error('Device authentication token required');
@@ -55,13 +57,37 @@ serve(async (req) => {
       );
     }
 
-    // Parse battery level
+    // Parse battery level and screen dimensions
     const batteryLevel = batteryLevelHeader ? parseInt(batteryLevelHeader, 10) : null;
+    const screenWidth = screenWidthHeader ? parseInt(screenWidthHeader, 10) : null;
+    const screenHeight = screenHeightHeader ? parseInt(screenHeightHeader, 10) : null;
 
-    // Update last_seen_at and battery_level
+    // Calculate aspect ratio
+    let aspectRatio: string | null = null;
+    if (screenWidth && screenHeight && screenWidth > 0 && screenHeight > 0) {
+      const ratio = screenWidth / screenHeight;
+      if (ratio > 1.3) {
+        aspectRatio = 'landscape'; // 16:9 or wider
+      } else if (ratio < 0.8) {
+        aspectRatio = 'portrait'; // 9:16 or taller
+      } else {
+        aspectRatio = 'square'; // roughly 1:1
+      }
+    }
+
+    // Update last_seen_at, battery_level, and screen dimensions
     const updateData: any = { last_seen_at: new Date().toISOString() };
     if (batteryLevel !== null && !isNaN(batteryLevel) && batteryLevel >= 0 && batteryLevel <= 100) {
       updateData.battery_level = batteryLevel;
+    }
+    if (screenWidth && screenWidth > 0) {
+      updateData.screen_width = screenWidth;
+    }
+    if (screenHeight && screenHeight > 0) {
+      updateData.screen_height = screenHeight;
+    }
+    if (aspectRatio) {
+      updateData.aspect_ratio = aspectRatio;
     }
 
     await supabase
@@ -109,6 +135,7 @@ serve(async (req) => {
           id,
           title,
           video_url,
+          video_url_landscape,
           company_id
         )
       `)
@@ -121,14 +148,22 @@ serve(async (req) => {
     }
 
     // Filter videos to only include those from this company and format response
+    // Select appropriate video URL based on device aspect ratio
     const videos = (playlistVideos || [])
       .filter(pv => pv.videos && pv.videos.company_id === device.company_id)
-      .map(pv => ({
-        id: pv.videos.id,
-        title: pv.videos.title,
-        video_url: pv.videos.video_url,
-        order_index: pv.order_index
-      }));
+      .map(pv => {
+        // Use landscape video if device is landscape and landscape version exists
+        const videoUrl = aspectRatio === 'landscape' && pv.videos.video_url_landscape 
+          ? pv.videos.video_url_landscape 
+          : pv.videos.video_url;
+        
+        return {
+          id: pv.videos.id,
+          title: pv.videos.title,
+          video_url: videoUrl,
+          order_index: pv.order_index
+        };
+      });
 
     console.log(`Returning ${videos.length} videos for device ${device.id}`);
 
