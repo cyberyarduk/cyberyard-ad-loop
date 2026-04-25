@@ -74,8 +74,7 @@ const Auth = () => {
       setResetLoading(false);
     }
   };
-
-
+  return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-4">
         <Link to="/">
@@ -85,14 +84,13 @@ const Auth = () => {
           </Button>
         </Link>
         <Card className="w-full">
-        <CardHeader className="text-center">
-          <img src={logo} alt="Cyberyard" className="h-32 md:h-40 mx-auto mb-4" />
-          <CardTitle>Welcome to Cyberyard</CardTitle>
-          <CardDescription>Sign in to manage your wearable digital billboards</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <form onSubmit={handleSignIn} className="space-y-4">
-            <div>
+          <CardHeader className="text-center">
+            <img src={logo} alt="Cyberyard" className="h-32 md:h-40 mx-auto mb-4" />
+            <CardTitle>Welcome to Cyberyard</CardTitle>
+            <CardDescription>Sign in to manage your wearable digital billboards</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <form onSubmit={handleSignIn} className="space-y-4">
               <Input
                 type="email"
                 placeholder="Email"
@@ -100,8 +98,6 @@ const Auth = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
-            </div>
-            <div>
               <Input
                 type="password"
                 placeholder="Password"
@@ -109,20 +105,36 @@ const Auth = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Signing in..." : "Sign In"}
-            </Button>
-          </form>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Signing in..." : "Sign In"}
+              </Button>
+            </form>
 
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertDescription>
-              <strong>Need an account?</strong> Contact your Cyberyard representative to get access.
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
+            <div className="text-center">
+              <Button variant="link" className="px-0" onClick={() => setShowReset((current) => !current)}>
+                Forgotten password?
+              </Button>
+            </div>
+
+            {showReset && (
+              <form onSubmit={handleResetPassword} className="space-y-3 border-t pt-4">
+                <p className="text-sm text-muted-foreground text-center">
+                  Enter your email above and we'll send you a reset link.
+                </p>
+                <Button type="submit" variant="secondary" className="w-full" disabled={resetLoading}>
+                  {resetLoading ? "Sending reset link..." : "Send Password Reset Link"}
+                </Button>
+              </form>
+            )}
+
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Need an account?</strong> Contact your Cyberyard representative to get access.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
