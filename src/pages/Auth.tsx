@@ -49,7 +49,33 @@ const Auth = () => {
     }
   };
 
-  return (
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!email) {
+      toast.error("Enter your email address first.");
+      return;
+    }
+
+    setResetLoading(true);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) throw error;
+
+      toast.success("Password reset email sent. Check your inbox.");
+      setShowReset(false);
+    } catch (error: any) {
+      toast.error(error.message || "Unable to send password reset email.");
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-4">
         <Link to="/">
