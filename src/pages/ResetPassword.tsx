@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -14,17 +14,47 @@ const ResetPassword = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [hasRecoveryToken, setHasRecoveryToken] = useState(false);
-
-  const recoveryType = useMemo(() => {
-    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-    const searchParams = new URLSearchParams(window.location.search);
-    return hashParams.get("type") || searchParams.get("type");
-  }, []);
+  const [canReset, setCanReset] = useState(false);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    setHasRecoveryToken(recoveryType === "recovery");
-  }, [recoveryType]);
+    // Listen for the PASSWORD_RECOVERY event Supabase fires when a recovery link is opened
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session)) {
+        setCanReset(true);
+        setChecking(false);
+      }
+    });
+
+    // Also handle the ?code= parameter (PKCE flow used in some recovery links)
+    const init = async () => {
+      const url = new URL(window.location.href);
+      const code = url.searchParams.get("code");
+
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) {
+          toast.error("Reset link is invalid or has expired. Request a new one.");
+          setChecking(false);
+          return;
+        }
+        setCanReset(true);
+        setChecking(false);
+        return;
+      }
+
+      // Fallback: if there's already a session (hash tokens auto-processed), allow reset
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setCanReset(true);
+      }
+      setChecking(false);
+    };
+
+    init();
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleUpdatePassword = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -73,11 +103,18 @@ const ResetPassword = () => {
             <CardDescription>Choose a new password for your Cyberyard account</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {!hasRecoveryToken && (
+            {checking && (
               <Alert>
                 <Info className="h-4 w-4" />
+                <AlertDescription>Verifying reset link...</AlertDescription>
+              </Alert>
+            )}
+
+            {!checking && !canReset && (
+              <Alert variant="destructive">
+                <Info className="h-4 w-4" />
                 <AlertDescription>
-                  Use the password reset link from your email to set a new password.
+                  This reset link is invalid or has expired. Please request a new one from the sign-in page.
                 </AlertDescription>
               </Alert>
             )}
@@ -89,7 +126,7 @@ const ResetPassword = () => {
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 required
-                disabled={!hasRecoveryToken || loading}
+                disabled={!canReset || loading}
               />
               <Input
                 type="password"
@@ -97,9 +134,9 @@ const ResetPassword = () => {
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
                 required
-                disabled={!hasRecoveryToken || loading}
+                disabled={!canReset || loading}
               />
-              <Button type="submit" className="w-full" disabled={!hasRecoveryToken || loading}>
+              <Button type="submit" className="w-full" disabled={!canReset || loading}>
                 {loading ? "Updating password..." : "Update Password"}
               </Button>
             </form>
