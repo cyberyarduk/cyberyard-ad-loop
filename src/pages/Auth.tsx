@@ -12,8 +12,10 @@ import { Info, ArrowLeft } from "lucide-react";
 const Auth = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showReset, setShowReset] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
