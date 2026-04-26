@@ -7,10 +7,63 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Sparkles, Loader2, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { VideoGenerationLoader } from "@/components/VideoGenerationLoader";
+import { cn } from "@/lib/utils";
+
+// ===== Customization options =====
+const STYLE_PRESETS = [
+  { value: "boom", label: "💥 BOOM", description: "Bold explosive impact" },
+  { value: "sparkle", label: "✨ Sparkle", description: "Elegant magical shine" },
+  { value: "stars", label: "⭐ Stars", description: "Glamorous & fabulous" },
+  { value: "minimal", label: "🎯 Minimal", description: "Clean & professional" },
+];
+
+const FONT_OPTIONS = [
+  { value: "bold-sans", label: "Bold Sans", description: "Strong, modern, attention-grabbing" },
+  { value: "elegant-serif", label: "Elegant Serif", description: "Classic, refined, premium feel" },
+  { value: "handwritten", label: "Handwritten Script", description: "Friendly, casual, personal" },
+  { value: "modern-display", label: "Modern Display", description: "Geometric, futuristic" },
+  { value: "rounded", label: "Rounded Soft", description: "Playful, approachable" },
+  { value: "condensed", label: "Condensed Block", description: "Tall, dense, impactful" },
+];
+
+const TEXT_COLOR_OPTIONS = [
+  { value: "white", label: "White", swatch: "#FFFFFF" },
+  { value: "black", label: "Black", swatch: "#000000" },
+  { value: "yellow", label: "Yellow", swatch: "#FFD60A" },
+  { value: "red", label: "Red", swatch: "#FF3B30" },
+  { value: "pink", label: "Hot Pink", swatch: "#FF2D87" },
+  { value: "blue", label: "Electric Blue", swatch: "#0A84FF" },
+  { value: "green", label: "Lime Green", swatch: "#30D158" },
+  { value: "orange", label: "Orange", swatch: "#FF9500" },
+];
+
+const OVERLAY_OPTIONS = [
+  { value: "none", label: "None", description: "Text floats directly on the image" },
+  { value: "solid-band", label: "Solid Band", description: "Colored bar behind the text" },
+  { value: "semi-dark", label: "Dark Tint", description: "Semi-transparent dark layer for readability" },
+  { value: "semi-light", label: "Light Tint", description: "Semi-transparent light layer" },
+  { value: "gradient-bottom", label: "Bottom Fade", description: "Soft gradient fading from the bottom" },
+  { value: "gradient-top", label: "Top Fade", description: "Soft gradient fading from the top" },
+];
+
+const OVERLAY_COLOR_OPTIONS = [
+  { value: "black", label: "Black", swatch: "#000000" },
+  { value: "white", label: "White", swatch: "#FFFFFF" },
+  { value: "red", label: "Red", swatch: "#FF3B30" },
+  { value: "blue", label: "Blue", swatch: "#0A84FF" },
+  { value: "yellow", label: "Yellow", swatch: "#FFD60A" },
+  { value: "pink", label: "Pink", swatch: "#FF2D87" },
+];
+
+const POSITION_OPTIONS = [
+  { value: "top", label: "Top" },
+  { value: "middle", label: "Middle" },
+  { value: "bottom", label: "Bottom" },
+];
 
 const CreateAIVideo = () => {
   const navigate = useNavigate();
@@ -26,28 +79,29 @@ const CreateAIVideo = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
 
+  // Advanced customization
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [fontFamily, setFontFamily] = useState("bold-sans");
+  const [textColor, setTextColor] = useState("white");
+  const [overlayStyle, setOverlayStyle] = useState("none");
+  const [overlayColor, setOverlayColor] = useState("black");
+  const [textPosition, setTextPosition] = useState("middle");
+  const [themePrompt, setThemePrompt] = useState("");
+
   // Fetch playlists on mount
   useEffect(() => {
     const fetchPlaylists = async () => {
       try {
-        console.log('CreateAIVideo: Starting playlist fetch...');
-        
         const { data: { user }, error: userError } = await supabase.auth.getUser();
-        
         if (userError) {
-          console.error("Auth error:", userError);
           toast.error(`Authentication failed: ${userError.message}`);
           return;
         }
-        
         if (!user) {
-          console.log('No authenticated user found');
           toast.error("Not logged in. Redirecting...");
           setTimeout(() => navigate("/auth"), 2000);
           return;
         }
-
-        console.log('User authenticated, ID:', user.id);
 
         const { data, error } = await supabase
           .from("playlists")
@@ -56,33 +110,29 @@ const CreateAIVideo = () => {
           .order("created_at", { ascending: false });
 
         if (error) {
-          console.error("Playlist fetch error:", error);
           toast.error(`Cannot load playlists: ${error.message}`);
           return;
         }
 
-        console.log('Playlists retrieved:', data?.length || 0);
-        
         if (!data || data.length === 0) {
           toast.error("No playlists exist. Go to Playlists page and create one first.");
           setPlaylists([]);
           return;
         }
-        
+
         setPlaylists(data);
-        // Honor preset from query param if it matches an existing playlist
         if (presetPlaylistId && data.some((p) => p.id === presetPlaylistId)) {
           setSelectedPlaylistIds([presetPlaylistId]);
         } else if (selectedPlaylistIds.length === 0) {
           setSelectedPlaylistIds([data[0].id]);
         }
       } catch (err) {
-        console.error("Unexpected error in fetchPlaylists:", err);
         toast.error(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`);
       }
     };
 
     fetchPlaylists();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [presetPlaylistId]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,63 +140,43 @@ const CreateAIVideo = () => {
     if (file) {
       setImageFile(file);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
+      reader.onloadend = () => setImagePreview(reader.result as string);
       reader.readAsDataURL(file);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!mainText.trim()) {
-      toast.error("Please enter main text for your video.");
-      return;
-    }
 
-    if (!imageFile) {
-      toast.error("Please upload an image for your video.");
-      return;
-    }
-
-    if (selectedPlaylistIds.length === 0) {
-      toast.error("Please select at least one playlist.");
-      return;
-    }
+    if (!mainText.trim()) return toast.error("Please enter main text for your video.");
+    if (!imageFile) return toast.error("Please upload an image for your video.");
+    if (selectedPlaylistIds.length === 0) return toast.error("Please select at least one playlist.");
+    if (themePrompt.length > 200) return toast.error("Theme prompt must be 200 characters or less.");
 
     const durationNum = parseInt(duration, 10);
     if (isNaN(durationNum) || durationNum < 0 || durationNum > 600) {
-      toast.error("Duration must be between 0 and 600 seconds.");
-      return;
+      return toast.error("Duration must be between 0 and 600 seconds.");
     }
 
     setIsGenerating(true);
 
     try {
       toast.info("Uploading image...");
-      
-      // Upload image to Supabase Storage
+
       const fileExt = imageFile.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
       const filePath = `offer-images/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('videos')
-        .upload(filePath, imageFile, {
-          cacheControl: '3600',
-          upsert: false
-        });
+        .upload(filePath, imageFile, { cacheControl: '3600', upsert: false });
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('videos')
-        .getPublicUrl(filePath);
+      const { data: { publicUrl } } = supabase.storage.from('videos').getPublicUrl(filePath);
 
       toast.info("Starting video generation. This may take 1-2 minutes...");
-      
+
       const firstPlaylistId = selectedPlaylistIds[0] || null;
       const { data, error } = await supabase.functions.invoke('generate-video', {
         body: {
@@ -156,13 +186,20 @@ const CreateAIVideo = () => {
           duration,
           style,
           playlistId: firstPlaylistId,
+          customization: {
+            fontFamily,
+            textColor,
+            overlayStyle,
+            overlayColor,
+            textPosition,
+            themePrompt: themePrompt.trim(),
+          },
         }
       });
 
       if (error) throw error;
 
       if (data?.success) {
-        // Add the new video to any additional selected playlists
         const extraPlaylistIds = selectedPlaylistIds.slice(1);
         if (extraPlaylistIds.length > 0 && data.video?.id) {
           const rows = extraPlaylistIds.map((pid) => ({
@@ -172,7 +209,6 @@ const CreateAIVideo = () => {
           }));
           const { error: insertError } = await supabase.from('playlist_videos').insert(rows);
           if (insertError) {
-            console.error('Failed to add video to extra playlists:', insertError);
             toast.error('Video created, but could not add to all selected playlists.');
           }
         }
@@ -212,6 +248,7 @@ const CreateAIVideo = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Playlists */}
               <div className="space-y-2">
                 <Label>Target Playlists</Label>
                 {playlists.length === 0 ? (
@@ -229,16 +266,11 @@ const CreateAIVideo = () => {
                             checked={checked}
                             onCheckedChange={(value) => {
                               setSelectedPlaylistIds((prev) =>
-                                value
-                                  ? [...prev, playlist.id]
-                                  : prev.filter((id) => id !== playlist.id)
+                                value ? [...prev, playlist.id] : prev.filter((id) => id !== playlist.id)
                               );
                             }}
                           />
-                          <Label
-                            htmlFor={`pl-${playlist.id}`}
-                            className="font-normal cursor-pointer"
-                          >
+                          <Label htmlFor={`pl-${playlist.id}`} className="font-normal cursor-pointer">
                             {playlist.name}
                           </Label>
                         </div>
@@ -251,6 +283,7 @@ const CreateAIVideo = () => {
                 </p>
               </div>
 
+              {/* Image */}
               <div className="space-y-2">
                 <Label htmlFor="image">Product Image</Label>
                 <Input
@@ -262,18 +295,13 @@ const CreateAIVideo = () => {
                 />
                 {imagePreview && (
                   <div className="mt-2">
-                    <img 
-                      src={imagePreview} 
-                      alt="Preview" 
-                      className="w-full max-w-xs rounded-lg border"
-                    />
+                    <img src={imagePreview} alt="Preview" className="w-full max-w-xs rounded-lg border" />
                   </div>
                 )}
-                <p className="text-sm text-muted-foreground">
-                  Upload a photo (e.g., blueberry muffins)
-                </p>
+                <p className="text-sm text-muted-foreground">Upload a photo (e.g., blueberry muffins)</p>
               </div>
 
+              {/* Main text */}
               <div className="space-y-2">
                 <Label htmlFor="mainText">Main Offer Text</Label>
                 <Input
@@ -285,6 +313,7 @@ const CreateAIVideo = () => {
                 />
               </div>
 
+              {/* Subtext */}
               <div className="space-y-2">
                 <Label htmlFor="subtext">Subtext (Optional)</Label>
                 <Textarea
@@ -295,6 +324,7 @@ const CreateAIVideo = () => {
                 />
               </div>
 
+              {/* Duration + Style preset */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="duration">Select your duration</Label>
@@ -311,26 +341,161 @@ const CreateAIVideo = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="style">Video Style</Label>
+                  <Label htmlFor="style">Style Preset</Label>
                   <select
                     id="style"
                     value={style}
                     onChange={(e) => setStyle(e.target.value)}
                     className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                   >
-                    <option value="boom">💥 BOOM - Bold Explosion</option>
-                    <option value="sparkle">✨ Sparkle - Elegant Shine</option>
-                    <option value="stars">⭐ Stars - Magical</option>
-                    <option value="minimal">🎯 Minimal - Clean</option>
+                    {STYLE_PRESETS.map((p) => (
+                      <option key={p.value} value={p.value}>{p.label} — {p.description}</option>
+                    ))}
                   </select>
                 </div>
               </div>
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isGenerating}
-              >
+              {/* Theme prompt */}
+              <div className="space-y-2">
+                <Label htmlFor="themePrompt">
+                  Theme / Vibe (Optional)
+                  <span className="text-xs text-muted-foreground font-normal ml-2">
+                    {themePrompt.length}/200
+                  </span>
+                </Label>
+                <Textarea
+                  id="themePrompt"
+                  placeholder="e.g. stars, boom, exciting, summer vibes, retro 80s, fresh & bright..."
+                  value={themePrompt}
+                  onChange={(e) => setThemePrompt(e.target.value.slice(0, 200))}
+                  maxLength={200}
+                  rows={2}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Add a few words to influence the mood. Up to 200 characters.
+                </p>
+              </div>
+
+              {/* Advanced toggle */}
+              <div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAdvanced((s) => !s)}
+                  className="w-full"
+                >
+                  <Settings2 className="mr-2 h-4 w-4" />
+                  {showAdvanced ? "Hide advanced options" : "Show advanced options"}
+                </Button>
+              </div>
+
+              {/* Advanced section */}
+              {showAdvanced && (
+                <div className="space-y-6 rounded-md border p-4 bg-muted/30">
+                  {/* Font */}
+                  <div className="space-y-2">
+                    <Label htmlFor="fontFamily">Font Family</Label>
+                    <select
+                      id="fontFamily"
+                      value={fontFamily}
+                      onChange={(e) => setFontFamily(e.target.value)}
+                      className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    >
+                      {FONT_OPTIONS.map((f) => (
+                        <option key={f.value} value={f.value}>{f.label} — {f.description}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Text color */}
+                  <div className="space-y-2">
+                    <Label>Text Color</Label>
+                    <div className="grid grid-cols-4 gap-2">
+                      {TEXT_COLOR_OPTIONS.map((c) => (
+                        <button
+                          key={c.value}
+                          type="button"
+                          onClick={() => setTextColor(c.value)}
+                          className={cn(
+                            "flex flex-col items-center gap-1 rounded-md border p-2 text-xs transition-colors",
+                            textColor === c.value ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/50"
+                          )}
+                        >
+                          <span
+                            className="h-6 w-6 rounded-full border border-border"
+                            style={{ backgroundColor: c.swatch }}
+                          />
+                          <span>{c.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Text position */}
+                  <div className="space-y-2">
+                    <Label>Text Position</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {POSITION_OPTIONS.map((p) => (
+                        <button
+                          key={p.value}
+                          type="button"
+                          onClick={() => setTextPosition(p.value)}
+                          className={cn(
+                            "rounded-md border p-2 text-sm transition-colors",
+                            textPosition === p.value ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
+                          )}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Overlay style */}
+                  <div className="space-y-2">
+                    <Label htmlFor="overlayStyle">Text Background / Overlay</Label>
+                    <select
+                      id="overlayStyle"
+                      value={overlayStyle}
+                      onChange={(e) => setOverlayStyle(e.target.value)}
+                      className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    >
+                      {OVERLAY_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>{o.label} — {o.description}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Overlay color (only when relevant) */}
+                  {overlayStyle !== "none" && (
+                    <div className="space-y-2">
+                      <Label>Overlay Color</Label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {OVERLAY_COLOR_OPTIONS.map((c) => (
+                          <button
+                            key={c.value}
+                            type="button"
+                            onClick={() => setOverlayColor(c.value)}
+                            className={cn(
+                              "flex items-center gap-2 rounded-md border p-2 text-xs transition-colors",
+                              overlayColor === c.value ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/50"
+                            )}
+                          >
+                            <span
+                              className="h-5 w-5 rounded-full border border-border"
+                              style={{ backgroundColor: c.swatch }}
+                            />
+                            <span>{c.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <Button type="submit" className="w-full" disabled={isGenerating}>
                 {isGenerating ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

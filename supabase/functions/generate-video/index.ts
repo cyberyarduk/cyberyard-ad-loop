@@ -13,8 +13,55 @@ serve(async (req) => {
   }
 
   try {
-    const { imageUrl, imageData, mainText, subtext, duration, style = 'boom', playlistId, deviceToken } = await req.json();
-    console.log('Generating video with params:', { hasImageUrl: !!imageUrl, hasImageData: !!imageData, mainText, subtext, duration, style, playlistId, deviceToken: !!deviceToken });
+    const { imageUrl, imageData, mainText, subtext, duration, style = 'boom', playlistId, deviceToken, customization } = await req.json();
+    console.log('Generating video with params:', { hasImageUrl: !!imageUrl, hasImageData: !!imageData, mainText, subtext, duration, style, playlistId, deviceToken: !!deviceToken, customization });
+
+    // ===== Build customization prompt fragment =====
+    const fontDescriptions: Record<string, string> = {
+      'bold-sans': 'a bold, heavy sans-serif font (like Impact or Bebas Neue)',
+      'elegant-serif': 'an elegant serif font (like Playfair Display or Didot)',
+      'handwritten': 'a handwritten brush-script font with personality',
+      'modern-display': 'a modern geometric display font (like Futura or Eurostile)',
+      'rounded': 'a rounded, soft, friendly font (like Quicksand or Nunito)',
+      'condensed': 'a tall condensed block font for maximum impact',
+    };
+    const colorDescriptions: Record<string, string> = {
+      white: 'pure white',
+      black: 'deep black',
+      yellow: 'vibrant yellow',
+      red: 'bold red',
+      pink: 'hot pink',
+      blue: 'electric blue',
+      green: 'lime green',
+      orange: 'bright orange',
+    };
+    const overlayDescriptions: Record<string, string> = {
+      'none': 'no background behind the text — let it sit directly on the image',
+      'solid-band': 'a solid colored horizontal band/box behind the text',
+      'semi-dark': 'a semi-transparent dark tinted layer behind the text for readability',
+      'semi-light': 'a semi-transparent light tinted layer behind the text for readability',
+      'gradient-bottom': 'a soft gradient that fades from the bottom of the image to make the text pop',
+      'gradient-top': 'a soft gradient that fades from the top of the image to make the text pop',
+    };
+    const positionDescriptions: Record<string, string> = {
+      top: 'at the TOP of the composition',
+      middle: 'in the CENTER of the composition',
+      bottom: 'at the BOTTOM of the composition',
+    };
+
+    const c = customization || {};
+    const fontDesc = fontDescriptions[c.fontFamily] || fontDescriptions['bold-sans'];
+    const textColorDesc = colorDescriptions[c.textColor] || 'pure white';
+    const positionDesc = positionDescriptions[c.textPosition] || positionDescriptions.middle;
+    const overlayDesc = overlayDescriptions[c.overlayStyle] || overlayDescriptions.none;
+    const overlayColorDesc = c.overlayStyle && c.overlayStyle !== 'none'
+      ? `Use ${colorDescriptions[c.overlayColor] || 'black'} for the overlay/background color. `
+      : '';
+    const themeDesc = c.themePrompt && c.themePrompt.trim().length > 0
+      ? `Additional vibe/theme to incorporate: "${String(c.themePrompt).slice(0, 200)}". `
+      : '';
+
+    const customizationFragment = ` Render the headline text in ${fontDesc}, colored ${textColorDesc}, positioned ${positionDesc}. ${overlayDesc ? `Use ${overlayDesc}. ` : ''}${overlayColorDesc}${themeDesc}`;
 
     const SHOTSTACK_API_KEY = Deno.env.get('SHOTSTACK_API_KEY');
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -89,8 +136,8 @@ serve(async (req) => {
       minimal: `Take this product image and transform it into a clean promotional poster in 1920x1080 landscape format. Add modern text "${mainText}" in bold sans-serif font with simple, professional styling. Keep it minimal but impactful.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`
     };
 
-    const textPrompt = stylePrompts[style] || stylePrompts.boom;
-    const landscapePrompt = landscapeStylePrompts[style] || landscapeStylePrompts.boom;
+    const textPrompt = (stylePrompts[style] || stylePrompts.boom) + customizationFragment;
+    const landscapePrompt = (landscapeStylePrompts[style] || landscapeStylePrompts.boom) + customizationFragment;
     
     // Generate both portrait and landscape images in parallel
     console.log('Generating portrait and landscape promotional images with AI...');
