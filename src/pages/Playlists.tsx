@@ -57,6 +57,8 @@ const Playlists = () => {
   const [previewVideo, setPreviewVideo] = useState<any | null>(null);
   const [durationEdit, setDurationEdit] = useState<{ id: string; value: string } | null>(null);
   const [savingDuration, setSavingDuration] = useState(false);
+  const [renameTarget, setRenameTarget] = useState<{ id: string; name: string } | null>(null);
+  const [savingRename, setSavingRename] = useState(false);
 
   useEffect(() => {
     checkAuth();
