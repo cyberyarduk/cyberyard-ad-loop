@@ -1,17 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Video, Monitor, List } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { PlaylistSelectorDialog } from "@/components/PlaylistSelectorDialog";
 import { CurrentlyPlayingPreview } from "@/components/CurrentlyPlayingPreview";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
-  const [playlistDialogOpen, setPlaylistDialogOpen] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
