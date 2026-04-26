@@ -15,7 +15,7 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Video, Trash2, Sparkles, Download, RefreshCw, Clock, Play } from "lucide-react";
+import { Plus, Video, Trash2, Sparkles, RefreshCw, Clock, Play } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
@@ -379,11 +379,6 @@ const Videos = () => {
                           <RefreshCw className={`h-4 w-4 ${regenerating === video.id ? 'animate-spin' : ''}`} />
                         </Button>
                       )}
-                      <Button variant="ghost" size="sm" asChild title="Download">
-                        <a href={video.video_url} download={`${video.title}.mp4`}>
-                          <Download className="h-4 w-4" />
-                        </a>
-                      </Button>
                     </div>
                     <Button
                       variant="ghost"
