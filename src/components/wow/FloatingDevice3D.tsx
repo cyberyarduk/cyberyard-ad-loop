@@ -14,7 +14,7 @@ const Device = () => {
     if (screen.current) {
       const t = clock.getElapsedTime();
       // gentle hue pulse on the glowing face
-      const mat = screen.current.material as { emissiveIntensity: number };
+      const mat = screen.current.material as unknown as { emissiveIntensity: number };
       mat.emissiveIntensity = 1.4 + Math.sin(t * 1.3) * 0.5;
     }
   });
