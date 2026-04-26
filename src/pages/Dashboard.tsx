@@ -43,7 +43,7 @@ const Dashboard = () => {
       icon: Video,
       title: "Create your video",
       description: "Generate a new AI-powered offer video",
-      onClick: () => setPlaylistDialogOpen(true),
+      to: "/videos/create-ai",
     },
     {
       icon: Monitor,
