@@ -143,20 +143,35 @@ const CreateAIVideo = () => {
 
       toast.info("Starting video generation. This may take 1-2 minutes...");
       
-      const { data, error} = await supabase.functions.invoke('generate-video', {
+      const firstPlaylistId = selectedPlaylistIds[0] || null;
+      const { data, error } = await supabase.functions.invoke('generate-video', {
         body: {
           imageUrl: publicUrl,
           mainText,
           subtext,
           duration,
           style,
-          playlistId: playlistId || null
+          playlistId: firstPlaylistId,
         }
       });
 
       if (error) throw error;
 
       if (data?.success) {
+        // Add the new video to any additional selected playlists
+        const extraPlaylistIds = selectedPlaylistIds.slice(1);
+        if (extraPlaylistIds.length > 0 && data.video?.id) {
+          const rows = extraPlaylistIds.map((pid) => ({
+            playlist_id: pid,
+            video_id: data.video.id,
+            order_index: 0,
+          }));
+          const { error: insertError } = await supabase.from('playlist_videos').insert(rows);
+          if (insertError) {
+            console.error('Failed to add video to extra playlists:', insertError);
+            toast.error('Video created, but could not add to all selected playlists.');
+          }
+        }
         toast.success("Video generated successfully!");
         navigate("/videos");
       } else {
