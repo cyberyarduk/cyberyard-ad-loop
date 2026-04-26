@@ -97,14 +97,7 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/venues"
-              element={
-                <ProtectedRoute>
-                  <Venues />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/venues" element={<Navigate to="/dashboard" replace />} />
             <Route
               path="/devices"
               element={
