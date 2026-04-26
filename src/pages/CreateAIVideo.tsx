@@ -301,14 +301,6 @@ const CreateAIVideo = () => {
                 <Label htmlFor="music">Background Music</Label>
               </div>
 
-              <div className="bg-muted p-4 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  <strong>Note:</strong> This feature uses Shotstack AI to generate real videos.
-                  The generated video will be in 9:16 portrait format, perfect for
-                  vertical displays. Generation typically takes 1-2 minutes.
-                </p>
-              </div>
-
               <Button type="submit" className="w-full" disabled={isGenerating}>
                 {isGenerating ? (
                   <>
