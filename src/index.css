@@ -1,48 +1,51 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,800;9..144,900&family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Cyberyard "Wow" design system. All colors MUST be HSL. */
+/* Cyberyard editorial design system. All colors MUST be HSL. */
 
 @layer base {
   :root {
-    /* Light theme (kept for dashboard / auth) */
-    --background: 0 0% 100%;
-    --foreground: 0 0% 10%;
+    /* Light editorial palette */
+    --background: 40 30% 97%;     /* warm off-white / paper */
+    --foreground: 0 0% 8%;         /* near-black ink */
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 10%;
+    --card-foreground: 0 0% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10%;
+    --popover-foreground: 0 0% 8%;
 
-    --primary: 45 98% 52%;
-    --primary-foreground: 0 0% 10%;
+    --primary: 45 98% 52%;          /* Cyberyard yellow */
+    --primary-foreground: 0 0% 8%;
 
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 10%;
+    --secondary: 40 20% 92%;
+    --secondary-foreground: 0 0% 8%;
 
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
+    --muted: 40 20% 92%;
+    --muted-foreground: 0 0% 38%;
 
-    --accent: 45 98% 52%;
-    --accent-foreground: 0 0% 10%;
+    --accent: 12 90% 56%;            /* editorial vermilion accent */
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 45 98% 52%;
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 0 0% 8%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
-    /* Brand accents */
+    /* Editorial accent palette */
+    --ink: 0 0% 8%;                  /* Pentagram black */
+    --paper: 40 30% 97%;             /* warm paper */
     --yellow-bright: 45 98% 52%;
-    --yellow-dark: 38 92% 50%;
-    --purple-electric: 262 83% 62%;
-    --pink-hot: 328 86% 60%;
-    --cyan-glow: 188 94% 55%;
+    --vermilion: 12 90% 56%;         /* editorial red-orange */
+    --cobalt: 222 80% 48%;           /* deep blue block */
+    --sage: 142 28% 56%;             /* muted green block */
 
     /* Sidebar */
     --sidebar-background: 0 0% 98%;
@@ -55,25 +58,11 @@
     --sidebar-ring: 45 98% 52%;
   }
 
-  /* "Wow" dark surface used by the marketing homepage */
-  .wow {
-    --background: 240 30% 4%;
+  .dark {
+    --background: 0 0% 10%;
     --foreground: 0 0% 98%;
-    --card: 240 25% 8%;
+    --card: 0 0% 12%;
     --card-foreground: 0 0% 98%;
-    --popover: 240 25% 8%;
-    --popover-foreground: 0 0% 98%;
-    --muted: 240 20% 12%;
-    --muted-foreground: 240 10% 70%;
-    --border: 240 20% 18%;
-    --input: 240 20% 18%;
-    --primary: 45 98% 56%;
-    --primary-foreground: 240 30% 6%;
-    --secondary: 240 20% 12%;
-    --secondary-foreground: 0 0% 98%;
-    --accent: 262 83% 62%;
-    --accent-foreground: 0 0% 98%;
-    --ring: 262 83% 62%;
   }
 }
 
@@ -88,133 +77,102 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-feature-settings: 'ss01', 'cv11';
   }
 }
 
 @layer utilities {
-  /* Gradient text */
-  .text-gradient-wow {
-    @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(
-      120deg,
-      hsl(var(--yellow-bright)) 0%,
-      hsl(var(--pink-hot)) 50%,
-      hsl(var(--purple-electric)) 100%
-    );
+  /* Editorial typography */
+  .font-display {
+    font-family: 'Fraunces', 'Times New Roman', Georgia, serif;
+    font-optical-sizing: auto;
+    letter-spacing: -0.025em;
+  }
+  .font-display-tight {
+    font-family: 'Fraunces', 'Times New Roman', Georgia, serif;
+    letter-spacing: -0.04em;
+    line-height: 0.92;
+  }
+  .font-mono-tight {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: -0.02em;
   }
 
-  .text-gradient-cool {
-    @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(
-      120deg,
-      hsl(var(--cyan-glow)) 0%,
-      hsl(var(--purple-electric)) 100%
-    );
-  }
+  /* Editorial color blocks */
+  .bg-ink     { background-color: hsl(var(--ink)); }
+  .bg-paper   { background-color: hsl(var(--paper)); }
+  .bg-yellow-block    { background-color: hsl(var(--yellow-bright)); }
+  .bg-vermilion-block { background-color: hsl(var(--vermilion)); }
+  .bg-cobalt-block    { background-color: hsl(var(--cobalt)); }
+  .bg-sage-block      { background-color: hsl(var(--sage)); }
+  .text-ink           { color: hsl(var(--ink)); }
+  .text-vermilion     { color: hsl(var(--vermilion)); }
+  .text-cobalt        { color: hsl(var(--cobalt)); }
 
-  /* Gradient surfaces */
-  .bg-gradient-wow {
-    background-image: linear-gradient(
-      135deg,
-      hsl(var(--yellow-bright)) 0%,
-      hsl(var(--pink-hot)) 55%,
-      hsl(var(--purple-electric)) 100%
-    );
-  }
+  /* Editorial rule lines */
+  .rule-thick { border-top: 2px solid hsl(var(--ink)); }
+  .rule-hair  { border-top: 1px solid hsl(var(--ink) / 0.15); }
 
-  .bg-gradient-cool {
-    background-image: linear-gradient(
-      135deg,
-      hsl(var(--purple-electric)),
-      hsl(var(--cyan-glow))
-    );
+  /* Story underline link */
+  .story-link {
+    @apply relative inline-block;
   }
-
-  /* Glass card */
-  .glass {
-    background-color: hsl(var(--card) / 0.5);
-    backdrop-filter: blur(20px) saturate(160%);
-    -webkit-backdrop-filter: blur(20px) saturate(160%);
-    border: 1px solid hsl(0 0% 100% / 0.08);
-  }
-
-  .glass-strong {
-    background-color: hsl(var(--card) / 0.7);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid hsl(0 0% 100% / 0.1);
-  }
-
-  /* Glows */
-  .glow-yellow {
-    box-shadow:
-      0 0 24px hsl(var(--yellow-bright) / 0.45),
-      0 0 60px hsl(var(--yellow-bright) / 0.25);
-  }
-  .glow-purple {
-    box-shadow:
-      0 0 24px hsl(var(--purple-electric) / 0.45),
-      0 0 60px hsl(var(--purple-electric) / 0.25);
-  }
-  .glow-pink {
-    box-shadow:
-      0 0 24px hsl(var(--pink-hot) / 0.45),
-      0 0 60px hsl(var(--pink-hot) / 0.25);
-  }
-
-  /* Animated mesh blob */
-  .mesh-blob {
-    filter: blur(80px);
-    opacity: 0.55;
-    will-change: transform;
-  }
-
-  /* Subtle grid background */
-  .bg-grid {
-    background-image:
-      linear-gradient(hsl(0 0% 100% / 0.04) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(0 0% 100% / 0.04) 1px, transparent 1px);
-    background-size: 48px 48px;
-  }
-
-  /* Dot grid */
-  .bg-dots {
-    background-image: radial-gradient(
-      hsl(0 0% 100% / 0.08) 1px,
-      transparent 1px
-    );
-    background-size: 22px 22px;
-  }
-
-  /* Hover lift */
-  .hover-lift {
-    transition:
-      transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
-      box-shadow 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
-      border-color 0.35s ease;
-  }
-  .hover-lift:hover {
-    transform: translateY(-6px);
-  }
-
-  /* Animated gradient border */
-  .border-gradient-wow {
-    position: relative;
-    background-clip: padding-box;
-    border: 1px solid transparent;
-  }
-  .border-gradient-wow::before {
+  .story-link::after {
     content: "";
     position: absolute;
-    inset: 0;
-    z-index: -1;
-    margin: -1px;
-    border-radius: inherit;
-    background: linear-gradient(
-      135deg,
-      hsl(var(--yellow-bright)),
-      hsl(var(--pink-hot)),
-      hsl(var(--purple-electric))
-    );
+    left: 0;
+    bottom: -2px;
+    height: 2px;
+    width: 100%;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.4s cubic-bezier(0.7, 0, 0.2, 1);
   }
+  .story-link:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  /* Marquee */
+  .animate-marquee-slow {
+    animation: marquee-slow 50s linear infinite;
+  }
+
+  /* Hover ink-fill for cards */
+  .ink-hover {
+    transition: background-color 0.5s cubic-bezier(0.7, 0, 0.2, 1),
+                color 0.5s cubic-bezier(0.7, 0, 0.2, 1);
+  }
+  .ink-hover:hover {
+    background-color: hsl(var(--ink));
+    color: hsl(var(--paper));
+  }
+  .ink-hover:hover .ink-hover-muted {
+    color: hsl(var(--paper) / 0.7);
+  }
+
+  /* Reveal animations */
+  .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition:
+      opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1),
+      transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Big number ticker */
+  .stat-number {
+    font-feature-settings: 'tnum', 'lnum';
+  }
+}
+
+@keyframes marquee-slow {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
