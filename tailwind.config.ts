@@ -9,13 +9,12 @@ export default {
       center: true,
       padding: "1.5rem",
       screens: {
-        "2xl": "1440px",
+        "2xl": "1400px",
       },
     },
     extend: {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Fraunces', 'Times New Roman', 'Georgia', 'serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -61,21 +60,31 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        ink: "hsl(var(--ink))",
-        paper: "hsl(var(--paper))",
-        vermilion: "hsl(var(--vermilion))",
-        cobalt: "hsl(var(--cobalt))",
-        sage: "hsl(var(--sage))",
         yellow: {
           bright: "hsl(var(--yellow-bright))",
+          soft: "hsl(var(--yellow-soft))",
+        },
+        peach: {
+          DEFAULT: "hsl(var(--peach))",
+          deep: "hsl(var(--peach-deep))",
+        },
+        lavender: {
+          DEFAULT: "hsl(var(--lavender))",
+          deep: "hsl(var(--lavender-deep))",
+        },
+        mint: {
+          DEFAULT: "hsl(var(--mint))",
+          deep: "hsl(var(--mint-deep))",
+        },
+        sky: {
+          DEFAULT: "hsl(var(--sky))",
+          deep: "hsl(var(--sky-deep))",
         },
       },
       fontSize: {
-        // Editorial display scale
-        'display-sm': ['clamp(2.5rem, 6vw, 4rem)', { lineHeight: '0.95', letterSpacing: '-0.03em' }],
-        'display-md': ['clamp(3.5rem, 9vw, 6.5rem)', { lineHeight: '0.92', letterSpacing: '-0.035em' }],
-        'display-lg': ['clamp(4.5rem, 13vw, 10rem)', { lineHeight: '0.88', letterSpacing: '-0.045em' }],
-        'display-xl': ['clamp(6rem, 18vw, 14rem)', { lineHeight: '0.85', letterSpacing: '-0.05em' }],
+        'display-sm': ['clamp(2rem, 4.5vw, 3.25rem)', { lineHeight: '1.05', letterSpacing: '-0.025em' }],
+        'display-md': ['clamp(2.75rem, 6vw, 4.5rem)', { lineHeight: '1.02', letterSpacing: '-0.03em' }],
+        'display-lg': ['clamp(3.5rem, 8vw, 6rem)', { lineHeight: '0.98', letterSpacing: '-0.035em' }],
       },
       borderRadius: {
         lg: "var(--radius)",

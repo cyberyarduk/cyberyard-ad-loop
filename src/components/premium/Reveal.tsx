@@ -6,10 +6,6 @@ interface RevealProps {
   delay?: number;
 }
 
-/**
- * Lightweight scroll-triggered fade/slide using IntersectionObserver.
- * Editorial style — slow, confident, no bouncy easing.
- */
 const Reveal = ({ children, className = "", delay = 0 }: RevealProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -24,7 +20,7 @@ const Reveal = ({ children, className = "", delay = 0 }: RevealProps) => {
           obs.disconnect();
         }
       },
-      { threshold: 0.12, rootMargin: "0px 0px -80px 0px" }
+      { threshold: 0.12, rootMargin: "0px 0px -60px 0px" }
     );
     obs.observe(node);
     return () => obs.disconnect();
