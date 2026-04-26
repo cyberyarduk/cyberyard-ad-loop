@@ -329,19 +329,17 @@ const CreateAIVideo = () => {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isGenerating || creditsLoading || !hasEnough(VIDEO_GENERATION_COST)}
+                disabled={isGenerating}
               >
                 {isGenerating ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Generating Video...
                   </>
-                ) : !hasEnough(VIDEO_GENERATION_COST) ? (
-                  <>Not enough credits</>
                 ) : (
                   <>
                     <Sparkles className="mr-2 h-4 w-4" />
-                    Generate Video ({VIDEO_GENERATION_COST} credits)
+                    Generate Video
                   </>
                 )}
               </Button>
