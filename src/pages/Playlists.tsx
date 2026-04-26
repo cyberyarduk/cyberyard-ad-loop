@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, List, Edit, Trash2, ArrowUp, ArrowDown, Send, Upload, ChevronDown } from "lucide-react";
+import { Plus, List, Edit, Trash2, ArrowUp, ArrowDown, Send, Upload, ChevronDown, Clock, Play } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -54,6 +54,9 @@ const Playlists = () => {
   const [uploadingToPlaylist, setUploadingToPlaylist] = useState(false);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoTitle, setVideoTitle] = useState("");
+  const [previewVideo, setPreviewVideo] = useState<any | null>(null);
+  const [durationEdit, setDurationEdit] = useState<{ id: string; value: string } | null>(null);
+  const [savingDuration, setSavingDuration] = useState(false);
 
   useEffect(() => {
     checkAuth();
