@@ -110,6 +110,17 @@ const CreateAIVideo = () => {
       return;
     }
 
+    if (selectedPlaylistIds.length === 0) {
+      toast.error("Please select at least one playlist.");
+      return;
+    }
+
+    const durationNum = parseInt(duration, 10);
+    if (isNaN(durationNum) || durationNum < 0 || durationNum > 600) {
+      toast.error("Duration must be between 0 and 600 seconds.");
+      return;
+    }
+
     setIsGenerating(true);
 
     try {
