@@ -94,7 +94,8 @@ const Playlists = () => {
             videos (
               id,
               title,
-              video_url
+              video_url,
+              display_duration
             )
           `)
           .eq("playlist_id", playlist.id)
