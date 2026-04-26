@@ -11,6 +11,8 @@ import { Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { VideoGenerationLoader } from "@/components/VideoGenerationLoader";
+import { CreditsBalanceCard } from "@/components/CreditsBalanceCard";
+import { useCredits, VIDEO_GENERATION_COST } from "@/hooks/useCredits";
 
 const CreateAIVideo = () => {
   const navigate = useNavigate();
