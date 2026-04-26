@@ -136,6 +136,7 @@ serve(async (req) => {
           title,
           video_url,
           video_url_landscape,
+          display_duration,
           company_id
         )
       `)
@@ -161,6 +162,7 @@ serve(async (req) => {
           id: pv.videos.id,
           title: pv.videos.title,
           video_url: videoUrl,
+          display_duration: pv.videos.display_duration ?? null,
           order_index: pv.order_index
         };
       });
