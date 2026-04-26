@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, List, Edit, Trash2, ArrowUp, ArrowDown, Send, Upload, ChevronDown } from "lucide-react";
+import { Plus, List, Edit, Trash2, ArrowUp, ArrowDown, Send, Upload, ChevronDown, Clock, Play } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -54,6 +54,9 @@ const Playlists = () => {
   const [uploadingToPlaylist, setUploadingToPlaylist] = useState(false);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoTitle, setVideoTitle] = useState("");
+  const [previewVideo, setPreviewVideo] = useState<any | null>(null);
+  const [durationEdit, setDurationEdit] = useState<{ id: string; value: string } | null>(null);
+  const [savingDuration, setSavingDuration] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -94,7 +97,8 @@ const Playlists = () => {
             videos (
               id,
               title,
-              video_url
+              video_url,
+              display_duration
             )
           `)
           .eq("playlist_id", playlist.id)
@@ -417,6 +421,32 @@ const Playlists = () => {
     fetchPlaylists();
   };
 
+  const saveDuration = async () => {
+    if (!durationEdit) return;
+    setSavingDuration(true);
+    try {
+      const trimmed = durationEdit.value.trim();
+      const parsed = trimmed === "" ? null : Math.max(1, Math.min(600, parseInt(trimmed, 10)));
+      if (trimmed !== "" && (parsed === null || isNaN(parsed))) {
+        toast.error("Enter a number between 1 and 600 seconds");
+        return;
+      }
+      const { error } = await supabase
+        .from("videos")
+        .update({ display_duration: parsed })
+        .eq("id", durationEdit.id);
+      if (error) throw error;
+      toast.success(parsed ? `Duration set to ${parsed}s` : "Using default duration");
+      setDurationEdit(null);
+      fetchPlaylists();
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e.message || "Failed to save duration");
+    } finally {
+      setSavingDuration(false);
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -536,7 +566,9 @@ const Playlists = () => {
                       <TableHeader>
                         <TableRow>
                           <TableHead className="w-12">#</TableHead>
+                          <TableHead className="w-20">Preview</TableHead>
                           <TableHead>Video</TableHead>
+                          <TableHead>Duration</TableHead>
                           <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -544,8 +576,37 @@ const Playlists = () => {
                         {playlist.videos.map((video: any, index: number) => (
                           <TableRow key={video.id}>
                             <TableCell>{index + 1}</TableCell>
+                            <TableCell>
+                              <button
+                                type="button"
+                                onClick={() => setPreviewVideo(video)}
+                                className="block w-12 h-16 bg-muted rounded overflow-hidden relative group"
+                                aria-label={`Preview ${video.title}`}
+                              >
+                                <video
+                                  src={video.video_url}
+                                  muted
+                                  playsInline
+                                  preload="metadata"
+                                  className="w-full h-full object-cover"
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center bg-background/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Play className="h-4 w-4 text-foreground" />
+                                </div>
+                              </button>
+                            </TableCell>
                             <TableCell className="font-medium">
                               {video.title}
+                            </TableCell>
+                            <TableCell>
+                              <button
+                                type="button"
+                                onClick={() => setDurationEdit({ id: video.id, value: video.display_duration?.toString() ?? "" })}
+                                className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-md border border-border hover:bg-accent transition-colors"
+                              >
+                                <Clock className="h-3 w-3" />
+                                {video.display_duration ? `${video.display_duration}s` : "Auto"}
+                              </button>
                             </TableCell>
                             <TableCell className="text-right space-x-2">
                               <Button 
@@ -709,6 +770,64 @@ const Playlists = () => {
                   </button>
                 ))
               )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Video Preview Dialog */}
+        <Dialog open={!!previewVideo} onOpenChange={(o) => !o && setPreviewVideo(null)}>
+          <DialogContent className="max-w-md p-0 overflow-hidden bg-background">
+            <DialogHeader className="px-6 pt-6">
+              <DialogTitle className="truncate">{previewVideo?.title}</DialogTitle>
+            </DialogHeader>
+            {previewVideo && (
+              <div className="aspect-[9/16] bg-muted">
+                <video
+                  src={previewVideo.video_url}
+                  controls
+                  autoPlay
+                  loop
+                  playsInline
+                  className="w-full h-full object-contain bg-background"
+                />
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Duration Edit Dialog */}
+        <Dialog open={!!durationEdit} onOpenChange={(o) => !o && setDurationEdit(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Set display duration</DialogTitle>
+              <DialogDescription>
+                Override how long this video stays on screen during playback.
+                Useful for menus or static images. Leave blank to use the
+                video's own length.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2 py-2">
+              <Label htmlFor="pl-duration">Seconds</Label>
+              <Input
+                id="pl-duration"
+                type="number"
+                min={1}
+                max={600}
+                placeholder="e.g. 30"
+                value={durationEdit?.value ?? ""}
+                onChange={(e) =>
+                  setDurationEdit((prev) => (prev ? { ...prev, value: e.target.value } : prev))
+                }
+              />
+              <p className="text-xs text-muted-foreground">Between 1 and 600 seconds.</p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setDurationEdit(null)} disabled={savingDuration}>
+                Cancel
+              </Button>
+              <Button onClick={saveDuration} disabled={savingDuration}>
+                {savingDuration ? "Saving…" : "Save"}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>

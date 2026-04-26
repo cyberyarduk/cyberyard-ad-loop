@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -12,16 +13,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Plus, Video, Edit, Trash2, Sparkles, Download, RefreshCw } from "lucide-react";
+import { Plus, Video, Trash2, Sparkles, Download, RefreshCw, Clock, Play } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
@@ -33,6 +27,9 @@ const Videos = () => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [regenerating, setRegenerating] = useState<string | null>(null);
+  const [previewVideo, setPreviewVideo] = useState<any | null>(null);
+  const [durationEdit, setDurationEdit] = useState<{ id: string; value: string } | null>(null);
+  const [savingDuration, setSavingDuration] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(true);
@@ -192,6 +189,32 @@ const Videos = () => {
     }
   };
 
+  const saveDuration = async () => {
+    if (!durationEdit) return;
+    setSavingDuration(true);
+    try {
+      const trimmed = durationEdit.value.trim();
+      const parsed = trimmed === "" ? null : Math.max(1, Math.min(600, parseInt(trimmed, 10)));
+      if (trimmed !== "" && (parsed === null || isNaN(parsed))) {
+        toast.error("Enter a number between 1 and 600 seconds");
+        return;
+      }
+      const { error } = await supabase
+        .from("videos")
+        .update({ display_duration: parsed })
+        .eq("id", durationEdit.id);
+      if (error) throw error;
+      toast.success(parsed ? `Duration set to ${parsed}s` : "Using default duration");
+      setDurationEdit(null);
+      fetchVideos();
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e.message || "Failed to save duration");
+    } finally {
+      setSavingDuration(false);
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -286,132 +309,154 @@ const Videos = () => {
             </p>
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {videos.map((video) => (
-                <TableRow key={video.id}>
-                  <TableCell className="font-medium">{video.title}</TableCell>
-                  <TableCell>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {videos.map((video) => (
+              <Card key={video.id} className="overflow-hidden border border-border shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => setPreviewVideo(video)}
+                  className="block w-full aspect-[9/16] bg-muted relative group"
+                  aria-label={`Preview ${video.title}`}
+                >
+                  <video
+                    src={video.video_url}
+                    muted
+                    loop
+                    playsInline
+                    preload="metadata"
+                    className="w-full h-full object-cover"
+                    onMouseEnter={(e) => (e.currentTarget as HTMLVideoElement).play().catch(() => {})}
+                    onMouseLeave={(e) => {
+                      const v = e.currentTarget as HTMLVideoElement;
+                      v.pause();
+                      v.currentTime = 0;
+                    }}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/30 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Play className="h-10 w-10 text-foreground" />
+                  </div>
+                </button>
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h3 className="font-semibold truncate">{video.title}</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(video.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
                     {video.source === 'ai_generated' ? (
-                      <Badge variant="secondary">
+                      <Badge variant="secondary" className="shrink-0">
                         <Sparkles className="h-3 w-3 mr-1" />
-                        AI Generated
+                        AI
                       </Badge>
                     ) : (
-                      <Badge variant="outline">
-                        Manual Upload
-                      </Badge>
+                      <Badge variant="outline" className="shrink-0">Upload</Badge>
                     )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge className="bg-green-500">Active</Badge>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(video.created_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell className="text-right space-x-2">
-                    {video.source === 'ai_generated' && video.ai_prompt && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleRegenerate(video)}
-                        disabled={regenerating === video.id}
-                        title="Regenerate video"
-                      >
-                        <RefreshCw className={`h-4 w-4 ${regenerating === video.id ? 'animate-spin' : ''}`} />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setDurationEdit({ id: video.id, value: video.display_duration?.toString() ?? "" })}
+                    className="w-full flex items-center gap-2 text-xs text-muted-foreground border border-border rounded-md px-3 py-2 hover:bg-accent hover:text-foreground transition-colors"
+                  >
+                    <Clock className="h-3.5 w-3.5" />
+                    <span className="flex-1 text-left">
+                      {video.display_duration ? `Plays for ${video.display_duration}s` : "Use video length"}
+                    </span>
+                    <span className="text-primary font-medium">Edit</span>
+                  </button>
+
+                  <div className="flex items-center justify-between pt-1 border-t border-border">
+                    <div className="flex gap-1">
+                      {video.source === 'ai_generated' && video.ai_prompt && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRegenerate(video)}
+                          disabled={regenerating === video.id}
+                          title="Regenerate"
+                        >
+                          <RefreshCw className={`h-4 w-4 ${regenerating === video.id ? 'animate-spin' : ''}`} />
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="sm" asChild title="Download">
+                        <a href={video.video_url} download={`${video.title}.mp4`}>
+                          <Download className="h-4 w-4" />
+                        </a>
                       </Button>
-                    )}
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      asChild
-                    >
-                      <a href={video.video_url} download={`${video.title}.mp4`}>
-                        <Download className="h-4 w-4" />
-                      </a>
-                    </Button>
+                    </div>
                     <Button
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => {
-                        const videoElement = document.createElement('video');
-                        videoElement.src = video.video_url;
-                        videoElement.controls = true;
-                        videoElement.style.width = '100%';
-                        videoElement.style.maxWidth = '600px';
-                        
-                        const dialog = document.createElement('div');
-                        dialog.style.position = 'fixed';
-                        dialog.style.top = '50%';
-                        dialog.style.left = '50%';
-                        dialog.style.transform = 'translate(-50%, -50%)';
-                        dialog.style.backgroundColor = 'black';
-                        dialog.style.padding = '20px';
-                        dialog.style.borderRadius = '8px';
-                        dialog.style.zIndex = '9999';
-                        dialog.style.boxShadow = '0 4px 20px rgba(0,0,0,0.5)';
-                        
-                        const closeBtn = document.createElement('button');
-                        closeBtn.textContent = '×';
-                        closeBtn.style.position = 'absolute';
-                        closeBtn.style.top = '10px';
-                        closeBtn.style.right = '10px';
-                        closeBtn.style.background = 'rgba(255,255,255,0.2)';
-                        closeBtn.style.color = 'white';
-                        closeBtn.style.border = 'none';
-                        closeBtn.style.fontSize = '24px';
-                        closeBtn.style.cursor = 'pointer';
-                        closeBtn.style.width = '30px';
-                        closeBtn.style.height = '30px';
-                        closeBtn.style.borderRadius = '50%';
-                        
-                        const backdrop = document.createElement('div');
-                        backdrop.style.position = 'fixed';
-                        backdrop.style.top = '0';
-                        backdrop.style.left = '0';
-                        backdrop.style.width = '100%';
-                        backdrop.style.height = '100%';
-                        backdrop.style.backgroundColor = 'rgba(0,0,0,0.8)';
-                        backdrop.style.zIndex = '9998';
-                        
-                        const closeDialog = () => {
-                          document.body.removeChild(dialog);
-                          document.body.removeChild(backdrop);
-                        };
-                        
-                        closeBtn.onclick = closeDialog;
-                        backdrop.onclick = closeDialog;
-                        
-                        dialog.appendChild(closeBtn);
-                        dialog.appendChild(videoElement);
-                        document.body.appendChild(backdrop);
-                        document.body.appendChild(dialog);
-                      }}
-                    >
-                      <Video className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
+                      variant="ghost"
                       size="sm"
                       onClick={() => handleDelete(video.id, video.video_url)}
+                      title="Delete"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         )}
+
+        {/* Preview Dialog */}
+        <Dialog open={!!previewVideo} onOpenChange={(o) => !o && setPreviewVideo(null)}>
+          <DialogContent className="max-w-md p-0 overflow-hidden bg-background">
+            <DialogHeader className="px-6 pt-6">
+              <DialogTitle className="truncate">{previewVideo?.title}</DialogTitle>
+            </DialogHeader>
+            {previewVideo && (
+              <div className="aspect-[9/16] bg-muted">
+                <video
+                  src={previewVideo.video_url}
+                  controls
+                  autoPlay
+                  loop
+                  playsInline
+                  className="w-full h-full object-contain bg-background"
+                />
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Duration Dialog */}
+        <Dialog open={!!durationEdit} onOpenChange={(o) => !o && setDurationEdit(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Set display duration</DialogTitle>
+              <DialogDescription>
+                Override how long this video stays on screen during playback.
+                Useful for menus or static images. Leave blank to use the video's
+                own length.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2 py-2">
+              <Label htmlFor="duration">Seconds</Label>
+              <Input
+                id="duration"
+                type="number"
+                min={1}
+                max={600}
+                placeholder="e.g. 30"
+                value={durationEdit?.value ?? ""}
+                onChange={(e) =>
+                  setDurationEdit((prev) => (prev ? { ...prev, value: e.target.value } : prev))
+                }
+              />
+              <p className="text-xs text-muted-foreground">Between 1 and 600 seconds.</p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDurationEdit(null)} disabled={savingDuration}>
+                Cancel
+              </Button>
+              <Button onClick={saveDuration} disabled={savingDuration}>
+                {savingDuration ? "Saving…" : "Save"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
