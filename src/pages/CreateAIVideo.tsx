@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,9 +20,11 @@ import { supabase } from "@/integrations/supabase/client";
 
 const CreateAIVideo = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const presetPlaylistId = searchParams.get("playlistId") || "";
   const [isGenerating, setIsGenerating] = useState(false);
   const [playlists, setPlaylists] = useState<any[]>([]);
-  const [playlistId, setPlaylistId] = useState("");
+  const [playlistId, setPlaylistId] = useState(presetPlaylistId);
   const [mainText, setMainText] = useState("");
   const [subtext, setSubtext] = useState("");
   const [duration, setDuration] = useState("10");
@@ -75,8 +77,12 @@ const CreateAIVideo = () => {
         }
         
         setPlaylists(data);
-        setPlaylistId(data[0].id);
-        toast.success(`Ready! ${data.length} playlist(s) available`);
+        // Honor preset from query param if it matches an existing playlist
+        if (presetPlaylistId && data.some((p) => p.id === presetPlaylistId)) {
+          setPlaylistId(presetPlaylistId);
+        } else {
+          setPlaylistId(data[0].id);
+        }
       } catch (err) {
         console.error("Unexpected error in fetchPlaylists:", err);
         toast.error(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`);
@@ -84,7 +90,7 @@ const CreateAIVideo = () => {
     };
 
     fetchPlaylists();
-  }, []);
+  }, [presetPlaylistId]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
