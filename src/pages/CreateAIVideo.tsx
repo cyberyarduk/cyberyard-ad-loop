@@ -17,6 +17,7 @@ import { Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
+import { VideoGenerationLoader } from "@/components/VideoGenerationLoader";
 
 const CreateAIVideo = () => {
   const navigate = useNavigate();
@@ -172,6 +173,7 @@ const CreateAIVideo = () => {
 
   return (
     <DashboardLayout>
+      <VideoGenerationLoader open={isGenerating} />
       <div className="max-w-2xl mx-auto space-y-6">
         <div>
           <h1 className="text-3xl font-bold flex items-center">
