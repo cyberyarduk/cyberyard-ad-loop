@@ -10,7 +10,7 @@ import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
-import Venues from "./pages/Venues";
+
 import Devices from "./pages/Devices";
 import Videos from "./pages/Videos";
 import Playlists from "./pages/Playlists";
