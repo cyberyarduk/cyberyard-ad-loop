@@ -136,8 +136,8 @@ serve(async (req) => {
       minimal: `Take this product image and transform it into a clean promotional poster in 1920x1080 landscape format. Add modern text "${mainText}" in bold sans-serif font with simple, professional styling. Keep it minimal but impactful.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`
     };
 
-    const textPrompt = stylePrompts[style] || stylePrompts.boom;
-    const landscapePrompt = landscapeStylePrompts[style] || landscapeStylePrompts.boom;
+    const textPrompt = (stylePrompts[style] || stylePrompts.boom) + customizationFragment;
+    const landscapePrompt = (landscapeStylePrompts[style] || landscapeStylePrompts.boom) + customizationFragment;
     
     // Generate both portrait and landscape images in parallel
     console.log('Generating portrait and landscape promotional images with AI...');
