@@ -566,7 +566,9 @@ const Playlists = () => {
                       <TableHeader>
                         <TableRow>
                           <TableHead className="w-12">#</TableHead>
+                          <TableHead className="w-20">Preview</TableHead>
                           <TableHead>Video</TableHead>
+                          <TableHead>Duration</TableHead>
                           <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -574,8 +576,37 @@ const Playlists = () => {
                         {playlist.videos.map((video: any, index: number) => (
                           <TableRow key={video.id}>
                             <TableCell>{index + 1}</TableCell>
+                            <TableCell>
+                              <button
+                                type="button"
+                                onClick={() => setPreviewVideo(video)}
+                                className="block w-12 h-16 bg-muted rounded overflow-hidden relative group"
+                                aria-label={`Preview ${video.title}`}
+                              >
+                                <video
+                                  src={video.video_url}
+                                  muted
+                                  playsInline
+                                  preload="metadata"
+                                  className="w-full h-full object-cover"
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center bg-background/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Play className="h-4 w-4 text-foreground" />
+                                </div>
+                              </button>
+                            </TableCell>
                             <TableCell className="font-medium">
                               {video.title}
+                            </TableCell>
+                            <TableCell>
+                              <button
+                                type="button"
+                                onClick={() => setDurationEdit({ id: video.id, value: video.display_duration?.toString() ?? "" })}
+                                className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-md border border-border hover:bg-accent transition-colors"
+                              >
+                                <Clock className="h-3 w-3" />
+                                {video.display_duration ? `${video.display_duration}s` : "Auto"}
+                              </button>
                             </TableCell>
                             <TableCell className="text-right space-x-2">
                               <Button 
