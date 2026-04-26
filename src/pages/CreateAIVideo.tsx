@@ -25,8 +25,6 @@ const CreateAIVideo = () => {
   const [style, setStyle] = useState("boom");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
-  const { total: availableCredits, hasEnough, deductCredits, loading: creditsLoading } = useCredits();
-  const { profile } = useAuth();
 
   // Fetch playlists on mount
   useEffect(() => {
