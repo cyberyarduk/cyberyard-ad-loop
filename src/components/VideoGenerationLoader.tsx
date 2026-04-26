@@ -64,7 +64,7 @@ export function VideoGenerationLoader({ open }: { open: boolean }) {
                 />
               </div>
               {/* Recording dot */}
-              <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-destructive animate-pulse" />
             </div>
           </div>
         </div>
