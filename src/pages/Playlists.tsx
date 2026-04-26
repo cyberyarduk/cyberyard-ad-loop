@@ -863,6 +863,46 @@ const Playlists = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Rename Playlist Dialog */}
+        <Dialog open={!!renameTarget} onOpenChange={(o) => !o && setRenameTarget(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Rename playlist</DialogTitle>
+              <DialogDescription>
+                Update the name of this playlist.
+              </DialogDescription>
+            </DialogHeader>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleRename();
+              }}
+              className="space-y-4"
+            >
+              <div className="space-y-2">
+                <Label htmlFor="pl-rename">Playlist name</Label>
+                <Input
+                  id="pl-rename"
+                  value={renameTarget?.name ?? ""}
+                  onChange={(e) =>
+                    setRenameTarget((prev) => (prev ? { ...prev, name: e.target.value } : prev))
+                  }
+                  autoFocus
+                  required
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setRenameTarget(null)} disabled={savingRename}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={savingRename}>
+                  {savingRename ? "Saving…" : "Save"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
