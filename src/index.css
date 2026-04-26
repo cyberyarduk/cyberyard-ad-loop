@@ -2,13 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Cyberyard "Wow" design system. All colors MUST be HSL. */
 
 @layer base {
   :root {
-    /* Cyberyard brand colors - Apple-style light theme */
+    /* Light theme (kept for dashboard / auth) */
     --background: 0 0% 100%;
     --foreground: 0 0% 10%;
 
@@ -19,7 +17,7 @@ All colors MUST be HSL.
     --popover-foreground: 0 0% 10%;
 
     --primary: 45 98% 52%;
-    --primary-foreground: 0 0% 100%;
+    --primary-foreground: 0 0% 10%;
 
     --secondary: 0 0% 96%;
     --secondary-foreground: 0 0% 10%;
@@ -39,12 +37,14 @@ All colors MUST be HSL.
 
     --radius: 0.75rem;
 
-    /* Custom Cyberyard colors */
+    /* Brand accents */
     --yellow-bright: 45 98% 52%;
     --yellow-dark: 38 92% 50%;
-    --grey-light: 0 0% 96%;
-    --grey-border: 0 0% 90%;
+    --purple-electric: 262 83% 62%;
+    --pink-hot: 328 86% 60%;
+    --cyan-glow: 188 94% 55%;
 
+    /* Sidebar */
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 0 0% 10%;
     --sidebar-primary: 45 98% 52%;
@@ -55,12 +55,25 @@ All colors MUST be HSL.
     --sidebar-ring: 45 98% 52%;
   }
 
-  .dark {
-    /* Dark theme (for dashboard only if needed) */
-    --background: 0 0% 10%;
+  /* "Wow" dark surface used by the marketing homepage */
+  .wow {
+    --background: 240 30% 4%;
     --foreground: 0 0% 98%;
-    --card: 0 0% 12%;
+    --card: 240 25% 8%;
     --card-foreground: 0 0% 98%;
+    --popover: 240 25% 8%;
+    --popover-foreground: 0 0% 98%;
+    --muted: 240 20% 12%;
+    --muted-foreground: 240 10% 70%;
+    --border: 240 20% 18%;
+    --input: 240 20% 18%;
+    --primary: 45 98% 56%;
+    --primary-foreground: 240 30% 6%;
+    --secondary: 240 20% 12%;
+    --secondary-foreground: 0 0% 98%;
+    --accent: 262 83% 62%;
+    --accent-foreground: 0 0% 98%;
+    --ring: 262 83% 62%;
   }
 }
 
@@ -75,5 +88,133 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Gradient text */
+  .text-gradient-wow {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(
+      120deg,
+      hsl(var(--yellow-bright)) 0%,
+      hsl(var(--pink-hot)) 50%,
+      hsl(var(--purple-electric)) 100%
+    );
+  }
+
+  .text-gradient-cool {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(
+      120deg,
+      hsl(var(--cyan-glow)) 0%,
+      hsl(var(--purple-electric)) 100%
+    );
+  }
+
+  /* Gradient surfaces */
+  .bg-gradient-wow {
+    background-image: linear-gradient(
+      135deg,
+      hsl(var(--yellow-bright)) 0%,
+      hsl(var(--pink-hot)) 55%,
+      hsl(var(--purple-electric)) 100%
+    );
+  }
+
+  .bg-gradient-cool {
+    background-image: linear-gradient(
+      135deg,
+      hsl(var(--purple-electric)),
+      hsl(var(--cyan-glow))
+    );
+  }
+
+  /* Glass card */
+  .glass {
+    background-color: hsl(var(--card) / 0.5);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid hsl(0 0% 100% / 0.08);
+  }
+
+  .glass-strong {
+    background-color: hsl(var(--card) / 0.7);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid hsl(0 0% 100% / 0.1);
+  }
+
+  /* Glows */
+  .glow-yellow {
+    box-shadow:
+      0 0 24px hsl(var(--yellow-bright) / 0.45),
+      0 0 60px hsl(var(--yellow-bright) / 0.25);
+  }
+  .glow-purple {
+    box-shadow:
+      0 0 24px hsl(var(--purple-electric) / 0.45),
+      0 0 60px hsl(var(--purple-electric) / 0.25);
+  }
+  .glow-pink {
+    box-shadow:
+      0 0 24px hsl(var(--pink-hot) / 0.45),
+      0 0 60px hsl(var(--pink-hot) / 0.25);
+  }
+
+  /* Animated mesh blob */
+  .mesh-blob {
+    filter: blur(80px);
+    opacity: 0.55;
+    will-change: transform;
+  }
+
+  /* Subtle grid background */
+  .bg-grid {
+    background-image:
+      linear-gradient(hsl(0 0% 100% / 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(0 0% 100% / 0.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  /* Dot grid */
+  .bg-dots {
+    background-image: radial-gradient(
+      hsl(0 0% 100% / 0.08) 1px,
+      transparent 1px
+    );
+    background-size: 22px 22px;
+  }
+
+  /* Hover lift */
+  .hover-lift {
+    transition:
+      transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+      box-shadow 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+      border-color 0.35s ease;
+  }
+  .hover-lift:hover {
+    transform: translateY(-6px);
+  }
+
+  /* Animated gradient border */
+  .border-gradient-wow {
+    position: relative;
+    background-clip: padding-box;
+    border: 1px solid transparent;
+  }
+  .border-gradient-wow::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    margin: -1px;
+    border-radius: inherit;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--yellow-bright)),
+      hsl(var(--pink-hot)),
+      hsl(var(--purple-electric))
+    );
   }
 }
