@@ -32,9 +32,6 @@ const Dashboard = () => {
 
   const firstName = profile?.full_name?.split(" ")[0] || profile?.email?.split("@")[0] || "";
 
-  const handlePlaylistChosen = (playlistId: string) => {
-    navigate(`/videos/create-ai?playlistId=${playlistId}`);
-  };
 
   const actions = [
     {
