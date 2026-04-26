@@ -13,9 +13,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { VideoGenerationLoader } from "@/components/VideoGenerationLoader";
 
@@ -25,12 +32,11 @@ const CreateAIVideo = () => {
   const presetPlaylistId = searchParams.get("playlistId") || "";
   const [isGenerating, setIsGenerating] = useState(false);
   const [playlists, setPlaylists] = useState<any[]>([]);
-  const [playlistId, setPlaylistId] = useState(presetPlaylistId);
+  const [selectedPlaylistIds, setSelectedPlaylistIds] = useState<string[]>(presetPlaylistId ? [presetPlaylistId] : []);
   const [mainText, setMainText] = useState("");
   const [subtext, setSubtext] = useState("");
   const [duration, setDuration] = useState("10");
   const [style, setStyle] = useState("boom");
-  const [music, setMusic] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
 
