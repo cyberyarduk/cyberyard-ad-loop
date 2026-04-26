@@ -183,30 +183,6 @@ const CreateAIVideo = () => {
       }
     } catch (error) {
       console.error('Video generation error:', error);
-      // Refund credits on failure
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user && profile?.company_id) {
-          const { data: current } = await supabase
-            .from("company_credits")
-            .select("purchased_credits")
-            .eq("company_id", profile.company_id)
-            .maybeSingle();
-          await supabase
-            .from("company_credits")
-            .update({ purchased_credits: (current?.purchased_credits ?? 0) + VIDEO_GENERATION_COST })
-            .eq("company_id", profile.company_id);
-          await supabase.from("credit_transactions").insert({
-            company_id: profile.company_id,
-            user_id: user.id,
-            amount: VIDEO_GENERATION_COST,
-            transaction_type: "admin_adjustment",
-            description: "Refund for failed video generation",
-          });
-        }
-      } catch (refundErr) {
-        console.error("Refund failed:", refundErr);
-      }
       toast.error(error instanceof Error ? error.message : "Failed to generate video. Please try again.");
     } finally {
       setIsGenerating(false);
