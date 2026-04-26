@@ -10,13 +10,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { DashboardAnalytics } from "@/components/DashboardAnalytics";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
 const Settings = () => {
   const { profile } = useAuth();
-  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -44,7 +44,6 @@ const Settings = () => {
       if (error) throw error;
 
       toast.success("Password updated successfully");
-      setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (error: any) {
@@ -56,13 +55,23 @@ const Settings = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-2xl">
+      <div className="space-y-8 max-w-4xl">
         <div>
           <h1 className="text-3xl font-bold">Settings</h1>
           <p className="text-muted-foreground mt-1">
-            Manage your account settings
+            Manage your account and view analytics
           </p>
         </div>
+
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold">Analytics</h2>
+            <p className="text-sm text-muted-foreground">
+              An overview of your devices, videos and content
+            </p>
+          </div>
+          <DashboardAnalytics />
+        </section>
 
         <Card>
           <CardHeader>
