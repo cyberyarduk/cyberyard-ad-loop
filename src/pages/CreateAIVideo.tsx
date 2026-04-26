@@ -79,9 +79,9 @@ const CreateAIVideo = () => {
         setPlaylists(data);
         // Honor preset from query param if it matches an existing playlist
         if (presetPlaylistId && data.some((p) => p.id === presetPlaylistId)) {
-          setPlaylistId(presetPlaylistId);
-        } else {
-          setPlaylistId(data[0].id);
+          setSelectedPlaylistIds([presetPlaylistId]);
+        } else if (selectedPlaylistIds.length === 0) {
+          setSelectedPlaylistIds([data[0].id]);
         }
       } catch (err) {
         console.error("Unexpected error in fetchPlaylists:", err);
