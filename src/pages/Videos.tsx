@@ -189,6 +189,32 @@ const Videos = () => {
     }
   };
 
+  const saveDuration = async () => {
+    if (!durationEdit) return;
+    setSavingDuration(true);
+    try {
+      const trimmed = durationEdit.value.trim();
+      const parsed = trimmed === "" ? null : Math.max(1, Math.min(600, parseInt(trimmed, 10)));
+      if (trimmed !== "" && (parsed === null || isNaN(parsed))) {
+        toast.error("Enter a number between 1 and 600 seconds");
+        return;
+      }
+      const { error } = await supabase
+        .from("videos")
+        .update({ display_duration: parsed })
+        .eq("id", durationEdit.id);
+      if (error) throw error;
+      toast.success(parsed ? `Duration set to ${parsed}s` : "Using default duration");
+      setDurationEdit(null);
+      fetchVideos();
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e.message || "Failed to save duration");
+    } finally {
+      setSavingDuration(false);
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
