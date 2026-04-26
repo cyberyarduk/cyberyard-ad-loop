@@ -98,6 +98,82 @@ export type Database = {
         }
         Relationships: []
       }
+      company_credits: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          monthly_credits: number
+          monthly_reset_at: string
+          purchased_credits: number
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          monthly_credits?: number
+          monthly_reset_at?: string
+          purchased_credits?: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          monthly_credits?: number
+          monthly_reset_at?: string
+          purchased_credits?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_credits_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_transactions: {
+        Row: {
+          amount: number
+          company_id: string
+          created_at: string
+          description: string | null
+          id: string
+          transaction_type: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          company_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          transaction_type: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          transaction_type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_transactions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       devices: {
         Row: {
           admin_pin: string | null
@@ -388,6 +464,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      deduct_credits: {
+        Args: {
+          _amount: number
+          _company_id: string
+          _description?: string
+          _user_id: string
+        }
+        Returns: Json
+      }
       generate_device_code: { Args: never; Returns: string }
       generate_secure_token: { Args: never; Returns: string }
       get_user_role: {
