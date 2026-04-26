@@ -335,6 +335,7 @@ export type Database = {
           ai_style: string | null
           company_id: string | null
           created_at: string
+          display_duration: number | null
           id: string
           source: string | null
           title: string
@@ -349,6 +350,7 @@ export type Database = {
           ai_style?: string | null
           company_id?: string | null
           created_at?: string
+          display_duration?: number | null
           id?: string
           source?: string | null
           title: string
@@ -363,6 +365,7 @@ export type Database = {
           ai_style?: string | null
           company_id?: string | null
           created_at?: string
+          display_duration?: number | null
           id?: string
           source?: string | null
           title?: string
