@@ -203,8 +203,6 @@ const CreateAIVideo = () => {
           </p>
         </div>
 
-        <CreditsBalanceCard highlightLow />
-
         <Card>
           <CardHeader>
             <CardTitle>Create your video</CardTitle>
