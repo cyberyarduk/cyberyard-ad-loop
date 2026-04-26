@@ -449,6 +449,28 @@ const Playlists = () => {
     }
   };
 
+  const handleRename = async () => {
+    if (!renameTarget) return;
+    const trimmed = renameTarget.name.trim();
+    if (!trimmed) {
+      toast.error("Playlist name cannot be empty");
+      return;
+    }
+    setSavingRename(true);
+    const { error } = await supabase
+      .from("playlists")
+      .update({ name: trimmed })
+      .eq("id", renameTarget.id);
+    setSavingRename(false);
+    if (error) {
+      toast.error("Failed to rename playlist");
+      return;
+    }
+    toast.success("Playlist renamed");
+    setRenameTarget(null);
+    fetchPlaylists();
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
