@@ -773,6 +773,64 @@ const Playlists = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Video Preview Dialog */}
+        <Dialog open={!!previewVideo} onOpenChange={(o) => !o && setPreviewVideo(null)}>
+          <DialogContent className="max-w-md p-0 overflow-hidden bg-background">
+            <DialogHeader className="px-6 pt-6">
+              <DialogTitle className="truncate">{previewVideo?.title}</DialogTitle>
+            </DialogHeader>
+            {previewVideo && (
+              <div className="aspect-[9/16] bg-muted">
+                <video
+                  src={previewVideo.video_url}
+                  controls
+                  autoPlay
+                  loop
+                  playsInline
+                  className="w-full h-full object-contain bg-background"
+                />
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Duration Edit Dialog */}
+        <Dialog open={!!durationEdit} onOpenChange={(o) => !o && setDurationEdit(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Set display duration</DialogTitle>
+              <DialogDescription>
+                Override how long this video stays on screen during playback.
+                Useful for menus or static images. Leave blank to use the
+                video's own length.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2 py-2">
+              <Label htmlFor="pl-duration">Seconds</Label>
+              <Input
+                id="pl-duration"
+                type="number"
+                min={1}
+                max={600}
+                placeholder="e.g. 30"
+                value={durationEdit?.value ?? ""}
+                onChange={(e) =>
+                  setDurationEdit((prev) => (prev ? { ...prev, value: e.target.value } : prev))
+                }
+              />
+              <p className="text-xs text-muted-foreground">Between 1 and 600 seconds.</p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setDurationEdit(null)} disabled={savingDuration}>
+                Cancel
+              </Button>
+              <Button onClick={saveDuration} disabled={savingDuration}>
+                {savingDuration ? "Saving…" : "Save"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
