@@ -18,7 +18,7 @@ const DashboardLayout = ({
   const navItems = [{
     path: "/dashboard",
     icon: LayoutDashboard,
-    label: "Dashboard"
+    label: "Home"
   }, {
     path: "/devices",
     icon: Monitor,
