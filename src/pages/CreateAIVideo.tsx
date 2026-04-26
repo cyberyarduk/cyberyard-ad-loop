@@ -201,7 +201,7 @@ const CreateAIVideo = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Video Details</CardTitle>
+            <CardTitle>Create your video</CardTitle>
             <CardDescription>
               Upload an image and add your offer text to create a video
             </CardDescription>
@@ -209,25 +209,41 @@ const CreateAIVideo = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="playlist">Target Playlist</Label>
-                <Select value={playlistId} onValueChange={setPlaylistId} required>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a playlist" />
-                  </SelectTrigger>
-                  <SelectContent className="z-[100] bg-background">
-                    {playlists.length === 0 ? (
-                      <SelectItem value="none" disabled>No playlists available</SelectItem>
-                    ) : (
-                      playlists.map((playlist) => (
-                        <SelectItem key={playlist.id} value={playlist.id}>
-                          {playlist.name}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
+                <Label>Target Playlists</Label>
+                {playlists.length === 0 ? (
+                  <p className="text-sm text-muted-foreground border rounded-md p-3">
+                    No playlists available. Create one on the Playlists page first.
+                  </p>
+                ) : (
+                  <div className="border rounded-md p-3 space-y-2 max-h-56 overflow-y-auto">
+                    {playlists.map((playlist) => {
+                      const checked = selectedPlaylistIds.includes(playlist.id);
+                      return (
+                        <div key={playlist.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`pl-${playlist.id}`}
+                            checked={checked}
+                            onCheckedChange={(value) => {
+                              setSelectedPlaylistIds((prev) =>
+                                value
+                                  ? [...prev, playlist.id]
+                                  : prev.filter((id) => id !== playlist.id)
+                              );
+                            }}
+                          />
+                          <Label
+                            htmlFor={`pl-${playlist.id}`}
+                            className="font-normal cursor-pointer"
+                          >
+                            {playlist.name}
+                          </Label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
                 <p className="text-sm text-muted-foreground">
-                  Video will be added to the beginning of this playlist
+                  Select one or more playlists. The video will be added to each.
                 </p>
               </div>
 
@@ -277,42 +293,36 @@ const CreateAIVideo = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="duration">Duration</Label>
-                  <Select value={duration} onValueChange={setDuration}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="5">5 seconds</SelectItem>
-                      <SelectItem value="10">10 seconds</SelectItem>
-                      <SelectItem value="15">15 seconds</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="duration">Select your duration</Label>
+                  <Input
+                    id="duration"
+                    type="number"
+                    min={0}
+                    max={600}
+                    step={1}
+                    value={duration}
+                    onChange={(e) => setDuration(e.target.value)}
+                    placeholder="e.g. 10"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    0–600 seconds
+                  </p>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="style">Video Style</Label>
-                  <Select value={style} onValueChange={setStyle}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="boom">💥 BOOM - Bold Explosion</SelectItem>
-                      <SelectItem value="sparkle">✨ Sparkle - Elegant Shine</SelectItem>
-                      <SelectItem value="stars">⭐ Stars - Magical</SelectItem>
-                      <SelectItem value="minimal">🎯 Minimal - Clean</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <select
+                    id="style"
+                    value={style}
+                    onChange={(e) => setStyle(e.target.value)}
+                    className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                  >
+                    <option value="boom">💥 BOOM - Bold Explosion</option>
+                    <option value="sparkle">✨ Sparkle - Elegant Shine</option>
+                    <option value="stars">⭐ Stars - Magical</option>
+                    <option value="minimal">🎯 Minimal - Clean</option>
+                  </select>
                 </div>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="music"
-                  checked={music}
-                  onCheckedChange={setMusic}
-                />
-                <Label htmlFor="music">Background Music</Label>
               </div>
 
               <Button type="submit" className="w-full" disabled={isGenerating}>
