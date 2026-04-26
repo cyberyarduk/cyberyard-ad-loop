@@ -124,6 +124,18 @@ const CreateAIVideo = () => {
       return;
     }
 
+    if (!hasEnough(VIDEO_GENERATION_COST)) {
+      toast.error(`Not enough credits. You need ${VIDEO_GENERATION_COST} credits to generate a video.`);
+      return;
+    }
+
+    // Deduct credits before generation
+    const deductResult = await deductCredits(VIDEO_GENERATION_COST, `Video: ${mainText}`);
+    if (!deductResult.success) {
+      toast.error(deductResult.error || "Could not deduct credits. Please try again.");
+      return;
+    }
+
     setIsGenerating(true);
 
     try {
