@@ -571,6 +571,14 @@ const Playlists = () => {
                       <Button 
                         variant="ghost" 
                         size="sm"
+                        onClick={() => setRenameTarget({ id: playlist.id, name: playlist.name })}
+                        aria-label="Rename playlist"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
                         onClick={() => handleDelete(playlist.id)}
                       >
                         <Trash2 className="h-4 w-4" />
