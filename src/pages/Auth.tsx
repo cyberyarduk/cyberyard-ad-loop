@@ -86,8 +86,8 @@ const Auth = () => {
         <Card className="w-full">
           <CardHeader className="text-center">
             <img src={logo} alt="Cyberyard" className="h-32 md:h-40 mx-auto mb-4" />
-            <CardTitle>Welcome to Cyberyard</CardTitle>
-            <CardDescription>Sign in to manage your wearable digital billboards</CardDescription>
+            <CardTitle>Welcome</CardTitle>
+            <CardDescription>Please sign in below</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <form onSubmit={handleSignIn} className="space-y-4">

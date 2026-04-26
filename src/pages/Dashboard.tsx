@@ -36,8 +36,8 @@ const Dashboard = () => {
   const actions = [
     {
       icon: Video,
-      title: "Create your video",
-      description: "Generate a new AI-powered offer video",
+      title: "Create Offer Video",
+      description: "Generate a new offer video",
       to: "/videos/create-ai",
     },
     {
