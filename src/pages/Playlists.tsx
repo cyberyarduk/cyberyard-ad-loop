@@ -57,6 +57,8 @@ const Playlists = () => {
   const [previewVideo, setPreviewVideo] = useState<any | null>(null);
   const [durationEdit, setDurationEdit] = useState<{ id: string; value: string } | null>(null);
   const [savingDuration, setSavingDuration] = useState(false);
+  const [renameTarget, setRenameTarget] = useState<{ id: string; name: string } | null>(null);
+  const [savingRename, setSavingRename] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -447,6 +449,28 @@ const Playlists = () => {
     }
   };
 
+  const handleRename = async () => {
+    if (!renameTarget) return;
+    const trimmed = renameTarget.name.trim();
+    if (!trimmed) {
+      toast.error("Playlist name cannot be empty");
+      return;
+    }
+    setSavingRename(true);
+    const { error } = await supabase
+      .from("playlists")
+      .update({ name: trimmed })
+      .eq("id", renameTarget.id);
+    setSavingRename(false);
+    if (error) {
+      toast.error("Failed to rename playlist");
+      return;
+    }
+    toast.success("Playlist renamed");
+    setRenameTarget(null);
+    fetchPlaylists();
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -543,6 +567,14 @@ const Playlists = () => {
                       >
                         <Send className="h-4 w-4 mr-2" />
                         Push to All
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => setRenameTarget({ id: playlist.id, name: playlist.name })}
+                        aria-label="Rename playlist"
+                      >
+                        <Edit className="h-4 w-4" />
                       </Button>
                       <Button 
                         variant="ghost" 
@@ -829,6 +861,46 @@ const Playlists = () => {
                 {savingDuration ? "Saving…" : "Save"}
               </Button>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Rename Playlist Dialog */}
+        <Dialog open={!!renameTarget} onOpenChange={(o) => !o && setRenameTarget(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Rename playlist</DialogTitle>
+              <DialogDescription>
+                Update the name of this playlist.
+              </DialogDescription>
+            </DialogHeader>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleRename();
+              }}
+              className="space-y-4"
+            >
+              <div className="space-y-2">
+                <Label htmlFor="pl-rename">Playlist name</Label>
+                <Input
+                  id="pl-rename"
+                  value={renameTarget?.name ?? ""}
+                  onChange={(e) =>
+                    setRenameTarget((prev) => (prev ? { ...prev, name: e.target.value } : prev))
+                  }
+                  autoFocus
+                  required
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setRenameTarget(null)} disabled={savingRename}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={savingRename}>
+                  {savingRename ? "Saving…" : "Save"}
+                </Button>
+              </div>
+            </form>
           </DialogContent>
         </Dialog>
       </div>
