@@ -341,19 +341,16 @@ const CreateAIVideo = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="duration">Select your duration</Label>
-                  <Input
+                  <select
                     id="duration"
-                    type="number"
-                    min={0}
-                    max={600}
-                    step={1}
                     value={duration}
                     onChange={(e) => setDuration(e.target.value)}
-                    placeholder="e.g. 10"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    0–600 seconds
-                  </p>
+                    className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                  >
+                    <option value="10">10 seconds</option>
+                    <option value="15">15 seconds</option>
+                    <option value="20">20 seconds</option>
+                  </select>
                 </div>
 
                 <div className="space-y-2">
