@@ -74,51 +74,28 @@ const Dashboard = () => {
         <div className="grid gap-4 md:grid-cols-3">
           {actions.map((action) => {
             const Icon = action.icon;
-            const inner = (
-              <Card className="border border-border shadow-sm hover:shadow-md hover:border-primary/40 transition-all h-full cursor-pointer">
-                <CardContent className="p-6 space-y-4">
-                  <div className="p-3 bg-primary/10 rounded-xl w-fit">
-                    <Icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">{action.title}</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {action.description}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-            if (action.to) {
-              return (
-                <Link key={action.title} to={action.to}>
-                  {inner}
-                </Link>
-              );
-            }
             return (
-              <button
-                key={action.title}
-                type="button"
-                onClick={action.onClick}
-                className="text-left"
-              >
-                {inner}
-              </button>
+              <Link key={action.title} to={action.to}>
+                <Card className="border border-border shadow-sm hover:shadow-md hover:border-primary/40 transition-all h-full cursor-pointer">
+                  <CardContent className="p-6 space-y-4">
+                    <div className="p-3 bg-primary/10 rounded-xl w-fit">
+                      <Icon className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg">{action.title}</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {action.description}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             );
           })}
         </div>
 
         <CurrentlyPlayingPreview />
       </div>
-
-      <PlaylistSelectorDialog
-        open={playlistDialogOpen}
-        onOpenChange={setPlaylistDialogOpen}
-        onSelected={handlePlaylistChosen}
-        title="Where should this video go?"
-        description="Pick the playlist your new video will be added to, or create a new one."
-      />
     </DashboardLayout>
   );
 };
