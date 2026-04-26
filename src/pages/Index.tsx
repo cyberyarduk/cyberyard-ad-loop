@@ -244,7 +244,7 @@ const Index = () => {
               <div>
                 <h3 className="text-2xl font-semibold mb-3">Create or Upload Content</h3>
                 <p className="text-muted-foreground text-lg">
-                  Upload videos or create new offers using our AI video generator.
+                  Upload videos or create new offer videos in seconds.
                 </p>
               </div>
             </div>
