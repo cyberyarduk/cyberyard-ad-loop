@@ -229,7 +229,7 @@ const Videos = () => {
             <Link to="/videos/create-ai">
               <Button variant="outline">
                 <Sparkles className="mr-2 h-4 w-4" />
-                AI Offer Video
+                Create Offer Video
               </Button>
             </Link>
             <Dialog open={open} onOpenChange={setOpen}>

@@ -196,10 +196,10 @@ const CreateAIVideo = () => {
         <div>
           <h1 className="text-3xl font-bold flex items-center">
             <Sparkles className="mr-2 h-8 w-8 text-primary" />
-            Quick Offer Video Creator
+            Create Offer Video
           </h1>
           <p className="text-muted-foreground mt-1">
-            Generate promotional videos instantly with AI
+            Generate promotional videos instantly
           </p>
         </div>
 
