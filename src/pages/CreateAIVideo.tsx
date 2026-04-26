@@ -11,9 +11,6 @@ import { Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { VideoGenerationLoader } from "@/components/VideoGenerationLoader";
-import { CreditsBalanceCard } from "@/components/CreditsBalanceCard";
-import { useCredits, VIDEO_GENERATION_COST } from "@/hooks/useCredits";
-import { useAuth } from "@/hooks/useAuth";
 
 const CreateAIVideo = () => {
   const navigate = useNavigate();
@@ -28,8 +25,6 @@ const CreateAIVideo = () => {
   const [style, setStyle] = useState("boom");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
-  const { total: availableCredits, hasEnough, deductCredits, loading: creditsLoading } = useCredits();
-  const { profile } = useAuth();
 
   // Fetch playlists on mount
   useEffect(() => {
@@ -126,18 +121,6 @@ const CreateAIVideo = () => {
       return;
     }
 
-    if (!hasEnough(VIDEO_GENERATION_COST)) {
-      toast.error(`Not enough credits. You need ${VIDEO_GENERATION_COST} credits to generate a video.`);
-      return;
-    }
-
-    // Deduct credits before generation
-    const deductResult = await deductCredits(VIDEO_GENERATION_COST, `Video: ${mainText}`);
-    if (!deductResult.success) {
-      toast.error(deductResult.error || "Could not deduct credits. Please try again.");
-      return;
-    }
-
     setIsGenerating(true);
 
     try {
@@ -200,30 +183,6 @@ const CreateAIVideo = () => {
       }
     } catch (error) {
       console.error('Video generation error:', error);
-      // Refund credits on failure
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user && profile?.company_id) {
-          const { data: current } = await supabase
-            .from("company_credits")
-            .select("purchased_credits")
-            .eq("company_id", profile.company_id)
-            .maybeSingle();
-          await supabase
-            .from("company_credits")
-            .update({ purchased_credits: (current?.purchased_credits ?? 0) + VIDEO_GENERATION_COST })
-            .eq("company_id", profile.company_id);
-          await supabase.from("credit_transactions").insert({
-            company_id: profile.company_id,
-            user_id: user.id,
-            amount: VIDEO_GENERATION_COST,
-            transaction_type: "admin_adjustment",
-            description: "Refund for failed video generation",
-          });
-        }
-      } catch (refundErr) {
-        console.error("Refund failed:", refundErr);
-      }
       toast.error(error instanceof Error ? error.message : "Failed to generate video. Please try again.");
     } finally {
       setIsGenerating(false);
@@ -243,8 +202,6 @@ const CreateAIVideo = () => {
             Generate promotional videos instantly
           </p>
         </div>
-
-        <CreditsBalanceCard highlightLow />
 
         <Card>
           <CardHeader>
@@ -372,19 +329,17 @@ const CreateAIVideo = () => {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isGenerating || creditsLoading || !hasEnough(VIDEO_GENERATION_COST)}
+                disabled={isGenerating}
               >
                 {isGenerating ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Generating Video...
                   </>
-                ) : !hasEnough(VIDEO_GENERATION_COST) ? (
-                  <>Not enough credits</>
                 ) : (
                   <>
                     <Sparkles className="mr-2 h-4 w-4" />
-                    Generate Video ({VIDEO_GENERATION_COST} credits)
+                    Generate Video
                   </>
                 )}
               </Button>
