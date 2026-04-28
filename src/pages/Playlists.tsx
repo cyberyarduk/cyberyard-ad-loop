@@ -411,7 +411,7 @@ const Playlists = () => {
       setImageFile(null);
       setImageTitle("");
       setImageDuration("10");
-      setImageAnimatedOverlays(false);
+      setImagePlayerOverlay("none");
       setImageLimitedOffer(false);
       setAddVideosOpen(false);
       setSelectedPlaylist(null);
