@@ -754,7 +754,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
         <canvas
           ref={canvasRef}
           key={`${currentVideo.id}-${safeIndex}-native-canvas`}
-          className="player-media-fade absolute inset-0 z-10 h-full w-full bg-black"
+          className="player-media-fade absolute inset-0 z-10 h-full w-full"
           aria-label={currentVideo.title}
         />
       )}
