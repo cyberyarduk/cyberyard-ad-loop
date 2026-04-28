@@ -50,6 +50,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const [isOffline, setIsOffline] = useState(false);
   const [isSuspended, setIsSuspended] = useState(false);
   const [cachedVideos, setCachedVideos] = useState<Video[]>([]);
+  const [imageRenderUrl, setImageRenderUrl] = useState<string>("");
   const [isPullingToRefresh, setIsPullingToRefresh] = useState(false);
   const [pullStartY, setPullStartY] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -499,6 +500,40 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
     return () => document.removeEventListener('fullscreenchange', handler);
   }, []);
 
+  // Android WebView can be flaky with cross-origin storage images. Fetch the
+  // active image as a blob and render a local object URL, with direct URL fallback.
+  useEffect(() => {
+    if (!_currentForImage || !_isImageItemEffect) {
+      setImageRenderUrl("");
+      return;
+    }
+
+    let cancelled = false;
+    let objectUrl = "";
+    const directUrl = appendCacheBust(getPlayableUrl(_currentForImage), playlistRevision);
+    setImageRenderUrl(directUrl);
+
+    fetch(directUrl, { cache: "no-store" })
+      .then((res) => {
+        if (!res.ok) throw new Error(`Image fetch failed: ${res.status}`);
+        return res.blob();
+      })
+      .then((blob) => {
+        if (cancelled) return;
+        objectUrl = URL.createObjectURL(blob);
+        setImageRenderUrl(objectUrl);
+      })
+      .catch((error) => {
+        console.error('[Image] Blob fallback failed, using direct URL:', error);
+        if (!cancelled) setImageRenderUrl(directUrl);
+      });
+
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [_currentForImage?.id, _isImageItemEffect, playlistRevision]);
+
   const toggleFullscreen = async () => {
     try {
       if (!document.fullscreenElement) {
@@ -575,6 +610,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const currentVideo = videos[safeIndex];
   const isImageItem = isImageMedia(currentVideo);
   const currentMediaUrl = appendCacheBust(getPlayableUrl(currentVideo), playlistRevision);
+  const currentImageUrl = isImageItem ? (imageRenderUrl || currentMediaUrl) : currentMediaUrl;
 
 
   return (
@@ -644,11 +680,11 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
         >
           <div
             className="absolute inset-0 bg-center bg-contain bg-no-repeat"
-            style={{ backgroundImage: `url("${currentMediaUrl.replace(/"/g, '%22')}")` }}
+            style={{ backgroundImage: `url("${currentImageUrl.replace(/"/g, '%22')}")` }}
             aria-hidden="true"
           />
           <img
-            src={currentMediaUrl}
+            src={currentImageUrl}
             alt={currentVideo.title}
             className="absolute inset-0 h-full w-full object-contain"
             decoding="async"

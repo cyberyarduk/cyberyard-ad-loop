@@ -68,12 +68,17 @@ const POSITION_OPTIONS = [
   { value: "behind", label: "Behind", description: "Behind the subject" },
 ];
 
+interface PlaylistOption {
+  id: string;
+  name: string;
+}
+
 const CreateAIVideo = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const presetPlaylistId = searchParams.get("playlistId") || "";
   const [isGenerating, setIsGenerating] = useState(false);
-  const [playlists, setPlaylists] = useState<any[]>([]);
+  const [playlists, setPlaylists] = useState<PlaylistOption[]>([]);
   const [selectedPlaylistIds, setSelectedPlaylistIds] = useState<string[]>(presetPlaylistId ? [presetPlaylistId] : []);
   const [mainText, setMainText] = useState("");
   const [subtext, setSubtext] = useState("");
@@ -181,8 +186,17 @@ const CreateAIVideo = () => {
       toast.info("Starting video generation. This may take 1-2 minutes...");
 
       const firstPlaylistId = selectedPlaylistIds[0] || null;
-      const { data, error } = await supabase.functions.invoke('generate-video', {
-        body: {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-video`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+          "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({
           imageUrl: publicUrl,
           mainText,
           subtext,
@@ -197,10 +211,12 @@ const CreateAIVideo = () => {
             textPosition,
             themePrompt: themePrompt.trim(),
           },
-        }
+        })
       });
 
-      if (error) throw error;
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data?.error || "Video generation failed");
 
       if (data?.success) {
         const extraPlaylistIds = selectedPlaylistIds.slice(1);
@@ -430,7 +446,7 @@ const CreateAIVideo = () => {
                         >
                           <span
                             className="text-2xl leading-none"
-                            style={{ fontFamily: f.css, fontWeight: f.weight as any }}
+                            style={{ fontFamily: f.css, fontWeight: f.weight }}
                           >
                             {mainText.trim().slice(0, 12) || "Aa Bb 99p"}
                           </span>
