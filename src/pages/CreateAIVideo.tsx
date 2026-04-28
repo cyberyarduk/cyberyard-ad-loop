@@ -205,6 +205,8 @@ const CreateAIVideo = () => {
           duration,
           style,
           playlistId: firstPlaylistId,
+          limitedOffer,
+          badgeText: limitedOffer ? badgeText.trim() : undefined,
           customization: {
             fontFamily,
             textColor,
