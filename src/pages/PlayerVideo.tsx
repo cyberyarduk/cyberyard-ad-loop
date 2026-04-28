@@ -849,6 +849,77 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
 };
 
 // ---------------------------------------------------------------------------
+// Canvas helpers for native Android fallback rendering.
+// ---------------------------------------------------------------------------
+const drawContainedImage = (
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  canvasWidth: number,
+  canvasHeight: number
+) => {
+  const imageWidth = img.naturalWidth || img.width;
+  const imageHeight = img.naturalHeight || img.height;
+  if (!imageWidth || !imageHeight || !canvasWidth || !canvasHeight) return;
+
+  const scale = Math.min(canvasWidth / imageWidth, canvasHeight / imageHeight);
+  const width = imageWidth * scale;
+  const height = imageHeight * scale;
+  const x = (canvasWidth - width) / 2;
+  const y = (canvasHeight - height) / 2;
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, x, y, width, height);
+};
+
+const drawCanvasSparkles = (
+  ctx: CanvasRenderingContext2D,
+  canvasWidth: number,
+  canvasHeight: number,
+  time: number
+) => {
+  const sparkles = [
+    { x: 0.12, y: 0.08, delay: 0, size: 14 },
+    { x: 0.78, y: 0.18, delay: 1.2, size: 18 },
+    { x: 0.06, y: 0.42, delay: 2.4, size: 12 },
+    { x: 0.88, y: 0.60, delay: 0.6, size: 16 },
+    { x: 0.22, y: 0.76, delay: 1.8, size: 14 },
+    { x: 0.68, y: 0.88, delay: 3.0, size: 20 },
+    { x: 0.50, y: 0.30, delay: 2.1, size: 10 },
+    { x: 0.40, y: 0.54, delay: 3.6, size: 12 },
+  ];
+
+  sparkles.forEach((sparkle) => {
+    const phase = (time / 1000 + sparkle.delay) % 2.8;
+    const pulse = (Math.sin((phase / 2.8) * Math.PI * 2 - Math.PI / 2) + 1) / 2;
+    const alpha = 0.18 + pulse * 0.82;
+    const radius = sparkle.size * (0.55 + pulse * 0.63);
+    const x = sparkle.x * canvasWidth;
+    const y = sparkle.y * canvasHeight;
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate((phase / 2.8) * Math.PI);
+    ctx.globalAlpha = alpha;
+    ctx.shadowColor = 'hsl(50 100% 84%)';
+    ctx.shadowBlur = 18;
+    ctx.fillStyle = 'hsl(50 100% 84%)';
+    ctx.beginPath();
+    ctx.moveTo(0, -radius);
+    ctx.lineTo(radius * 0.18, -radius * 0.18);
+    ctx.lineTo(radius, 0);
+    ctx.lineTo(radius * 0.18, radius * 0.18);
+    ctx.lineTo(0, radius);
+    ctx.lineTo(-radius * 0.18, radius * 0.18);
+    ctx.lineTo(-radius, 0);
+    ctx.lineTo(-radius * 0.18, -radius * 0.18);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  });
+};
+
+// ---------------------------------------------------------------------------
 // SparkleOverlay — small attention-grabbing sparkles rendered above the
 // playing media. Pure CSS animation so it costs nothing. pointer-events-none
 // so the 4-tap admin gesture still works underneath.
