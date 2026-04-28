@@ -42,6 +42,9 @@ const Videos = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageDuration, setImageDuration] = useState<string>("10");
   const [uploadingImage, setUploadingImage] = useState(false);
+  // Optional animated overlays for uploaded images
+  const [imgAnimatedOverlays, setImgAnimatedOverlays] = useState(false);
+  const [imgOverlayStyle, setImgOverlayStyle] = useState<"boom" | "sparkle" | "stars" | "minimal">("sparkle");
 
   useEffect(() => {
     fetchVideos();
