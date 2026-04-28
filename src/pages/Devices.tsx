@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Monitor, Copy, Edit, Trash2, QrCode, KeyRound } from "lucide-react";
+import { Plus, Monitor, Copy, Edit, Trash2, QrCode, KeyRound, PlayCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
@@ -469,7 +469,20 @@ const Devices = () => {
                     </div>
                   )}
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
+                    {device.device_code && device.status !== 'suspended' && (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => {
+                          window.open(`/player?code=${device.device_code}`, '_blank', 'noopener');
+                        }}
+                        title="Open the player on this browser using this device's code"
+                      >
+                        <PlayCircle className="mr-2 h-4 w-4" />
+                        Use this device (open player)
+                      </Button>
+                    )}
                     {device.status === 'active' && (
                       <>
                         <Button
