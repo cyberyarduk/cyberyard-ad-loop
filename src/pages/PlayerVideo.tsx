@@ -5,7 +5,7 @@ import PlayerAdminMode from "./PlayerAdminMode";
 import { Capacitor } from '@capacitor/core';
 import { Device } from '@capacitor/device';
 import { Network } from '@capacitor/network';
-import { Loader2, WifiOff } from "lucide-react";
+import { Loader2, WifiOff, Maximize, Minimize } from "lucide-react";
 
 interface Video {
   id: string;
