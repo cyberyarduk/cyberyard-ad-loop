@@ -17,6 +17,12 @@ interface Video {
   display_duration?: number | null;
 }
 
+const getPlayableUrl = (item?: Video | null) => item?.image_url || item?.video_url || "";
+const isImageMedia = (item?: Video | null) => {
+  const url = getPlayableUrl(item);
+  return item?.media_type === 'image' || /\.(jpe?g|png|gif|webp|avif)(\?|$)/i.test(url);
+};
+
 interface PlayerVideoProps {
   authToken: string;
   deviceInfo: any;
@@ -128,7 +134,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       setIsSuspended(false);
       
       console.log('Fetched videos:', data.videos, 'playlist_id:', data.playlist_id);
-      const newVideos = data.videos || [];
+      const newVideos = (data.videos || []).filter((item: Video) => !!getPlayableUrl(item));
       
       // If videos changed, reset to first video and force playback
       if (JSON.stringify(newVideos) !== JSON.stringify(videosRef.current)) {
@@ -267,7 +273,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           }
           
           if (data.success && data.videos) {
-            const newVideos = data.videos;
+              const newVideos = data.videos.filter((item: Video) => !!getPlayableUrl(item));
             
             if (newVideos.length > 0 && JSON.stringify(newVideos) !== JSON.stringify(videosRef.current)) {
               console.log('New playlist detected - switching immediately');
@@ -437,7 +443,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   // For image items, advance after `display_duration` seconds (default 10s).
   const _safeIdxForImage = currentIndex < videos.length ? currentIndex : 0;
   const _currentForImage = videos[_safeIdxForImage];
-  const _isImageItemEffect = _currentForImage?.media_type === 'image';
+  const _isImageItemEffect = isImageMedia(_currentForImage);
   useEffect(() => {
     if (!_currentForImage || !_isImageItemEffect) return;
     const seconds = Math.max(1, Math.min(600, _currentForImage.display_duration ?? 10));
@@ -510,7 +516,8 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   // Safety check: compute safe index without setting state during render
   const safeIndex = currentIndex < videos.length ? currentIndex : 0;
   const currentVideo = videos[safeIndex];
-  const isImageItem = currentVideo?.media_type === 'image';
+  const isImageItem = isImageMedia(currentVideo);
+  const currentMediaUrl = getPlayableUrl(currentVideo);
 
 
   return (
