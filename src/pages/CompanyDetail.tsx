@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import DashboardLayout from '@/components/DashboardLayout';
+import PortalLayout from '@/components/PortalLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -123,26 +123,26 @@ export default function CompanyDetail() {
 
   if (loading) {
     return (
-      <DashboardLayout>
+      <PortalLayout variant="admin">
         <div className="flex items-center justify-center h-64">
           <div className="text-muted-foreground">Loading company...</div>
         </div>
-      </DashboardLayout>
+      </PortalLayout>
     );
   }
 
   if (!company) {
     return (
-      <DashboardLayout>
+      <PortalLayout variant="admin">
         <div className="flex items-center justify-center h-64">
           <div className="text-muted-foreground">Company not found</div>
         </div>
-      </DashboardLayout>
+      </PortalLayout>
     );
   }
 
   return (
-    <DashboardLayout>
+    <PortalLayout variant="admin">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -342,6 +342,6 @@ export default function CompanyDetail() {
           </Card>
         )}
       </div>
-    </DashboardLayout>
+    </PortalLayout>
   );
 }
