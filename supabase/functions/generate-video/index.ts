@@ -107,9 +107,24 @@ serve(async (req) => {
     const priceStart = videoDuration * 0.30;
     const badgeStart = videoDuration * 0.55;
 
+    // ---- Resolve user customization ----
+    const FONT_MAP: Record<string, { stack: string; weight: number }> = {
+      'bold-sans':       { stack: "'Impact','Arial Black',system-ui,sans-serif", weight: 900 },
+      'elegant-serif':   { stack: "'Playfair Display','Didot',Georgia,serif",     weight: 700 },
+      'handwritten':     { stack: "'Brush Script MT','Lucida Handwriting',cursive", weight: 400 },
+      'modern-display':  { stack: "'Futura','Century Gothic','Trebuchet MS',sans-serif", weight: 700 },
+      'rounded':         { stack: "'Quicksand','Nunito','Comic Sans MS',sans-serif", weight: 700 },
+      'condensed':       { stack: "'Oswald','Bebas Neue','Arial Narrow',sans-serif", weight: 800 },
+    };
+    const TEXT_COLOR_MAP: Record<string, string> = {
+      white: '#FFFFFF', black: '#000000', yellow: '#FFD60A', red: '#FF3B30',
+      pink: '#FF2D87', blue: '#0A84FF', green: '#30D158', orange: '#FF9500',
+    };
+    const userFont = FONT_MAP[customization?.fontFamily as string] || FONT_MAP['bold-sans'];
+    const userTextColor = TEXT_COLOR_MAP[customization?.textColor as string] || '#FFFFFF';
+
     const accentColor = '#FACC15';
     const accentInk = '#111111';
-    const titleInk = '#FFFFFF';
 
     const escapeHtml = (s: string) => s
       .replace(/&/g, '&amp;')
@@ -128,32 +143,43 @@ serve(async (req) => {
       }
     }
 
-    // Auto-shrink title font if the text is long so it always fits on screen.
+    // Auto-shrink title font if the text is long so it always fits.
     const titleLen = resolvedTitle.length;
-    const titleSizeKey: 'medium' | 'large' | 'x-large' =
-      titleLen > 32 ? 'medium' : titleLen > 18 ? 'large' : 'x-large';
+    const titleFontSize = (isPortrait: boolean) => {
+      const base = isPortrait ? 130 : 110;
+      if (titleLen > 32) return Math.round(base * 0.65);
+      if (titleLen > 22) return Math.round(base * 0.78);
+      if (titleLen > 14) return Math.round(base * 0.9);
+      return base;
+    };
 
     const buildTracks = (bgSrc: string, isPortrait: boolean) => {
       const W = isPortrait ? 1080 : 1920;
       const H = isPortrait ? 1920 : 1080;
 
-      // Layout: title TOP, price CENTER-BOTTOM, badge TOP-RIGHT-ish above title.
+      // Layout
       const titleY = isPortrait ? 0.36 : 0.34;
       const priceY = isPortrait ? -0.30 : -0.30;
-      const badgeY = isPortrait ? 0.44 : 0.42;
+      const badgeY = isPortrait ? 0.46 : 0.44;
 
-      // Smaller, safer font sizes that always fit in the canvas.
-      const priceFontSize = isPortrait ? 140 : 120;
+      const tFontSize = titleFontSize(isPortrait);
+      const priceFontSize = isPortrait ? 150 : 130;
       const badgeFontSize = isPortrait ? 44 : 40;
 
+      // Text shadow that works for both light + dark text colours
+      const isLightText = ['#FFFFFF', '#FFD60A', '#FF9500', '#30D158'].includes(userTextColor);
+      const titleShadow = isLightText
+        ? '0 4px 24px rgba(0,0,0,0.85), 0 2px 6px rgba(0,0,0,0.9)'
+        : '0 2px 8px rgba(255,255,255,0.6)';
+
       // IMPORTANT: in Shotstack, the FIRST track in the array renders ON TOP.
-      // Order: badge -> price -> title -> dim overlay -> background image.
+      // Order: badge -> price -> title -> dim overlay -> hero image -> blurred bg.
       const tracks: Record<string, unknown>[] = [];
 
       // BADGE — pulsing limited offer pill
       if (showBadge && finalBadgeText) {
         const badgeHtml = `<p class="b">${escapeHtml(finalBadgeText)}</p>`;
-        const badgeCss = `.b{font-family:'Open Sans',Arial,sans-serif;font-weight:900;font-size:${badgeFontSize}px;color:#FFFFFF;background:#DC2626;letter-spacing:0.08em;padding:14px 32px;border-radius:9999px;display:inline-block;text-align:center;text-transform:uppercase;margin:0;line-height:1;border:3px solid #FFFFFF;box-shadow:0 6px 20px rgba(220,38,38,0.5);}`;
+        const badgeCss = `.b{font-family:${userFont.stack};font-weight:900;font-size:${badgeFontSize}px;color:#FFFFFF;background:#DC2626;letter-spacing:0.08em;padding:14px 32px;border-radius:9999px;display:inline-block;text-align:center;text-transform:uppercase;margin:0;line-height:1;border:3px solid #FFFFFF;box-shadow:0 6px 20px rgba(220,38,38,0.5);}`;
         const badgeW = 700;
         const badgeH = 140;
         const pulseLen = 0.9;
@@ -175,10 +201,10 @@ serve(async (req) => {
         }
       }
 
-      // PRICE — yellow pop badge, lower portion
+      // PRICE — yellow pop badge
       if (resolvedPrice) {
         const priceHtml = `<p class="p">${escapeHtml(resolvedPrice)}</p>`;
-        const priceCss = `.p{font-family:'Open Sans',Arial,sans-serif;font-weight:900;font-size:${priceFontSize}px;color:${accentInk};background:${accentColor};letter-spacing:-0.02em;padding:20px 48px;border-radius:20px;display:inline-block;text-align:center;text-transform:uppercase;margin:0;line-height:1;box-shadow:0 12px 32px rgba(0,0,0,0.45);white-space:nowrap;}`;
+        const priceCss = `.p{font-family:${userFont.stack};font-weight:${userFont.weight};font-size:${priceFontSize}px;color:${accentInk};background:${accentColor};letter-spacing:-0.02em;padding:20px 48px;border-radius:20px;display:inline-block;text-align:center;margin:0;line-height:1;box-shadow:0 12px 32px rgba(0,0,0,0.45);white-space:nowrap;}`;
         const priceW = isPortrait ? 900 : 1200;
         const priceH = isPortrait ? 280 : 240;
         tracks.push({
@@ -194,21 +220,18 @@ serve(async (req) => {
         });
       }
 
-      // TITLE — top of frame
+      // TITLE — uses USER-SELECTED FONT & COLOUR
       if (resolvedTitle) {
+        const titleHtml = `<p class="t">${escapeHtml(resolvedTitle)}</p>`;
+        const titleCss = `.t{font-family:${userFont.stack};font-weight:${userFont.weight};font-size:${tFontSize}px;color:${userTextColor};letter-spacing:-0.01em;text-align:center;margin:0;line-height:1.05;text-shadow:${titleShadow};text-transform:uppercase;}`;
+        const titleW = isPortrait ? 1000 : 1700;
+        const titleH = isPortrait ? 480 : 360;
         tracks.push({
           clips: [{
-            asset: {
-              type: "title",
-              text: resolvedTitle,
-              style: "future",
-              color: titleInk,
-              size: titleSizeKey,
-              background: "transparent",
-              position: "center",
-            },
+            asset: { type: "html", html: titleHtml, css: titleCss, width: titleW, height: titleH, background: "transparent" },
             start: titleStart,
             length: Math.max(2, videoDuration - titleStart),
+            position: "center",
             offset: { x: 0, y: titleY },
             transition: { in: "slideUp", out: "fade" },
           }]
@@ -217,7 +240,7 @@ serve(async (req) => {
 
       // Dim gradient overlay — stronger at top + bottom so text always reads.
       const dimHtml = `<div class="dim"></div>`;
-      const dimCss = `.dim{width:100%;height:100%;background:linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.10) 35%, rgba(0,0,0,0.10) 65%, rgba(0,0,0,0.65) 100%);}`;
+      const dimCss = `.dim{width:100%;height:100%;background:linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.05) 35%, rgba(0,0,0,0.05) 65%, rgba(0,0,0,0.65) 100%);}`;
       tracks.push({
         clips: [{
           asset: { type: "html", html: dimHtml, css: dimCss, width: W, height: H },
@@ -227,15 +250,28 @@ serve(async (req) => {
         }]
       });
 
-      // BACKGROUND — the user's uploaded image with slow Ken Burns
+      // HERO IMAGE — contained (not cropped), gentle zoom, sits above blurred bg
+      tracks.push({
+        clips: [{
+          asset: { type: "image", src: bgSrc },
+          start: 0,
+          length: videoDuration,
+          fit: "contain",
+          scale: 0.85,
+          effect: "zoomInSlow",
+          transition: { in: "fade", out: "fade" }
+        }]
+      });
+
+      // BLURRED BACKDROP — same image, cover-fit, blurred via opacity dim
       tracks.push({
         clips: [{
           asset: { type: "image", src: bgSrc },
           start: 0,
           length: videoDuration,
           fit: "cover",
-          effect: "zoomInSlow",
-          transition: { in: "fade", out: "fade" }
+          opacity: 0.55,
+          effect: "zoomOutSlow",
         }]
       });
 
