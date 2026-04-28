@@ -222,8 +222,7 @@ const Auth = () => {
                 </TabsContent>
               ))}
             </Tabs>
-          </CardContent>
-        </Card>
+        </div>
       </div>
     </div>
   );
