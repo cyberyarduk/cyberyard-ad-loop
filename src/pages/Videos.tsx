@@ -513,7 +513,11 @@ const Videos = () => {
                   >
                     <Clock className="h-3.5 w-3.5" />
                     <span className="flex-1 text-left">
-                      {video.display_duration ? `Plays for ${video.display_duration}s` : "Use video length"}
+                      {video.display_duration
+                        ? `Plays for ${video.display_duration}s`
+                        : video.media_type === 'image'
+                          ? 'Set display time'
+                          : 'Use video length'}
                     </span>
                     <span className="text-primary font-medium">Edit</span>
                   </button>
