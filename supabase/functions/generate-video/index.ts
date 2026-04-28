@@ -149,6 +149,11 @@ serve(async (req) => {
         ? ` Add a small "${finalBadgeText}" badge/sticker in a corner.`
         : '';
 
+      // CRITICAL composition rule appended to every prompt: the product must
+      // remain fully visible. Text must NEVER overlap or cover the product —
+      // it sits above, below, beside, or softly behind it.
+      const PRODUCT_RULE = ' CRITICAL: Keep the product fully visible and unobstructed. Text and price callouts must NEVER cover, overlap or sit on top of the product — place them in empty space above, below or beside the product so the product itself is never hidden.';
+
       const stylePrompts: Record<string, (orientation: string) => string> = {
         boom: (o) => `Take this product image and transform it into an eye-catching promotional poster in ${o} format. Add bold explosive text "${headline}" in huge letters with vibrant red and pink gradients, dramatic shadows, and energy-burst effects. Make it look like a dramatic product advertisement with WOW factor.${priceLine}${badgeLine}`,
         sparkle: (o) => `Take this product image and transform it into a magical promotional poster in ${o} format. Add elegant text "${headline}" with purple-to-blue gradients, sparkles, and dreamy glowing effects. Make it enchanting and eye-catching.${priceLine}${badgeLine}`,
@@ -156,8 +161,8 @@ serve(async (req) => {
         minimal: (o) => `Take this product image and transform it into a clean modern promotional poster in ${o} format. Add modern text "${headline}" in bold sans-serif font with simple, professional styling. Keep it minimal but impactful.${priceLine}${badgeLine}`,
       };
       const stylefn = stylePrompts[style] || stylePrompts.boom;
-      const portraitPrompt = stylefn('1080x1920 portrait') + customizationFragment;
-      const landscapePrompt = stylefn('1920x1080 landscape') + customizationFragment;
+      const portraitPrompt = stylefn('1080x1920 portrait') + customizationFragment + PRODUCT_RULE;
+      const landscapePrompt = stylefn('1920x1080 landscape') + customizationFragment + PRODUCT_RULE;
 
       const callGemini = (prompt: string) => fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
@@ -175,9 +180,6 @@ serve(async (req) => {
         })
       });
 
-      console.log('Generating portrait + landscape promo posters with Gemini...');
-      const [portraitRes, landscapeRes] = await Promise.all([callGemini(portraitPrompt), callGemini(landscapePrompt)]);
-
       const extractB64 = async (res: Response, label: string): Promise<string | null> => {
         if (!res.ok) { console.error(`${label} AI error:`, await res.text().catch(() => '')); return null; }
         try {
@@ -186,10 +188,37 @@ serve(async (req) => {
         } catch { return null; }
       };
 
-      const [portraitB64, landscapeB64] = await Promise.all([
-        extractB64(portraitRes, 'portrait poster'),
-        extractB64(landscapeRes, 'landscape poster'),
-      ]);
+      // Run portrait + landscape SEQUENTIALLY (not in parallel) so we don't
+      // hammer Gemini with two simultaneous image-generation requests — that
+      // was triggering 429 rate-limits and silently falling back to the
+      // original uploaded image (which is why desktop/landscape kept
+      // appearing as the raw upload with no text).
+      console.log('Generating portrait promo poster with Gemini...');
+      const portraitRes = await callGemini(portraitPrompt);
+      let portraitB64 = await extractB64(portraitRes, 'portrait poster');
+
+      // Small spacing + one retry for portrait if it failed.
+      if (!portraitB64) {
+        console.warn('Portrait poster failed once — retrying after short delay');
+        await new Promise(r => setTimeout(r, 1500));
+        const retry = await callGemini(portraitPrompt);
+        portraitB64 = await extractB64(retry, 'portrait poster (retry)');
+      }
+
+      await new Promise(r => setTimeout(r, 800));
+
+      console.log('Generating landscape promo poster with Gemini...');
+      const landscapeRes = await callGemini(landscapePrompt);
+      let landscapeB64 = await extractB64(landscapeRes, 'landscape poster');
+
+      // Retry landscape once if it failed — this is the bug that caused
+      // desktop renders to fall back to the original raw image.
+      if (!landscapeB64) {
+        console.warn('Landscape poster failed once — retrying after short delay');
+        await new Promise(r => setTimeout(r, 2000));
+        const retry = await callGemini(landscapePrompt);
+        landscapeB64 = await extractB64(retry, 'landscape poster (retry)');
+      }
 
       const ts = Date.now();
       const uploadPng = async (b64: string, path: string) => {
