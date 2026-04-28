@@ -368,7 +368,7 @@ CRITICAL RULES:
     const portraitEdit = {
       timeline: {
         background: "#000000",
-        tracks: buildTracks(portraitImageUrl, true)
+        tracks: buildTracks(portraitImageUrl, heroPortraitUrl, true)
       },
       output: {
         format: "mp4",
