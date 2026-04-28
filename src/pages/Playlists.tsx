@@ -366,81 +366,47 @@ const Playlists = () => {
       const portraitUrl = supabase.storage.from("images").getPublicUrl(portraitPath).data.publicUrl;
       const landscapeUrl = supabase.storage.from("images").getPublicUrl(landscapePath).data.publicUrl;
 
-      // Two paths:
-      //   (a) No animated overlays → save as a static image asset (current
-      //       behaviour — fast, no AI / Shotstack involved).
-      //   (b) Animated overlays on → call the generate-video edge function
-      //       with `useImageAsIs` so the uploaded image becomes the hero
-      //       and we get a video with swiping bars + optional offer badge.
-      if (imageAnimatedOverlays) {
-        toast.info("Adding animated overlays — rendering video (1–2 min)…");
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) throw new Error("Not authenticated");
+      // Static image insert. The chosen `player_overlay` is a live effect
+      // (e.g. golden stars) that the player draws on top of the image —
+      // no Shotstack render, no per-upload cost.
+      const { data: newRow, error: insertError } = await supabase
+        .from("videos")
+        .insert({
+          title: imageTitle || imageFile.name,
+          user_id: user.id,
+          company_id: profile?.company_id,
+          media_type: "image",
+          image_url: portraitUrl,
+          image_url_landscape: landscapeUrl,
+          video_url: portraitUrl,
+          display_duration: dur,
+          source: "image_upload",
+          player_overlay: imagePlayerOverlay,
+        } as any)
+        .select()
+        .single();
+      if (insertError) throw insertError;
 
-        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-video`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${session.access_token}`,
-            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-          body: JSON.stringify({
-            imageUrl: portraitUrl,
-            imageUrlLandscape: landscapeUrl,
-            mainText: imageTitle || imageFile.name,
-            duration: String(Math.max(8, Math.min(20, dur))),
-            style: imageOverlayStyle,
-            playlistId: selectedPlaylist,
-            useImageAsIs: true,
-            animatedOverlays: true,
-            limitedOffer: imageLimitedOffer,
-            badgeText: imageLimitedOffer ? imageBadgeText.trim() : undefined,
-          }),
+      const { data: existingVideos } = await supabase
+        .from("playlist_videos")
+        .select("order_index")
+        .eq("playlist_id", selectedPlaylist)
+        .order("order_index", { ascending: false })
+        .limit(1);
+      const orderIndex = existingVideos && existingVideos.length > 0
+        ? existingVideos[0].order_index + 1
+        : 0;
+
+      const { error: linkError } = await supabase
+        .from("playlist_videos")
+        .insert({
+          playlist_id: selectedPlaylist,
+          video_id: newRow.id,
+          order_index: orderIndex,
         });
-        const data = await response.json();
-        if (!response.ok || !data?.success) {
-          throw new Error(data?.error || "Failed to render animated image");
-        }
-        toast.success("Animated image added to playlist");
-      } else {
-        const { data: newRow, error: insertError } = await supabase
-          .from("videos")
-          .insert({
-            title: imageTitle || imageFile.name,
-            user_id: user.id,
-            company_id: profile?.company_id,
-            media_type: "image",
-            image_url: portraitUrl,
-            image_url_landscape: landscapeUrl,
-            video_url: portraitUrl,
-            display_duration: dur,
-            source: "image_upload",
-          })
-          .select()
-          .single();
-        if (insertError) throw insertError;
+      if (linkError) throw linkError;
 
-        const { data: existingVideos } = await supabase
-          .from("playlist_videos")
-          .select("order_index")
-          .eq("playlist_id", selectedPlaylist)
-          .order("order_index", { ascending: false })
-          .limit(1);
-        const orderIndex = existingVideos && existingVideos.length > 0
-          ? existingVideos[0].order_index + 1
-          : 0;
-
-        const { error: linkError } = await supabase
-          .from("playlist_videos")
-          .insert({
-            playlist_id: selectedPlaylist,
-            video_id: newRow.id,
-            order_index: orderIndex,
-          });
-        if (linkError) throw linkError;
-
-        toast.success("Image added to playlist");
-      }
+      toast.success("Image added to playlist");
 
       setImageFile(null);
       setImageTitle("");
