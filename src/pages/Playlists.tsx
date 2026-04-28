@@ -100,7 +100,10 @@ const Playlists = () => {
               id,
               title,
               video_url,
-              display_duration
+              display_duration,
+              media_type,
+              image_url,
+              image_url_landscape
             )
           `)
           .eq("playlist_id", playlist.id)
