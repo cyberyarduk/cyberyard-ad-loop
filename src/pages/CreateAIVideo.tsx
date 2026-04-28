@@ -382,8 +382,26 @@ const CreateAIVideo = () => {
                 )}
               </div>
 
+              {/* Animated overlays toggle */}
+              <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-4">
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    id="animatedOverlays"
+                    checked={animatedOverlays}
+                    onCheckedChange={(v) => setAnimatedOverlays(v === true)}
+                  />
+                  <Label htmlFor="animatedOverlays" className="cursor-pointer font-medium">
+                    Add animated overlays (swiping bars, pulsing badge)
+                  </Label>
+                </div>
+                <p className="ml-7 text-xs text-muted-foreground">
+                  {animatedOverlays
+                    ? "Adds motion effects on top of the poster — great for offers."
+                    : "Clean & still — perfect for menus or static information."}
+                </p>
+              </div>
 
-              {/* Duration + Style preset */}
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="duration">Select your duration</Label>
