@@ -47,6 +47,7 @@ const Devices = () => {
   const [qrCodeUrl, setQrCodeUrl] = useState("");
   const [editDevice, setEditDevice] = useState<any>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [deviceLimit, setDeviceLimit] = useState<number | null>(null);
 
   // Auth check
   useEffect(() => {
