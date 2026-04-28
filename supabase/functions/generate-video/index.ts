@@ -123,11 +123,12 @@ serve(async (req) => {
         'gradient-top': 'a soft gradient that fades from the top of the image to make the text pop',
       };
       const positionDescriptions: Record<string, string> = {
-        top: 'at the TOP of the composition',
-        middle: 'in the CENTER of the composition',
-        bottom: 'at the BOTTOM of the composition',
-        infront: 'overlapping the front of the subject',
-        behind: 'integrated behind the subject for depth',
+        top: 'in the empty space ABOVE the product (never overlapping it)',
+        middle: 'in clear empty space beside the product, never covering or touching it',
+        bottom: 'in the empty space BELOW the product (never overlapping it)',
+        // "infront" intentionally maps to a safe placement — text must NEVER cover the product.
+        infront: 'in clear empty space beside the product, never covering or touching it',
+        behind: 'subtly integrated BEHIND the product for depth (product stays fully visible in front)',
       };
       const c = customization || {};
       const fontDesc = fontDescriptions[c.fontFamily as string] || fontDescriptions['bold-sans'];
