@@ -17,6 +17,7 @@ interface Video {
   image_url_landscape?: string | null;
   video_url_landscape?: string | null;
   display_duration?: number | null;
+  player_overlay?: string | null;
 }
 
 const getPlayableUrl = (item?: Video | null) => item?.image_url || item?.video_url || item?.image_url_landscape || item?.video_url_landscape || "";
