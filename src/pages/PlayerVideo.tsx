@@ -202,31 +202,15 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
     };
   }, [isOffline, fetchPlaylist]);
 
-  // Pull-to-refresh handlers
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (window.scrollY === 0 && !showAdmin) {
-      setPullStartY(e.touches[0].clientY);
-    }
-  };
+  // NOTE: Pull-to-refresh disabled — the player auto-polls every 5s, and on
+  // touchscreens (phones/tablets) the gesture was firing constantly while
+  // viewing image items, spamming the "Content refreshed" toast and making
+  // the screen appear unresponsive. Kept as no-ops in case future code paths
+  // still reference them.
+  const handleTouchStart = (_e: React.TouchEvent) => {};
+  const handleTouchMove = (_e: React.TouchEvent) => {};
+  const handleTouchEnd = async () => {};
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (pullStartY > 0) {
-      const currentY = e.touches[0].clientY;
-      const diff = currentY - pullStartY;
-      if (diff > 100) {
-        setIsPullingToRefresh(true);
-      }
-    }
-  };
-
-  const handleTouchEnd = async () => {
-    if (isPullingToRefresh) {
-      await fetchPlaylist();
-      toast.success("Content refreshed");
-    }
-    setPullStartY(0);
-    setIsPullingToRefresh(false);
-  };
 
   useEffect(() => {
     fetchPlaylist();
