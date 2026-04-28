@@ -31,7 +31,13 @@ const appendCacheBust = (url: string, version: number) => {
 
 interface PlayerVideoProps {
   authToken: string;
-  deviceInfo: any;
+  deviceInfo: {
+    id?: string;
+    device_id?: string;
+    device_name?: string;
+    company_id?: string;
+    playlist_id?: string | null;
+  };
 }
 
 const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
@@ -195,7 +201,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
 
-    let networkListener: any;
+    let networkListener: Awaited<ReturnType<typeof Network.addListener>> | null = null;
     
     const setupListener = async () => {
       networkListener = await Network.addListener('networkStatusChange', async (status) => {
@@ -326,9 +332,10 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       if (refreshIntervalRef.current) {
         clearInterval(refreshIntervalRef.current);
       }
-      if (videoRef.current) {
-        videoRef.current.pause();
-        videoRef.current.src = '';
+      const player = videoRef.current;
+      if (player) {
+        player.pause();
+        player.src = '';
       }
       supabase.removeChannel(channel);
     };
