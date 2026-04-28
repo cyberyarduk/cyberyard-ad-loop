@@ -1030,13 +1030,85 @@ const Playlists = () => {
                       required
                     />
                   </div>
+
+                  {/* Animated overlays toggle */}
+                  <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={imageAnimatedOverlays}
+                        onChange={(e) => setImageAnimatedOverlays(e.target.checked)}
+                        className="mt-1 h-4 w-4 rounded border-input"
+                      />
+                      <div>
+                        <div className="font-medium text-sm">Add animated overlays</div>
+                        <p className="text-xs text-muted-foreground">
+                          Turn the image into a short looping video with motion (swiping bars, optional offer badge). Leave off for a clean static menu.
+                        </p>
+                      </div>
+                    </label>
+
+                    {imageAnimatedOverlays && (
+                      <div className="ml-7 space-y-3 pt-1">
+                        <div className="space-y-2">
+                          <Label className="text-xs">Overlay style</Label>
+                          <div className="grid grid-cols-2 gap-2">
+                            {([
+                              { v: "boom", label: "💥 BOOM", desc: "Bold red bars" },
+                              { v: "sparkle", label: "✨ Sparkle", desc: "Purple shine" },
+                              { v: "stars", label: "⭐ Stars", desc: "Hot pink pop" },
+                              { v: "minimal", label: "🎯 Minimal", desc: "Clean blue" },
+                            ] as const).map((o) => (
+                              <button
+                                key={o.v}
+                                type="button"
+                                onClick={() => setImageOverlayStyle(o.v)}
+                                className={`rounded-md border p-2 text-left text-xs transition-colors ${
+                                  imageOverlayStyle === o.v
+                                    ? "border-primary ring-2 ring-primary/30 bg-primary/5"
+                                    : "border-border hover:border-primary/50"
+                                }`}
+                              >
+                                <div className="font-medium">{o.label}</div>
+                                <div className="text-[10px] text-muted-foreground">{o.desc}</div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <label className="flex items-start gap-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={imageLimitedOffer}
+                            onChange={(e) => setImageLimitedOffer(e.target.checked)}
+                            className="mt-1 h-4 w-4 rounded border-input"
+                          />
+                          <div className="flex-1">
+                            <div className="text-sm font-medium">Add a limited-offer badge</div>
+                            {imageLimitedOffer && (
+                              <Input
+                                className="mt-2"
+                                placeholder="TODAY ONLY"
+                                value={imageBadgeText}
+                                onChange={(e) => setImageBadgeText(e.target.value.slice(0, 20))}
+                                maxLength={20}
+                              />
+                            )}
+                          </div>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+
                   <Button
                     onClick={handleUploadImageToPlaylist}
                     disabled={!imageFile || uploadingImage}
                     className="w-full"
                   >
                     <ImageIcon className="h-4 w-4 mr-2" />
-                    {uploadingImage ? "Uploading..." : "Upload & add to playlist"}
+                    {uploadingImage
+                      ? (imageAnimatedOverlays ? "Rendering video…" : "Uploading…")
+                      : (imageAnimatedOverlays ? "Render & add to playlist" : "Upload & add to playlist")}
                   </Button>
                 </div>
               </TabsContent>
