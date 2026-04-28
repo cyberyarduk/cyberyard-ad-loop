@@ -12,24 +12,24 @@ import { ArrowLeft, Building2, BriefcaseBusiness, ShieldCheck } from "lucide-rea
 
 type Portal = "customer" | "salesperson" | "admin";
 
-const portalCopy: Record<Portal, { title: string; subtitle: string; icon: any; gradient: string }> = {
+const portalCopy: Record<Portal, { title: string; subtitle: string; icon: any; chip: string }> = {
   customer: {
     title: "Customer Portal",
     subtitle: "Manage your devices, content & playlists.",
     icon: Building2,
-    gradient: "from-amber-200 via-yellow-100 to-orange-100",
+    chip: "bg-yellow-soft",
   },
   salesperson: {
     title: "Salesperson Portal",
     subtitle: "Track your signups, hit your monthly target.",
     icon: BriefcaseBusiness,
-    gradient: "from-violet-200 via-fuchsia-100 to-rose-100",
+    chip: "bg-lavender",
   },
   admin: {
     title: "Admin Portal",
     subtitle: "Oversee the entire Cyberyard CRM.",
     icon: ShieldCheck,
-    gradient: "from-sky-200 via-cyan-100 to-emerald-100",
+    chip: "bg-mint",
   },
 };
 
@@ -137,12 +137,9 @@ const Auth = () => {
   const PortalIcon = portalCopy[portal].icon;
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Soft pastel washes */}
-      <div className="absolute inset-0 -z-10 opacity-70">
-        <div className="absolute top-0 -left-20 h-[400px] w-[400px] rounded-full bg-gradient-to-br from-amber-200 to-orange-100 blur-3xl" />
-        <div className="absolute bottom-0 -right-20 h-[400px] w-[400px] rounded-full bg-gradient-to-br from-sky-200 to-violet-100 blur-3xl" />
-      </div>
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Soft pastel wash matching homepage */}
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-wash-warm opacity-70" />
 
       <div className="w-full max-w-md space-y-4">
         <Link to="/">
@@ -152,16 +149,16 @@ const Auth = () => {
           </Button>
         </Link>
 
-        <Card className="w-full border-border/60 shadow-xl shadow-black/5 backdrop-blur-sm bg-card/95">
-          <CardContent className="p-6 sm:p-8 space-y-6">
-            <div className="text-center space-y-3">
-              <img src={logo} alt="Cyberyard" className="h-20 mx-auto" />
-              <div className={`inline-flex items-center gap-2 rounded-full bg-gradient-to-r ${portalCopy[portal].gradient} px-3 py-1 text-xs font-medium text-foreground/80`}>
-                <PortalIcon className="h-3.5 w-3.5" />
-                {portalCopy[portal].title}
-              </div>
-              <p className="text-sm text-muted-foreground">{portalCopy[portal].subtitle}</p>
+        <div className="premium-card card-highlight rounded-3xl p-8 sm:p-10 space-y-6">
+          <div className="text-center space-y-3">
+            <img src={logo} alt="Cyberyard" className="h-16 mx-auto" />
+            <div className={`chip ${portalCopy[portal].chip} text-foreground/80`}>
+              <PortalIcon className="h-3.5 w-3.5" />
+              {portalCopy[portal].title}
             </div>
+            <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
+            <p className="text-sm text-muted-foreground">{portalCopy[portal].subtitle}</p>
+          </div>
 
             <Tabs value={portal} onValueChange={(v) => setPortal(v as Portal)} className="w-full">
               <TabsList className="grid w-full grid-cols-3 h-auto">
