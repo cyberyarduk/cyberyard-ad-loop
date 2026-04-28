@@ -46,10 +46,12 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     <>
       <div className="mb-6">
         <Link to="/dashboard" className="block">
-          <img alt="Cyberyard" src={logo} className="h-14 w-auto object-contain" />
+          <div className="rounded-2xl bg-foreground/95 px-4 py-4 flex items-center justify-center">
+            <img alt="Cyberyard" src={logo} className="h-12 w-auto object-contain brightness-0 invert" />
+          </div>
         </Link>
         {!isSuperAdmin && company && (
-          <p className="text-xs text-muted-foreground mt-3 truncate">{company.name}</p>
+          <p className="text-sm font-semibold text-foreground mt-3 truncate text-center">{company.name}</p>
         )}
       </div>
 
