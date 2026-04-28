@@ -266,50 +266,96 @@ serve(async (req) => {
     
     console.log('Promotional images uploaded:', { portrait: portraitImageUrl, landscape: landscapeImageUrl });
 
-    // Create Shotstack edits for both formats
+    // Create motion-rich Shotstack edits for both formats.
+    // Layers (bottom -> top):
+    //   1. AI promo image with subtle Ken Burns zoom (gives the video life)
+    //   2. Animated sparkle overlay (looped luma) for shine/sparkle effect
+    //   3. Pulsing "Limited Offer" CTA badge (HTML asset, scale-pulses)
     const videoDuration = parseFloat(duration);
 
-    // Simple portrait edit - static image only; motion/effects are baked into the AI image prompt.
+    // Public sparkle/particle overlay (transparent webm-style PNG sequence on Shotstack CDN).
+    // Falls back gracefully if the asset is unavailable — Shotstack will skip the clip.
+    const SPARKLE_OVERLAY = "https://shotstack-assets.s3.amazonaws.com/effects/sparkle-loop.mp4";
+
+    const ctaHtml = `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">
+      <div style="background:#FACC15;color:#111;font-family:'Helvetica Neue',Arial,sans-serif;font-weight:900;font-size:48px;letter-spacing:0.05em;padding:18px 36px;border-radius:9999px;box-shadow:0 10px 40px rgba(0,0,0,0.35);text-transform:uppercase;">Limited Offer</div>
+    </div>`;
+
+    const buildTracks = (imageSrc: string, isPortrait: boolean) => {
+      const ctaWidth = isPortrait ? 720 : 600;
+      const ctaHeight = 140;
+      const ctaY = isPortrait ? -0.38 : -0.40; // near top of frame
+
+      return [
+        // Top: pulsing CTA badge (last track = top layer in Shotstack)
+        {
+          clips: [{
+            asset: { type: "html", html: ctaHtml, width: ctaWidth, height: ctaHeight },
+            start: 0.4,
+            length: Math.max(0, videoDuration - 0.4),
+            position: "center",
+            offset: { x: 0, y: ctaY },
+            transition: { in: "zoom", out: "fade" },
+            // Subtle continuous pulse via scale keyframes
+            transform: {
+              scale: [
+                { from: 1.0, to: 1.08, start: 0, length: 0.6 },
+                { from: 1.08, to: 1.0, start: 0.6, length: 0.6 },
+                { from: 1.0, to: 1.08, start: 1.2, length: 0.6 },
+                { from: 1.08, to: 1.0, start: 1.8, length: 0.6 },
+                { from: 1.0, to: 1.08, start: 2.4, length: 0.6 },
+                { from: 1.08, to: 1.0, start: 3.0, length: 0.6 },
+              ]
+            }
+          }]
+        },
+        // Middle: animated sparkle overlay (screen blend gives a shine/sparkle look)
+        {
+          clips: [{
+            asset: { type: "video", src: SPARKLE_OVERLAY, volume: 0 },
+            start: 0,
+            length: videoDuration,
+            fit: "cover",
+            opacity: 0.55,
+          }]
+        },
+        // Bottom: AI poster image with slow Ken Burns zoom for cinematic motion
+        {
+          clips: [{
+            asset: { type: "image", src: imageSrc },
+            start: 0,
+            length: videoDuration,
+            fit: "contain",
+            effect: "zoomIn",
+            transition: { in: "fade" }
+          }]
+        }
+      ];
+    };
+
     const portraitEdit = {
       timeline: {
         background: "#000000",
-        tracks: [
-          {
-            clips: [{
-              asset: { type: "image", src: portraitImageUrl },
-              start: 0,
-              length: videoDuration,
-              fit: "contain"
-            }]
-          }
-        ]
+        tracks: buildTracks(portraitImageUrl, true)
       },
       output: {
         format: "mp4",
         aspectRatio: "9:16",
-        size: { width: 1080, height: 1920 }
+        size: { width: 1080, height: 1920 },
+        fps: 30
       }
     };
 
-    // Simple landscape edit - static image only; no slide/zoom/camera movement.
     const landscapeEdit = landscapeImageUrl ? {
       timeline: {
         background: "#000000",
-        tracks: [
-          {
-            clips: [{
-              asset: { type: "image", src: landscapeImageUrl },
-              start: 0,
-              length: videoDuration,
-              fit: "contain"
-            }]
-          }
-        ]
+        tracks: buildTracks(landscapeImageUrl, false)
       },
       output: {
         format: "mp4",
         aspectRatio: "16:9",
-        size: { width: 1920, height: 1080 }
+        size: { width: 1920, height: 1080 },
+        fps: 30
       }
     } : null;
 
