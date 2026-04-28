@@ -557,7 +557,20 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
         </div>
       )}
       
-      {currentVideo && (
+      {currentVideo && isImageItem && (
+        <img
+          key={`${currentVideo.id}-${safeIndex}`}
+          src={currentVideo.image_url || currentVideo.video_url}
+          alt={currentVideo.title}
+          className="w-full h-full object-contain"
+          onError={() => {
+            console.error('Image load error:', currentVideo.image_url || currentVideo.video_url);
+            if (videos.length > 1) handleVideoEnd();
+          }}
+        />
+      )}
+
+      {currentVideo && !isImageItem && (
         <video
           ref={videoRef}
           key={`${currentVideo.id}-${safeIndex}`}
