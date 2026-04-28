@@ -551,9 +551,12 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           key={`${currentVideo.id}-${safeIndex}`}
           src={currentVideo.image_url || currentVideo.video_url}
           alt={currentVideo.title}
-          className="w-full h-full object-contain"
+          className="absolute inset-0 w-full h-full object-contain bg-black"
+          onLoad={() => {
+            console.log('[Image] Loaded successfully:', currentVideo.image_url || currentVideo.video_url);
+          }}
           onError={() => {
-            console.error('Image load error:', currentVideo.image_url || currentVideo.video_url);
+            console.error('[Image] Load error for URL:', currentVideo.image_url || currentVideo.video_url);
             if (videos.length > 1) handleVideoEnd();
           }}
         />
