@@ -667,28 +667,29 @@ const SparkleOverlay = () => {
     <div className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
       <style>{`
         @keyframes sparkleTwinkle {
-          0%, 100% { opacity: 0; transform: scale(0.4) rotate(0deg); }
-          50%      { opacity: 1; transform: scale(1)   rotate(180deg); }
+          0%, 100% { opacity: 0.2; transform: scale(0.55) rotate(0deg); }
+          50%      { opacity: 1; transform: scale(1.18) rotate(180deg); }
         }
         @keyframes flashBurst {
-          0%, 92%, 100% { opacity: 0; }
-          94%           { opacity: 0.55; }
-          96%           { opacity: 0; }
+          0%, 84%, 100% { opacity: 0; }
+          87%           { opacity: 0.72; }
+          90%           { opacity: 0; }
         }
         .cy-sparkle {
           position: absolute;
-          color: #FFF6B0;
-          filter: drop-shadow(0 0 6px rgba(255, 246, 176, 0.9));
-          animation: sparkleTwinkle 4.2s ease-in-out infinite;
+          color: hsl(50 100% 84%);
+          filter: drop-shadow(0 0 10px hsl(50 100% 84% / 0.95)) drop-shadow(0 0 22px hsl(42 100% 56% / 0.7));
+          animation: sparkleTwinkle 2.8s ease-in-out infinite;
+          will-change: transform, opacity;
         }
         .cy-flash {
           position: absolute;
           inset: 0;
           background: radial-gradient(circle at center,
-            rgba(255,255,255,0.85) 0%,
-            rgba(255,255,255,0.3) 25%,
-            rgba(255,255,255,0) 60%);
-          animation: flashBurst 12s ease-in-out infinite;
+            hsl(0 0% 100% / 0.95) 0%,
+            hsl(50 100% 85% / 0.48) 28%,
+            hsl(0 0% 100% / 0) 66%);
+          animation: flashBurst 7s ease-in-out infinite;
           mix-blend-mode: screen;
         }
       `}</style>
@@ -702,6 +703,7 @@ const SparkleOverlay = () => {
             width: s.size * 4,
             height: s.size * 4,
             animationDelay: s.delay,
+            transform: 'translate(-50%, -50%)',
           }}
           viewBox="0 0 24 24"
           fill="currentColor"
