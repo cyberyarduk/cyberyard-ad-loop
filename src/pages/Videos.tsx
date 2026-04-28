@@ -276,12 +276,17 @@ const Videos = () => {
     }
   };
 
-  const handleRegenerate = async (video: any) => {
+  const handleRegenerate = (video: any) => {
     if (!video.ai_prompt || !video.ai_image_url) {
       toast.error("Cannot regenerate: missing original prompt data");
       return;
     }
+    // Ask which playlist the regenerated video should go into.
+    setPendingAction({ type: "regenerate", video });
+    setPlaylistPickerOpen(true);
+  };
 
+  const regenerateIntoPlaylist = async (video: any, playlistId: string) => {
     setRegenerating(video.id);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -297,20 +302,32 @@ const Videos = () => {
           imageUrl: video.ai_image_url,
           mainText: video.ai_prompt,
           duration: video.ai_duration || '5',
-          style: video.ai_style || 'boom'
+          style: video.ai_style || 'boom',
+          playlistId,
         })
       });
 
       const result = await response.json();
       if (!result.success) throw new Error(result.error || 'Failed to regenerate');
 
-      toast.success("Video regenerated successfully");
+      toast.success("Video regenerated and added to playlist");
       fetchVideos();
     } catch (error: any) {
       console.error('Regenerate error:', error);
       toast.error(error.message || "Failed to regenerate video");
     } finally {
       setRegenerating(null);
+    }
+  };
+
+  const handlePlaylistChosen = (playlistId: string) => {
+    const action = pendingAction;
+    setPendingAction(null);
+    if (!action) return;
+    if (action.type === "image_upload") {
+      uploadImageToPlaylist(playlistId);
+    } else if (action.type === "regenerate") {
+      regenerateIntoPlaylist(action.video, playlistId);
     }
   };
 
