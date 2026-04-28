@@ -14,6 +14,13 @@ export type Question =
     }
   | {
       id: string;
+      type: "multi";
+      label: string;
+      options: Choice[];
+      showIf?: (a: Record<string, any>) => boolean;
+    }
+  | {
+      id: string;
       type: "text";
       label: string;
       placeholder?: string;
