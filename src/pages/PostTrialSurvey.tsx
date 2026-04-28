@@ -16,7 +16,7 @@ const PostTrialSurvey = () => {
   const { id } = useParams();
   const { user } = useAuth();
   const [lead, setLead] = useState<any>(null);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -30,7 +30,7 @@ const PostTrialSurvey = () => {
     [answers]
   );
 
-  const setAnswer = (qid: string, v: string) => {
+  const setAnswer = (qid: string, v: string | string[]) => {
     setAnswers((prev) => {
       const next = { ...prev, [qid]: v };
       for (const q of POST_TRIAL_QUESTIONS) {
@@ -38,6 +38,12 @@ const PostTrialSurvey = () => {
       }
       return next;
     });
+  };
+
+  const toggleMulti = (qid: string, value: string) => {
+    const current = (answers[qid] as string[]) || [];
+    const next = current.includes(value) ? current.filter((x) => x !== value) : [...current, value];
+    setAnswer(qid, next);
   };
 
   const submit = async () => {
@@ -116,11 +122,34 @@ const PostTrialSurvey = () => {
                       );
                     })}
                   </div>
+                ) : q.type === "multi" ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {q.options.map((o) => {
+                      const selected = ((answers[q.id] as string[]) || []).includes(o.value);
+                      return (
+                        <button
+                          key={o.value}
+                          type="button"
+                          onClick={() => toggleMulti(q.id, o.value)}
+                          className={`relative rounded-xl border-2 p-3 text-sm text-left transition min-h-[52px] ${
+                            selected ? "border-primary bg-primary/5 font-medium" : "border-border hover:border-primary/40"
+                          }`}
+                        >
+                          {selected && (
+                            <div className="absolute top-1.5 right-1.5 h-4 w-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                              <Check className="h-2.5 w-2.5" />
+                            </div>
+                          )}
+                          {o.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 ) : (
                   <Textarea
                     rows={q.multiline ? 3 : 1}
                     placeholder={q.placeholder}
-                    value={answers[q.id] || ""}
+                    value={(answers[q.id] as string) || ""}
                     onChange={(e) => setAnswer(q.id, e.target.value)}
                   />
                 )}

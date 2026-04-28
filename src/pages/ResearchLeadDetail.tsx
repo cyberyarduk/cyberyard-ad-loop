@@ -159,9 +159,11 @@ const ResearchLeadDetail = () => {
               <div className="space-y-4">
                 {visible.map((q, idx) => {
                   const v = answers[q.id];
-                  const display = v == null || v === "" ? <span className="text-muted-foreground italic">No answer</span>
-                    : q.type === "single" ? <span className="font-medium">{getOptionLabel(q.id, v)}</span>
-                    : <span className="font-medium whitespace-pre-wrap">{v}</span>;
+                  const empty = v == null || v === "" || (Array.isArray(v) && v.length === 0);
+                  const display = empty ? <span className="text-muted-foreground italic">No answer</span>
+                    : q.type === "single" ? <span className="font-medium">{getOptionLabel(q.id, v as string)}</span>
+                    : q.type === "multi" ? <span className="font-medium">{(v as string[]).map((x) => getOptionLabel(q.id, x)).join(", ")}</span>
+                    : <span className="font-medium whitespace-pre-wrap">{v as string}</span>;
                   return (
                     <div key={q.id} className="border-b last:border-0 pb-3 last:pb-0">
                       <p className="text-xs text-muted-foreground">Q{idx + 1}. {q.label}</p>
@@ -181,9 +183,11 @@ const ResearchLeadDetail = () => {
               <div className="space-y-4">
                 {ptVisible.map((q, idx) => {
                   const v = ptAnswers[q.id];
-                  const display = v == null || v === "" ? <span className="text-muted-foreground italic">No answer</span>
-                    : q.type === "single" ? <span className="font-medium">{getOptionLabel(q.id, v)}</span>
-                    : <span className="font-medium whitespace-pre-wrap">{v}</span>;
+                  const empty = v == null || v === "" || (Array.isArray(v) && v.length === 0);
+                  const display = empty ? <span className="text-muted-foreground italic">No answer</span>
+                    : q.type === "single" ? <span className="font-medium">{getOptionLabel(q.id, v as string)}</span>
+                    : q.type === "multi" ? <span className="font-medium">{(v as string[]).map((x) => getOptionLabel(q.id, x)).join(", ")}</span>
+                    : <span className="font-medium whitespace-pre-wrap">{v as string}</span>;
                   return (
                     <div key={q.id} className="border-b last:border-0 pb-3 last:pb-0">
                       <p className="text-xs text-muted-foreground">Q{idx + 1}. {q.label}</p>
