@@ -140,7 +140,9 @@ const Videos = () => {
     }
   };
 
-  const handleImageSubmit = async (e: React.FormEvent) => {
+  // Step 1: validate the form, then ask which playlist to drop the image into.
+  // The actual upload happens in `uploadImageToPlaylist` once the user picks one.
+  const handleImageSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!imageFile) {
       toast.error("Please select an image");
@@ -151,7 +153,13 @@ const Videos = () => {
       toast.error("Display time must be 1–600 seconds");
       return;
     }
+    setPendingAction({ type: "image_upload" });
+    setPlaylistPickerOpen(true);
+  };
 
+  const uploadImageToPlaylist = async (playlistId: string) => {
+    if (!imageFile) return;
+    const dur = parseInt(imageDuration, 10);
     setUploadingImage(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -163,8 +171,6 @@ const Videos = () => {
         .eq("id", user.id)
         .single();
 
-      // Generate portrait + landscape variants on the client so the same image
-      // looks great on a phone (9:16) and a TV (16:9).
       toast.info("Optimising image for every screen…");
       const { portraitBlob, landscapeBlob } = await generateOrientedVariants(imageFile);
 
@@ -188,23 +194,40 @@ const Videos = () => {
       const portraitUrl = supabase.storage.from("images").getPublicUrl(portraitPath).data.publicUrl;
       const landscapeUrl = supabase.storage.from("images").getPublicUrl(landscapePath).data.publicUrl;
 
-      // Static image insert. The chosen `player_overlay` is a live effect
-      // (e.g. golden stars) that the player renders on top of the image —
-      // no Shotstack render, no per-upload cost.
-      const { error: insertError } = await supabase.from("videos").insert({
-        title: imageTitle || imageFile.name,
-        user_id: user.id,
-        company_id: profile?.company_id,
-        media_type: "image",
-        image_url: portraitUrl,
-        image_url_landscape: landscapeUrl,
-        video_url: portraitUrl, // legacy field — keeps device fallback simple
-        display_duration: dur,
-        source: "image_upload",
-        player_overlay: imgPlayerOverlay,
-      } as any);
+      const { data: inserted, error: insertError } = await supabase
+        .from("videos")
+        .insert({
+          title: imageTitle || imageFile.name,
+          user_id: user.id,
+          company_id: profile?.company_id,
+          media_type: "image",
+          image_url: portraitUrl,
+          image_url_landscape: landscapeUrl,
+          video_url: portraitUrl,
+          display_duration: dur,
+          source: "image_upload",
+          player_overlay: imgPlayerOverlay,
+        } as any)
+        .select("id")
+        .single();
       if (insertError) throw insertError;
-      toast.success("Image added to your library");
+
+      // Append to chosen playlist
+      const { data: existingVideos } = await supabase
+        .from("playlist_videos")
+        .select("order_index")
+        .eq("playlist_id", playlistId)
+        .order("order_index", { ascending: false })
+        .limit(1);
+      const nextOrder = existingVideos && existingVideos.length > 0
+        ? existingVideos[0].order_index + 1
+        : 0;
+      const { error: linkErr } = await supabase
+        .from("playlist_videos")
+        .insert({ playlist_id: playlistId, video_id: inserted!.id, order_index: nextOrder });
+      if (linkErr) throw linkErr;
+
+      toast.success("Image uploaded and added to playlist");
 
       setImageOpen(false);
       setImageTitle("");
