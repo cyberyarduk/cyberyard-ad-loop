@@ -190,10 +190,6 @@ serve(async (req) => {
         extractB64(landscapeRes, 'landscape poster'),
       ]);
 
-      if (!portraitB64) {
-        throw new Error('Failed to generate portrait promotional poster');
-      }
-
       const ts = Date.now();
       const uploadPng = async (b64: string, path: string) => {
         const data = b64.split(',')[1];
@@ -205,9 +201,23 @@ serve(async (req) => {
         return supabase.storage.from('videos').getPublicUrl(path).data.publicUrl;
       };
 
-      portraitImageUrl = await uploadPng(portraitB64, `promo-images/${ts}-portrait.png`);
-      landscapeImageUrl = landscapeB64 ? await uploadPng(landscapeB64, `promo-images/${ts}-landscape.png`) : null;
-      console.log('AI posters uploaded:', { portraitImageUrl, landscapeImageUrl });
+      // Graceful fallback: if Gemini failed (rate-limit / transient), use the
+      // original uploaded image as the hero so the render still produces a
+      // playable video instead of crashing the whole request.
+      if (!portraitB64) {
+        console.warn('Gemini portrait poster failed — falling back to original uploaded image');
+        portraitImageUrl = finalImageUrl;
+      } else {
+        portraitImageUrl = await uploadPng(portraitB64, `promo-images/${ts}-portrait.png`);
+      }
+
+      if (landscapeB64) {
+        landscapeImageUrl = await uploadPng(landscapeB64, `promo-images/${ts}-landscape.png`);
+      } else {
+        console.warn('Gemini landscape poster failed — falling back to uploaded image');
+        landscapeImageUrl = imageUrlLandscape || finalImageUrl;
+      }
+      console.log('Hero posters ready:', { portraitImageUrl, landscapeImageUrl });
     }
 
     // ============================================================
