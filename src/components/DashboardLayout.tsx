@@ -26,7 +26,7 @@ const DashboardLayout = ({
   }, {
     path: "/videos",
     icon: Video,
-    label: "Videos"
+    label: "Media"
   }, {
     path: "/playlists",
     icon: List,
