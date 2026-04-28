@@ -33,80 +33,91 @@ const PortalLayout = ({ children, variant }: PortalLayoutProps) => {
           { path: "/admin/research/analytics", icon: BarChart3, label: "Research Analytics" },
         ];
 
-  const accent = variant === "sales"
-    ? "from-violet-500/10 via-fuchsia-500/5 to-rose-500/10"
-    : "from-sky-500/10 via-cyan-500/5 to-emerald-500/10";
+  const portalLabel = variant === "sales" ? "Salesperson Portal" : "Admin Portal";
+
+  const NavButton = ({ item, onClick }: { item: typeof navItems[number]; onClick?: () => void }) => {
+    const Icon = item.icon;
+    const isActive = location.pathname === item.path;
+    return (
+      <Link to={item.path} onClick={onClick}>
+        <button
+          className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+            isActive
+              ? "bg-foreground text-background shadow-sm"
+              : "text-foreground/70 hover:bg-secondary hover:text-foreground"
+          }`}
+        >
+          <Icon className="h-4 w-4 shrink-0" />
+          <span>{item.label}</span>
+        </button>
+      </Link>
+    );
+  };
 
   const sidebarContent = (
     <>
-      <div className="mb-4">
-        <img alt="Cyberyard" src={logo} className="h-20 w-full object-contain" />
-        <div className={`mt-2 rounded-full bg-gradient-to-r ${accent} px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-foreground/70 text-center`}>
-          {variant === "sales" ? "Salesperson Portal" : "Admin Portal"}
+      <div className="mb-6">
+        <Link to={variant === "sales" ? "/sales" : "/admin"} className="block">
+          <img alt="Cyberyard" src={logo} className="h-14 w-auto object-contain" />
+        </Link>
+        <div className="chip mt-3 bg-yellow-soft text-foreground/80">
+          {portalLabel}
         </div>
         {variant === "sales" && salesperson && (
-          <p className="text-xs text-muted-foreground mt-2 text-center">
+          <p className="text-xs text-muted-foreground mt-2">
             #{salesperson.employee_number} · {salesperson.area || "No area"}
           </p>
         )}
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = location.pathname === item.path;
-          return (
-            <Link key={item.path} to={item.path} onClick={() => setMobileOpen(false)}>
-              <Button variant={isActive ? "default" : "ghost"} className="w-full justify-start">
-                <Icon className="mr-2 h-4 w-4" />
-                {item.label}
-              </Button>
-            </Link>
-          );
-        })}
+        {navItems.map((item) => (
+          <NavButton key={item.path} item={item} onClick={() => setMobileOpen(false)} />
+        ))}
       </nav>
 
-      <div className="border-t pt-2 space-y-1">
+      <div className="border-t border-border/60 pt-3 space-y-1">
         {profile && (
-          <div className="px-2 mb-2">
+          <div className="px-3 mb-2">
             <p className="text-sm font-medium truncate">{profile.full_name || profile.email}</p>
             <p className="text-xs text-muted-foreground capitalize">{profile.role.replace("_", " ")}</p>
           </div>
         )}
-        <Button variant="ghost" className="w-full justify-start" onClick={signOut}>
-          <LogOut className="mr-2 h-4 w-4" />
-          Sign Out
-        </Button>
+        <button
+          onClick={signOut}
+          className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground/70 hover:bg-secondary hover:text-foreground transition-all"
+        >
+          <LogOut className="h-4 w-4 shrink-0" />
+          <span>Sign Out</span>
+        </button>
       </div>
     </>
   );
 
   return (
-    <div className="min-h-screen bg-background relative">
-      {/* Soft pastel wash */}
-      <div className="pointer-events-none absolute inset-0 -z-10 opacity-50">
-        <div className={`absolute -top-40 -left-20 h-[500px] w-[500px] rounded-full bg-gradient-to-br ${accent} blur-3xl`} />
-      </div>
+    <div className="min-h-screen relative">
+      <div className="pointer-events-none fixed inset-0 -z-10 bg-wash-warm opacity-40" />
+      <div className="pointer-events-none fixed inset-0 -z-10 bg-background/60" />
 
-      <header className="lg:hidden fixed top-0 left-0 right-0 h-16 border-b border-border bg-card flex items-center px-4 z-50">
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-16 border-b border-border/60 bg-background/80 backdrop-blur-xl flex items-center px-4 z-50">
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon">
               <Menu className="h-6 w-6" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-64 p-4 flex flex-col">
+          <SheetContent side="left" className="w-72 p-5 flex flex-col bg-background">
             {sidebarContent}
           </SheetContent>
         </Sheet>
-        <img alt="Cyberyard" src={logo} className="h-10 w-auto object-contain ml-4" />
+        <img alt="Cyberyard" src={logo} className="h-9 w-auto object-contain ml-3" />
       </header>
 
-      <aside className="hidden lg:flex fixed left-0 top-0 h-full w-64 border-r border-border bg-card/80 backdrop-blur p-4 flex-col">
+      <aside className="hidden lg:flex fixed left-4 top-4 bottom-4 w-60 glass-card rounded-2xl p-5 flex-col z-40">
         {sidebarContent}
       </aside>
 
-      <main className="lg:ml-64 pt-20 lg:pt-8 p-4 lg:p-8">{children}</main>
+      <main className="lg:ml-[17rem] pt-20 lg:pt-8 px-4 lg:pr-8 pb-12">{children}</main>
     </div>
   );
 };
