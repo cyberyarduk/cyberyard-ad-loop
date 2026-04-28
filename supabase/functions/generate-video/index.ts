@@ -13,8 +13,8 @@ serve(async (req) => {
   }
 
   try {
-    const { imageUrl, imageData, mainText, subtext, duration, style = 'boom', playlistId, deviceToken, customization, price, limitedOffer, badgeText } = await req.json();
-    console.log('Generating video with params:', { hasImageUrl: !!imageUrl, hasImageData: !!imageData, mainText, subtext, duration, style, playlistId, deviceToken: !!deviceToken, customization, price, limitedOffer, badgeText });
+    const { imageUrl, imageData, mainText, subtext, duration, style = 'boom', playlistId, deviceToken, customization, price, limitedOffer, badgeText, animatedOverlays = true } = await req.json();
+    console.log('Generating video with params:', { hasImageUrl: !!imageUrl, hasImageData: !!imageData, mainText, subtext, duration, style, playlistId, deviceToken: !!deviceToken, customization, price, limitedOffer, badgeText, animatedOverlays });
 
     // Resolve title/price: prefer explicit `price`, fall back to subtext for backward compat.
     const titleText = (mainText || '').toString().trim();
@@ -217,8 +217,9 @@ serve(async (req) => {
       const H = isPortrait ? 1920 : 1080;
       const tracks: Record<string, unknown>[] = [];
 
-      // Optional pulsing "LIMITED OFFER" badge overlay (front-most)
-      if (showBadge && finalBadgeText) {
+      // Optional pulsing "LIMITED OFFER" badge overlay (front-most).
+      // Only added when overlays are enabled AND the user marked it limited.
+      if (animatedOverlays && showBadge && finalBadgeText) {
         const badgeFontSize = isPortrait ? 48 : 42;
         const badgeHtml = `<p class="b">${escapeHtml(finalBadgeText)}</p>`;
         const badgeCss = `.b{font-family:'Open Sans',Arial,sans-serif;font-weight:900;font-size:${badgeFontSize}px;color:#FFFFFF;background:#DC2626;letter-spacing:0.08em;padding:14px 32px;border-radius:9999px;display:inline-block;text-align:center;text-transform:uppercase;margin:0;line-height:1;border:3px solid #FFFFFF;box-shadow:0 6px 20px rgba(0,0,0,0.45);}`;
@@ -242,26 +243,29 @@ serve(async (req) => {
         }
       }
 
-      // Swiping accent bar — a coloured stripe that slides across at intervals
-      const barHtml = `<div class="bar"></div>`;
-      const barH = isPortrait ? 24 : 20;
-      const barCss = `.bar{width:100%;height:${barH}px;background:${accent};box-shadow:0 0 30px ${accent};}`;
-      const swipes = [
-        { start: 0.4, dir: 'slideRight' as const, y: -0.18 },
-        { start: videoDuration * 0.55, dir: 'slideLeft' as const, y: 0.22 },
-      ];
-      for (const s of swipes) {
-        if (s.start + 1.4 > videoDuration) continue;
-        tracks.push({
-          clips: [{
-            asset: { type: 'html', html: barHtml, css: barCss, width: W, height: barH, background: 'transparent' },
-            start: s.start,
-            length: 1.4,
-            position: 'center',
-            offset: { x: 0, y: s.y },
-            transition: { in: s.dir, out: 'fade' },
-          }]
-        });
+      // Swiping accent bar — coloured stripe sliding across at intervals.
+      // Skipped entirely when overlays are disabled (e.g. for menus).
+      if (animatedOverlays) {
+        const barHtml = `<div class="bar"></div>`;
+        const barH = isPortrait ? 24 : 20;
+        const barCss = `.bar{width:100%;height:${barH}px;background:${accent};box-shadow:0 0 30px ${accent};}`;
+        const swipes = [
+          { start: 0.4, dir: 'slideRight' as const, y: -0.18 },
+          { start: videoDuration * 0.55, dir: 'slideLeft' as const, y: 0.22 },
+        ];
+        for (const s of swipes) {
+          if (s.start + 1.4 > videoDuration) continue;
+          tracks.push({
+            clips: [{
+              asset: { type: 'html', html: barHtml, css: barCss, width: W, height: barH, background: 'transparent' },
+              start: s.start,
+              length: 1.4,
+              position: 'center',
+              offset: { x: 0, y: s.y },
+              transition: { in: s.dir, out: 'fade' },
+            }]
+          });
+        }
       }
 
       // HERO POSTER — the AI-generated promo image with slow Ken Burns
