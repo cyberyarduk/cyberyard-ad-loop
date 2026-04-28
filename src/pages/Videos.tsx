@@ -303,9 +303,9 @@ const Videos = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold">Videos</h1>
+            <h1 className="text-3xl font-bold">Media</h1>
             <p className="text-muted-foreground mt-1">
-              Manage your video content library
+              Manage your videos and images in one library
             </p>
           </div>
           <div className="flex gap-2">
@@ -442,7 +442,7 @@ const Videos = () => {
         ) : videos.length === 0 ? (
           <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
             <Video className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-semibold">No videos yet</h3>
+            <h3 className="mt-4 text-lg font-semibold">No media yet</h3>
             <p className="text-muted-foreground mt-2">
               Upload your first video or create one with AI
             </p>
