@@ -381,7 +381,7 @@ CRITICAL RULES:
     const landscapeEdit = landscapeImageUrl ? {
       timeline: {
         background: "#000000",
-        tracks: buildTracks(landscapeImageUrl, false)
+        tracks: buildTracks(landscapeImageUrl, heroLandscapeUrl, false)
       },
       output: {
         format: "mp4",
