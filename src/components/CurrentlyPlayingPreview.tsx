@@ -95,6 +95,8 @@ export function CurrentlyPlayingPreview() {
           let playlistName: string | null = null;
           let videoUrl: string | null = null;
           let videoTitle: string | null = null;
+          let mediaType: 'video' | 'image' | null = null;
+          let imageUrl: string | null = null;
           let total = 0;
 
           if (d.playlist_id) {
@@ -107,16 +109,29 @@ export function CurrentlyPlayingPreview() {
 
             const { data: items } = await supabase
               .from("playlist_videos")
-              .select("video_id, order_index, videos(title, video_url)")
+              .select("video_id, order_index, videos(title, video_url, media_type, image_url, image_url_landscape, video_url_landscape)")
               .eq("playlist_id", d.playlist_id)
               .order("order_index", { ascending: true });
 
             total = items?.length ?? 0;
             const first = items?.[0]?.videos as
-              | { title?: string; video_url?: string }
+              | {
+                  title?: string;
+                  video_url?: string | null;
+                  media_type?: 'video' | 'image' | null;
+                  image_url?: string | null;
+                  image_url_landscape?: string | null;
+                  video_url_landscape?: string | null;
+                }
               | null;
-            videoUrl = first?.video_url ?? null;
             videoTitle = first?.title ?? null;
+            mediaType = (first?.media_type ?? 'video') as 'video' | 'image';
+            if (mediaType === 'image') {
+              imageUrl = first?.image_url ?? first?.image_url_landscape ?? null;
+              videoUrl = null;
+            } else {
+              videoUrl = first?.video_url ?? first?.video_url_landscape ?? null;
+            }
           }
 
           return {
@@ -128,6 +143,8 @@ export function CurrentlyPlayingPreview() {
             video_url: videoUrl,
             video_title: videoTitle,
             total_videos: total,
+            media_type: mediaType,
+            image_url: imageUrl,
           };
         }),
       );
