@@ -215,7 +215,7 @@ export const POST_TRIAL_QUESTIONS: Question[] = [
     placeholder: "Open answer…", multiline: true,
     showIf: (a) => a.pt3_used_ai === "no" },
 
-  { id: "pt4_engagement", type: "single", label: "Did you notice any of the following during the trial?",
+  { id: "pt4_engagement", type: "multi", label: "Did you notice any of the following during the trial? (select all that apply)",
     options: [
       { value: "increased_engagement", label: "Increased customer engagement" },
       { value: "more_questions", label: "More questions about products" },
