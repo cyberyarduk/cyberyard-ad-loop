@@ -379,36 +379,66 @@ const CreateAIVideo = () => {
                 </p>
               </div>
 
-              {/* Advanced toggle */}
-              <div>
+              {/* Advanced toggle + Decide For Me */}
+              <div className="grid grid-cols-2 gap-2">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => setShowAdvanced((s) => !s)}
-                  className="w-full"
                 >
                   <Settings2 className="mr-2 h-4 w-4" />
-                  {showAdvanced ? "Hide advanced options" : "Show advanced options"}
+                  {showAdvanced ? "Hide advanced" : "Show advanced"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
+                    setFontFamily(pick(FONT_OPTIONS).value);
+                    setTextColor(pick(TEXT_COLOR_OPTIONS).value);
+                    setTextPosition(pick(POSITION_OPTIONS).value);
+                    setOverlayStyle(pick(OVERLAY_OPTIONS).value);
+                    setOverlayColor(pick(OVERLAY_COLOR_OPTIONS).value);
+                    setStyle(pick(STYLE_PRESETS).value);
+                    toast.success("AI picked a style for you ✨");
+                    setShowAdvanced(true);
+                  }}
+                >
+                  <Wand2 className="mr-2 h-4 w-4" />
+                  Decide For Me
                 </Button>
               </div>
 
               {/* Advanced section */}
               {showAdvanced && (
                 <div className="space-y-6 rounded-md border p-4 bg-muted/30">
-                  {/* Font */}
+                  {/* Font - visual preview grid */}
                   <div className="space-y-2">
-                    <Label htmlFor="fontFamily">Font Family</Label>
-                    <select
-                      id="fontFamily"
-                      value={fontFamily}
-                      onChange={(e) => setFontFamily(e.target.value)}
-                      className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    >
+                    <Label>Font Family</Label>
+                    <div className="grid grid-cols-2 gap-2">
                       {FONT_OPTIONS.map((f) => (
-                        <option key={f.value} value={f.value}>{f.label} — {f.description}</option>
+                        <button
+                          key={f.value}
+                          type="button"
+                          onClick={() => setFontFamily(f.value)}
+                          className={cn(
+                            "flex flex-col items-start gap-1 rounded-md border p-3 text-left transition-colors",
+                            fontFamily === f.value ? "border-primary ring-2 ring-primary/30 bg-primary/5" : "border-border hover:border-primary/50"
+                          )}
+                        >
+                          <span
+                            className="text-2xl leading-none"
+                            style={{ fontFamily: f.css, fontWeight: f.weight as any }}
+                          >
+                            {mainText.trim().slice(0, 12) || "Aa Bb 99p"}
+                          </span>
+                          <span className="text-xs font-medium">{f.label}</span>
+                          <span className="text-[10px] text-muted-foreground leading-tight">{f.description}</span>
+                        </button>
                       ))}
-                    </select>
+                    </div>
                   </div>
 
                   {/* Text color */}
@@ -438,22 +468,24 @@ const CreateAIVideo = () => {
                   {/* Text position */}
                   <div className="space-y-2">
                     <Label>Text Position</Label>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
                       {POSITION_OPTIONS.map((p) => (
                         <button
                           key={p.value}
                           type="button"
                           onClick={() => setTextPosition(p.value)}
                           className={cn(
-                            "rounded-md border p-2 text-sm transition-colors",
+                            "flex flex-col items-center gap-0.5 rounded-md border p-2 text-sm transition-colors",
                             textPosition === p.value ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
                           )}
                         >
-                          {p.label}
+                          <span className="font-medium">{p.label}</span>
+                          <span className="text-[10px] text-muted-foreground leading-tight text-center">{p.description}</span>
                         </button>
                       ))}
                     </div>
                   </div>
+
 
                   {/* Overlay style */}
                   <div className="space-y-2">
