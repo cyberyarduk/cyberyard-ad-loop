@@ -557,8 +557,28 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const currentMediaUrl = appendCacheBust(getPlayableUrl(currentVideo), playlistRevision);
 
 
+  // Track fullscreen state changes (Esc key, etc.)
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handler);
+    return () => document.removeEventListener('fullscreenchange', handler);
+  }, []);
+
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await containerRef.current?.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch (err) {
+      console.error('Fullscreen toggle failed:', err);
+    }
+  };
+
   return (
-    <div 
+    <div
+      ref={containerRef}
       className="fixed inset-0 bg-black overflow-hidden"
       onTouchStart={(e) => {
         handleTripleTap(e);
