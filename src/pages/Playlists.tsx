@@ -26,7 +26,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, List, Edit, Trash2, ArrowUp, ArrowDown, Send, Upload, ChevronDown, Clock, Play } from "lucide-react";
+import { Plus, List, Edit, Trash2, ArrowUp, ArrowDown, Send, Upload, ChevronDown, Clock, Play, Image as ImageIcon } from "lucide-react";
+import { generateOrientedVariants } from "@/lib/imageOrient";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
