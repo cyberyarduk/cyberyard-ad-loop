@@ -37,6 +37,7 @@ import ResearchLeads from "./pages/ResearchLeads";
 import NewResearchLead from "./pages/NewResearchLead";
 import ResearchLeadDetail from "./pages/ResearchLeadDetail";
 import ResearchAnalytics from "./pages/ResearchAnalytics";
+import PostTrialSurvey from "./pages/PostTrialSurvey";
 import { toast } from "sonner";
 
 const queryClient = new QueryClient();
