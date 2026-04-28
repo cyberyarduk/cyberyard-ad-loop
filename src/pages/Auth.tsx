@@ -88,6 +88,20 @@ const Auth = () => {
         return;
       }
 
+      // Block suspended salespeople at sign-in
+      if (role === "salesperson") {
+        const { data: sp } = await supabase
+          .from("salespeople")
+          .select("active")
+          .eq("user_id", data.user!.id)
+          .maybeSingle();
+        if (!sp?.active) {
+          await supabase.auth.signOut();
+          toast.error("Your account has been suspended. Please contact your administrator.");
+          return;
+        }
+      }
+
       toast.success("Welcome back!");
       if (role === "super_admin") navigate("/admin");
       else if (role === "salesperson") navigate("/sales");
