@@ -254,33 +254,28 @@ CRITICAL RULES:
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
 
-    const titleHtmlFor = (text: string, fontSize: number) => `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">
-      <div style="font-family:'Helvetica Neue',Arial,sans-serif;font-weight:800;font-size:${fontSize}px;color:${titleInk};letter-spacing:-0.01em;line-height:1.05;text-align:center;text-shadow:0 4px 24px rgba(0,0,0,0.55);padding:0 40px;">${escapeHtml(text)}</div>
-    </div>`;
-
-    const priceHtmlFor = (text: string, fontSize: number) => `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">
-      <div style="display:inline-block;font-family:'Helvetica Neue',Arial,sans-serif;font-weight:900;font-size:${fontSize}px;color:${accentInk};background:${accentColor};letter-spacing:-0.02em;padding:18px 44px;border-radius:18px;box-shadow:0 14px 50px rgba(0,0,0,0.45);text-transform:uppercase;">${escapeHtml(text)}</div>
-    </div>`;
-
-    const badgeHtmlFor = (text: string) => `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">
-      <div style="font-family:'Helvetica Neue',Arial,sans-serif;font-weight:900;font-size:42px;color:#FFFFFF;background:#DC2626;letter-spacing:0.08em;padding:14px 28px;border-radius:9999px;box-shadow:0 10px 30px rgba(220,38,38,0.5);text-transform:uppercase;border:3px solid #FFFFFF;">${escapeHtml(text)}</div>
-    </div>`;
-
-    const dimOverlayHtml = `<div style="width:100%;height:100%;background:linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.20) 50%, rgba(0,0,0,0.55) 100%);"></div>`;
+    // Try to split "Bacon Sandwich Only £4.99" -> title="Bacon Sandwich Only", price="£4.99"
+    let resolvedTitle = titleText;
+    let resolvedPrice = priceText;
+    if (!resolvedPrice && resolvedTitle) {
+      const m = resolvedTitle.match(/(.+?)\s+((?:£|\$|€)\s?\d[\d.,]*|\d+\s?p\b|\d+%\s?off)\s*$/i);
+      if (m) {
+        resolvedTitle = m[1].trim();
+        resolvedPrice = m[2].trim();
+      }
+    }
 
     const buildTracks = (imageSrc: string, isPortrait: boolean) => {
-      const titleFontSize = isPortrait ? 96 : 84;
-      const priceFontSize = isPortrait ? 140 : 120;
-      const titleWidth = isPortrait ? 1000 : 1500;
-      const titleHeight = isPortrait ? 360 : 260;
-      const priceWidth = isPortrait ? 900 : 1100;
-      const priceHeight = isPortrait ? 280 : 240;
-      const badgeWidth = isPortrait ? 600 : 600;
-      const badgeHeight = 120;
+      const W = isPortrait ? 1080 : 1920;
+      const H = isPortrait ? 1920 : 1080;
 
-      const titleY = isPortrait ? 0.18 : 0.22;
-      const priceY = isPortrait ? -0.12 : -0.10;
-      const badgeY = isPortrait ? -0.38 : -0.36;
+      const titleY = isPortrait ? 0.32 : 0.30;
+      const priceY = isPortrait ? -0.08 : -0.05;
+      const badgeY = isPortrait ? -0.34 : -0.32;
+
+      const titleFontSize = isPortrait ? 92 : 78;
+      const priceFontSize = isPortrait ? 180 : 150;
+      const badgeFontSize = isPortrait ? 56 : 48;
 
       const tracks: Record<string, unknown>[] = [];
 
@@ -296,53 +291,71 @@ CRITICAL RULES:
         }]
       });
 
-      // Dim overlay so text reads on any background
+      // Dim gradient overlay so text reads on any background
+      const dimHtml = `<div class="dim"></div>`;
+      const dimCss = `.dim{width:100%;height:100%;background:linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 45%, rgba(0,0,0,0.65) 100%);}`;
       tracks.push({
         clips: [{
-          asset: { type: "html", html: dimOverlayHtml, width: isPortrait ? 1080 : 1920, height: isPortrait ? 1920 : 1080 },
+          asset: { type: "html", html: dimHtml, css: dimCss, width: W, height: H },
           start: 0,
           length: videoDuration,
           position: "center",
         }]
       });
 
-      // Title slides up and fades in
-      if (titleText) {
+      // TITLE — native title asset (guaranteed to render)
+      if (resolvedTitle) {
         tracks.push({
           clips: [{
-            asset: { type: "html", html: titleHtmlFor(titleText, titleFontSize), width: titleWidth, height: titleHeight },
+            asset: {
+              type: "title",
+              text: resolvedTitle,
+              style: "future",
+              color: titleInk,
+              size: isPortrait ? "x-large" : "large",
+              background: "transparent",
+              position: "center",
+            },
             start: titleStart,
-            length: videoDuration - titleStart,
-            position: "center",
+            length: Math.max(2, videoDuration - titleStart),
             offset: { x: 0, y: titleY },
-            transition: { in: "slideUp", out: "fade" }
+            transition: { in: "slideUp", out: "fade" },
+            effect: "zoomIn",
           }]
         });
       }
 
-      // Price pops in with zoom
-      if (priceText) {
+      // PRICE — big yellow pop badge using HTML (with css field)
+      if (resolvedPrice) {
+        const priceHtml = `<p class="p">${escapeHtml(resolvedPrice)}</p>`;
+        const priceCss = `.p{font-family:'Open Sans',Arial,sans-serif;font-weight:900;font-size:${priceFontSize}px;color:${accentInk};background:${accentColor};letter-spacing:-0.02em;padding:24px 60px;border-radius:24px;display:inline-block;text-align:center;text-transform:uppercase;margin:0;line-height:1;}`;
+        const priceW = isPortrait ? 1000 : 1400;
+        const priceH = isPortrait ? 360 : 320;
         tracks.push({
           clips: [{
-            asset: { type: "html", html: priceHtmlFor(priceText, priceFontSize), width: priceWidth, height: priceHeight },
+            asset: { type: "html", html: priceHtml, css: priceCss, width: priceW, height: priceH, background: "transparent" },
             start: priceStart,
-            length: videoDuration - priceStart,
+            length: Math.max(2, videoDuration - priceStart),
             position: "center",
             offset: { x: 0, y: priceY },
             transition: { in: "zoom", out: "fade" },
-            effect: "zoomInSlow"
+            effect: "zoomInSlow",
           }]
         });
       }
 
-      // Optional pulsing "TODAY ONLY" badge
+      // BADGE — pulsing "TODAY ONLY"
       if (showBadge && finalBadgeText) {
-        const pulseLen = 1.0;
+        const badgeHtml = `<p class="b">${escapeHtml(finalBadgeText)}</p>`;
+        const badgeCss = `.b{font-family:'Open Sans',Arial,sans-serif;font-weight:900;font-size:${badgeFontSize}px;color:#FFFFFF;background:#DC2626;letter-spacing:0.1em;padding:18px 40px;border-radius:9999px;display:inline-block;text-align:center;text-transform:uppercase;margin:0;line-height:1;border:4px solid #FFFFFF;}`;
+        const badgeW = isPortrait ? 800 : 800;
+        const badgeH = 180;
+        const pulseLen = 0.8;
         let t = badgeStart;
         let toggle = true;
         while (t + pulseLen <= videoDuration) {
           const clip: Record<string, unknown> = {
-            asset: { type: "html", html: badgeHtmlFor(finalBadgeText), width: badgeWidth, height: badgeHeight },
+            asset: { type: "html", html: badgeHtml, css: badgeCss, width: badgeW, height: badgeH, background: "transparent" },
             start: t,
             length: pulseLen,
             position: "center",
