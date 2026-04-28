@@ -315,6 +315,62 @@ const Videos = () => {
                 Create Offer Video
               </Button>
             </Link>
+            <Dialog open={imageOpen} onOpenChange={setImageOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <ImageIcon className="mr-2 h-4 w-4" />
+                  Upload Image
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Upload an image</DialogTitle>
+                  <DialogDescription>
+                    Add a menu, promo or any picture. We'll auto-resize it for
+                    every screen — phones play it portrait, TVs play it landscape.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleImageSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="img-title">Title</Label>
+                    <Input
+                      id="img-title"
+                      placeholder="Lunch menu"
+                      value={imageTitle}
+                      onChange={(e) => setImageTitle(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="img-file">Image (JPG or PNG)</Label>
+                    <Input
+                      id="img-file"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="img-duration">Display time (seconds)</Label>
+                    <Input
+                      id="img-duration"
+                      type="number"
+                      min={1}
+                      max={600}
+                      value={imageDuration}
+                      onChange={(e) => setImageDuration(e.target.value)}
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      How long the image stays on screen before the next item plays.
+                    </p>
+                  </div>
+                  <Button type="submit" className="w-full" disabled={uploadingImage}>
+                    {uploadingImage ? "Uploading…" : "Upload Image"}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
                 <Button>
