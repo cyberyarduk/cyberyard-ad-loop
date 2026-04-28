@@ -46,15 +46,30 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    // Check if caller is super_admin
+    // Allow super_admin OR active salesperson
     const { data: callerProfile, error: profileError } = await supabaseAuth
       .from('profiles')
       .select('role')
       .eq('id', caller.id)
       .single();
 
-    if (profileError || callerProfile?.role !== 'super_admin') {
-      throw new Error('Only super admins can create company admins');
+    if (profileError) {
+      throw new Error('Could not verify caller profile');
+    }
+
+    let authorized = callerProfile?.role === 'super_admin';
+    if (!authorized) {
+      const { data: sp } = await supabaseAuth
+        .from('salespeople')
+        .select('id')
+        .eq('user_id', caller.id)
+        .eq('active', true)
+        .maybeSingle();
+      authorized = !!sp;
+    }
+
+    if (!authorized) {
+      throw new Error('Only super admins or salespeople can create company admins');
     }
 
     // Now use service role for admin operations
