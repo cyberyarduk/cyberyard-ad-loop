@@ -222,16 +222,16 @@ export default function CompanyForm() {
 
   if (fetchingCompany) {
     return (
-      <DashboardLayout>
+      <PortalLayout variant="admin">
         <div className="flex items-center justify-center h-64">
           <div className="text-muted-foreground">Loading company...</div>
         </div>
-      </DashboardLayout>
+      </PortalLayout>
     );
   }
 
   return (
-    <DashboardLayout>
+    <PortalLayout variant="admin">
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate(isEditing ? `/companies/${id}` : '/companies')}>
@@ -575,6 +575,6 @@ export default function CompanyForm() {
           </div>
         </form>
       </div>
-    </DashboardLayout>
+    </PortalLayout>
   );
 }

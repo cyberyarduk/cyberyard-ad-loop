@@ -123,26 +123,26 @@ export default function CompanyDetail() {
 
   if (loading) {
     return (
-      <DashboardLayout>
+      <PortalLayout variant="admin">
         <div className="flex items-center justify-center h-64">
           <div className="text-muted-foreground">Loading company...</div>
         </div>
-      </DashboardLayout>
+      </PortalLayout>
     );
   }
 
   if (!company) {
     return (
-      <DashboardLayout>
+      <PortalLayout variant="admin">
         <div className="flex items-center justify-center h-64">
           <div className="text-muted-foreground">Company not found</div>
         </div>
-      </DashboardLayout>
+      </PortalLayout>
     );
   }
 
   return (
-    <DashboardLayout>
+    <PortalLayout variant="admin">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -342,6 +342,6 @@ export default function CompanyDetail() {
           </Card>
         )}
       </div>
-    </DashboardLayout>
+    </PortalLayout>
   );
 }
