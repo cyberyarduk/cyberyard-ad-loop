@@ -82,125 +82,16 @@ serve(async (req) => {
     }
 
     // ============================================================
-    // LAYERED ADVERT APPROACH
-    // 1. Use the user's uploaded image AS-IS as the hero subject (no replacement).
-    // 2. Generate a CUTOUT (transparent PNG, subject only) from the uploaded image
-    //    so we can animate the product on its own layer.
-    // 3. Generate a styled BACKGROUND scene (no product, no text) for depth.
-    // 4. Shotstack composites: BG (slow pan) + product cutout (parallax bounce)
-    //    + animated text. This produces a real 2.5D promo, not just a zoom.
-    // If cutout fails, we fall back to the original uploaded image as the hero.
+    // SIMPLE, RELIABLE APPROACH
+    // The user's uploaded image IS the advert background.
+    // No AI cutout (was producing white-box rectangles).
+    // No AI background replacement (was replacing the actual product).
+    // Shotstack adds: slow Ken Burns motion + dim overlay + animated text.
     // ============================================================
-    console.log('Generating layered advert assets (background + product cutout)...');
+    console.log('Using uploaded image directly as advert background.');
 
-    const themeDesc = customization?.themePrompt && customization.themePrompt.trim().length > 0
-      ? ` Vibe/theme: "${String(customization.themePrompt).slice(0, 200)}".`
-      : '';
-
-    const styleMoodMap: Record<string, string> = {
-      boom: 'high-energy, vibrant, punchy commercial advertising lighting with rich saturated colors',
-      sparkle: 'magical, dreamy, soft glowing studio lighting with bokeh particles',
-      stars: 'glamorous, fashion-magazine, premium product lighting on a luxe backdrop',
-      minimal: 'clean, minimal, editorial backdrop with soft neutral tones and gentle shadows',
-    };
-    const moodDesc = styleMoodMap[style] || styleMoodMap.boom;
-
-    // --- Prompt 1: BACKGROUND ONLY (no product, no text) ---
-    const bgPrompt = (orientation: 'portrait' | 'landscape') => {
-      const dims = orientation === 'portrait' ? '1080x1920 vertical (9:16)' : '1920x1080 horizontal (16:9)';
-      return `Look at this reference product photo to understand the category/colour palette, then create a BEAUTIFUL EMPTY BACKGROUND SCENE in ${dims}. Use ${moodDesc}.${themeDesc}
-
-CRITICAL RULES:
-- The output must be a BACKDROP / SCENE only — DO NOT include the product itself, do NOT include any food, packaging, item, person, or subject.
-- Think: an empty cafe counter, a soft gradient studio backdrop with bokeh, a wooden surface with steam/light rays, a blurred kitchen — context appropriate to the product but EMPTY.
-- ZERO text, words, letters, numbers, prices, badges, stickers, logos.
-- Leave plenty of clean space for animated text overlay.
-- Cinematic, premium, advertising-quality lighting. No clutter.`;
-    };
-
-    // --- Prompt 2: PRODUCT CUTOUT (transparent background) ---
-    const cutoutPrompt = `Isolate ONLY the main product/subject from this image and place it on a PURE WHITE background (#FFFFFF). 
-CRITICAL RULES:
-- Keep the product photo IDENTICAL — same shape, same colours, same details. Do NOT redesign or restyle it.
-- Remove EVERYTHING else: original background, surfaces, hands, props, shadows.
-- Crop tightly around the subject with a small margin.
-- Solid pure white background only — no gradients, no text, no shadows, no badges.
-- Output must be a clean product cutout suitable for compositing.`;
-
-    const aiCall = (prompt: string) => fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'google/gemini-3-pro-image-preview',
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'text', text: prompt },
-            { type: 'image_url', image_url: { url: finalImageUrl } }
-          ]
-        }],
-        modalities: ['image', 'text']
-      })
-    });
-
-    const [bgPortraitRes, bgLandscapeRes, cutoutRes] = await Promise.all([
-      aiCall(bgPrompt('portrait')),
-      aiCall(bgPrompt('landscape')),
-      aiCall(cutoutPrompt),
-    ]);
-
-    const extractImage = async (res: Response, label: string): Promise<string | null> => {
-      if (!res.ok) {
-        console.error(`${label} AI error:`, await res.text().catch(() => ''));
-        return null;
-      }
-      try {
-        const json = await res.json();
-        return json.choices?.[0]?.message?.images?.[0]?.image_url?.url ?? null;
-      } catch {
-        return null;
-      }
-    };
-
-    const [bgPortraitB64, bgLandscapeB64, cutoutB64] = await Promise.all([
-      extractImage(bgPortraitRes, 'BG portrait'),
-      extractImage(bgLandscapeRes, 'BG landscape'),
-      extractImage(cutoutRes, 'Cutout'),
-    ]);
-
-    if (!bgPortraitB64) {
-      throw new Error('Failed to generate background scene');
-    }
-
-    console.log('Layered assets generated:', {
-      bgPortrait: !!bgPortraitB64, bgLandscape: !!bgLandscapeB64, cutout: !!cutoutB64
-    });
-
-    const timestamp = Date.now();
-
-    const uploadPng = async (b64: string, path: string) => {
-      const data = b64.split(',')[1];
-      const bin = Uint8Array.from(atob(data), c => c.charCodeAt(0));
-      const { error } = await supabase.storage.from('videos').upload(path, bin, {
-        contentType: 'image/png', upsert: false, cacheControl: '31536000'
-      });
-      if (error) throw new Error(`Upload failed (${path}): ${error.message}`);
-      return supabase.storage.from('videos').getPublicUrl(path).data.publicUrl;
-    };
-
-    const [bgPortraitUrl, bgLandscapeUrl, cutoutUrl] = await Promise.all([
-      uploadPng(bgPortraitB64, `promo-images/${timestamp}-bg-portrait.png`),
-      bgLandscapeB64 ? uploadPng(bgLandscapeB64, `promo-images/${timestamp}-bg-landscape.png`) : Promise.resolve<string | null>(null),
-      cutoutB64 ? uploadPng(cutoutB64, `promo-images/${timestamp}-cutout.png`) : Promise.resolve<string | null>(null),
-    ]);
-
-    // Hero subject = AI cutout if available, otherwise the user's original upload.
-    const heroPortraitUrl = cutoutUrl || finalImageUrl;
-    const heroLandscapeUrl = cutoutUrl || finalImageUrl;
-    const portraitImageUrl = bgPortraitUrl;
-    const landscapeImageUrl = bgLandscapeUrl;
-
-    console.log('Layered assets uploaded:', { bgPortraitUrl, bgLandscapeUrl, heroPortraitUrl });
+    const portraitImageUrl = finalImageUrl;
+    const landscapeImageUrl = finalImageUrl;
 
     // ============================================================
     // SHOTSTACK MULTI-SCENE PROMO
