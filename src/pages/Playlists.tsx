@@ -647,7 +647,7 @@ const Playlists = () => {
                       <div className="text-left">
                         <h3 className="text-xl font-semibold">{playlist.name}</h3>
                         <p className="text-muted-foreground text-sm">
-                          {playlist.videos.length} videos
+                          {playlist.videos.length} item{playlist.videos.length === 1 ? '' : 's'}
                         </p>
                       </div>
                     </div>
@@ -701,7 +701,7 @@ const Playlists = () => {
                   {playlist.videos.length === 0 ? (
                     <div className="text-center py-8 border-2 border-dashed border-border rounded">
                       <p className="text-muted-foreground">
-                        No videos in this playlist yet
+                        No media in this playlist yet
                       </p>
                     </div>
                   ) : (
