@@ -485,13 +485,17 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const _isImageItemEffect = isImageMedia(_currentForImage);
   useEffect(() => {
     if (!_currentForImage || !_isImageItemEffect) return;
+    // If this is the only item in the playlist, leave the image on screen
+    // permanently (e.g. a static menu). Only auto-advance when there are
+    // multiple items to rotate between.
+    if (videos.length <= 1) return;
     const seconds = Math.max(1, Math.min(600, _currentForImage.display_duration ?? 10));
     const t = setTimeout(() => {
       handleVideoEnd();
     }, seconds * 1000);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_currentForImage?.id, _safeIdxForImage, _isImageItemEffect]);
+  }, [_currentForImage?.id, _safeIdxForImage, _isImageItemEffect, videos.length]);
 
   // Track fullscreen state changes (Esc key, etc.) — must stay before any
   // conditional returns so React hook order is stable when media loads.
