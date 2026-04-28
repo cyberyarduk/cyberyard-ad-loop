@@ -13,8 +13,14 @@ serve(async (req) => {
   }
 
   try {
-    const { imageUrl, imageData, mainText, subtext, duration, style = 'boom', playlistId, deviceToken, customization } = await req.json();
-    console.log('Generating video with params:', { hasImageUrl: !!imageUrl, hasImageData: !!imageData, mainText, subtext, duration, style, playlistId, deviceToken: !!deviceToken, customization });
+    const { imageUrl, imageData, mainText, subtext, duration, style = 'boom', playlistId, deviceToken, customization, price, limitedOffer, badgeText } = await req.json();
+    console.log('Generating video with params:', { hasImageUrl: !!imageUrl, hasImageData: !!imageData, mainText, subtext, duration, style, playlistId, deviceToken: !!deviceToken, customization, price, limitedOffer, badgeText });
+
+    // Resolve title/price: prefer explicit `price`, fall back to subtext for backward compat.
+    const titleText = (mainText || '').toString().trim();
+    const priceText = (price || subtext || '').toString().trim();
+    const showBadge = !!limitedOffer;
+    const finalBadgeText = (badgeText || 'TODAY ONLY').toString().trim().toUpperCase().slice(0, 20);
 
     // ===== Build customization prompt fragment =====
     const fontDescriptions: Record<string, string> = {
