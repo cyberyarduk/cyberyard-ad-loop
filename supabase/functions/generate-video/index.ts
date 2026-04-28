@@ -232,31 +232,9 @@ serve(async (req) => {
       const H = isPortrait ? 1920 : 1080;
       const tracks: Record<string, unknown>[] = [];
 
-      // Optional pulsing "LIMITED OFFER" badge overlay (front-most).
-      // Only added when overlays are enabled AND the user marked it limited.
-      if (animatedOverlays && showBadge && finalBadgeText) {
-        const badgeFontSize = isPortrait ? 48 : 42;
-        const badgeHtml = `<p class="b">${escapeHtml(finalBadgeText)}</p>`;
-        const badgeCss = `.b{font-family:'Open Sans',Arial,sans-serif;font-weight:900;font-size:${badgeFontSize}px;color:#FFFFFF;background:#DC2626;letter-spacing:0.08em;padding:14px 32px;border-radius:9999px;display:inline-block;text-align:center;text-transform:uppercase;margin:0;line-height:1;border:3px solid #FFFFFF;box-shadow:0 6px 20px rgba(0,0,0,0.45);}`;
-        const badgeStart = videoDuration * 0.35;
-        const pulseLen = 0.85;
-        let t = badgeStart;
-        let toggle = true;
-        while (t + pulseLen <= videoDuration) {
-          const clip: Record<string, unknown> = {
-            asset: { type: 'html', html: badgeHtml, css: badgeCss, width: 700, height: 140, background: 'transparent' },
-            start: t,
-            length: pulseLen,
-            position: 'top',
-            offset: { x: isPortrait ? 0.30 : 0.36, y: -0.04 },
-            effect: toggle ? 'zoomIn' : 'zoomOut',
-          };
-          if (t === badgeStart) clip.transition = { in: 'zoom' };
-          tracks.push({ clips: [clip] });
-          t += pulseLen;
-          toggle = !toggle;
-        }
-      }
+      // NOTE: The pulsing red corner badge overlay was removed — it covered
+      // the AI poster text and looked cheap. The "limited offer" stamp is
+      // now baked directly into the AI-generated poster image instead.
 
       // Swiping accent bar — coloured stripe sliding across at intervals.
       // Skipped entirely when overlays are disabled (e.g. for menus).
