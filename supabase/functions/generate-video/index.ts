@@ -44,9 +44,11 @@ serve(async (req) => {
       'gradient-top': 'a soft gradient that fades from the top of the image to make the text pop',
     };
     const positionDescriptions: Record<string, string> = {
-      top: 'at the TOP of the composition',
+      top: 'at the TOP of the composition (well within the safe-zone)',
       middle: 'in the CENTER of the composition',
-      bottom: 'at the BOTTOM of the composition',
+      bottom: 'at the BOTTOM of the composition (well within the safe-zone)',
+      infront: 'IN FRONT of the main subject, overlapping it boldly so the text reads on top of the product/person',
+      behind: 'BEHIND the main subject — the text sits as a background layer with the subject occluding part of it for a layered, magazine-style depth effect',
     };
 
     const c = customization || {};
