@@ -565,6 +565,16 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       onTouchEnd={handleTouchEnd}
       onClick={handleTripleTap}
     >
+      <style>{`
+        @keyframes playerMediaFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .player-media-fade {
+          animation: playerMediaFadeIn 450ms ease-in-out both;
+        }
+      `}</style>
+
       {/* Pull to refresh indicator */}
       {isPullingToRefresh && (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white/90 text-black px-4 py-2 rounded-full text-sm font-medium z-50">
@@ -590,8 +600,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       {currentVideo && isImageItem && (
         <div
           key={`${currentVideo.id}-${safeIndex}`}
-          className="absolute inset-0 z-10 bg-black animate-fade-in"
-          style={{ animationDuration: '450ms' }}
+          className="player-media-fade absolute inset-0 z-10 bg-black"
         >
           <div
             className="absolute inset-0 bg-center bg-contain bg-no-repeat"
@@ -619,8 +628,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           ref={videoRef}
           key={`${currentVideo.id}-${safeIndex}`}
           src={currentMediaUrl}
-          className="relative z-10 w-full h-full object-contain animate-fade-in"
-          style={{ animationDuration: '450ms' }}
+          className="player-media-fade relative z-10 w-full h-full object-contain"
           autoPlay
           muted
           playsInline
