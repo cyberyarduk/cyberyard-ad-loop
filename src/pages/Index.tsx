@@ -52,7 +52,7 @@ const features = [
   },
   {
     icon: Zap,
-    title: "AI-powered creation",
+    title: "Effortless promo videos",
     desc: "Snap a photo, type an offer, get a polished promo video in seconds.",
     tone: "peach",
   },
@@ -203,10 +203,10 @@ const Index = () => {
     <div className="min-h-screen bg-background text-foreground antialiased overflow-x-hidden">
       {/* NAV — dark for logo contrast */}
       <nav className="fixed top-0 w-full z-50 bg-foreground/95 backdrop-blur-xl border-b border-foreground/20">
-        <div className="container mx-auto px-6 py-3">
+        <div className="container mx-auto px-6 py-2">
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center gap-3">
-              <img src={logo} alt="Cyberyard" className="h-9 md:h-11 w-auto brightness-0 invert" />
+              <img src={logo} alt="Cyberyard" className="h-14 md:h-20 w-auto brightness-0 invert" />
             </Link>
             <div className="hidden md:flex items-center gap-8">
               {[
@@ -247,7 +247,7 @@ const Index = () => {
           {/* Eyebrow */}
           <Reveal>
             <div className="flex justify-center mb-8">
-              <div className="chip border border-border/60 bg-background/80 backdrop-blur-sm">
+              <div className="chip border border-foreground/10 bg-foreground/5 backdrop-blur-sm text-foreground/80">
                 <Sparkles className="h-3.5 w-3.5 text-yellow-bright" />
                 <span>In-store advertising — on any screen you already own</span>
               </div>
