@@ -795,79 +795,137 @@ const Playlists = () => {
           </Accordion>
         )}
 
-        {/* Add Videos Dialog */}
+        {/* Add Media Dialog */}
         <Dialog open={addVideosOpen} onOpenChange={(open) => {
           setAddVideosOpen(open);
           if (!open) {
             setVideoFile(null);
             setVideoTitle("");
             setSelectedVideos([]);
+            setImageFile(null);
+            setImageTitle("");
+            setImageDuration("10");
           }
         }}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Add Videos to Playlist</DialogTitle>
+              <DialogTitle>Add media to playlist</DialogTitle>
               <DialogDescription>
-                Select existing videos or upload new ones
+                Pick existing items from your library, upload a new video, or upload a picture.
+                Hover any item below to preview it.
               </DialogDescription>
             </DialogHeader>
             <Tabs defaultValue="existing" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="existing">Existing Videos</TabsTrigger>
-                <TabsTrigger value="upload">Upload New</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="existing">From library</TabsTrigger>
+                <TabsTrigger value="upload">Upload video</TabsTrigger>
+                <TabsTrigger value="image">Upload picture</TabsTrigger>
               </TabsList>
+
               <TabsContent value="existing" className="space-y-4">
-                <div className="space-y-4 max-h-96 overflow-y-auto">
+                <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
                   {videos.length === 0 ? (
                     <p className="text-muted-foreground text-center py-8">
-                      No videos available. Upload some videos first!
+                      Nothing in your library yet. Upload a video or picture first!
                     </p>
                   ) : (
-                    videos.map((video) => (
-                      <div key={video.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={video.id}
-                          checked={selectedVideos.includes(video.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedVideos([...selectedVideos, video.id]);
-                            } else {
-                              setSelectedVideos(selectedVideos.filter(id => id !== video.id));
-                            }
-                          }}
-                        />
-                        <label
-                          htmlFor={video.id}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                        >
-                          {video.title}
-                        </label>
-                      </div>
-                    ))
+                    videos.map((video) => {
+                      const isImage = video.media_type === 'image';
+                      return (
+                        <HoverCard key={video.id} openDelay={120} closeDelay={80}>
+                          <div className="flex items-center gap-3 p-2 rounded-md hover:bg-accent/40 transition-colors">
+                            <Checkbox
+                              id={video.id}
+                              checked={selectedVideos.includes(video.id)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedVideos([...selectedVideos, video.id]);
+                                } else {
+                                  setSelectedVideos(selectedVideos.filter(id => id !== video.id));
+                                }
+                              }}
+                            />
+                            <HoverCardTrigger asChild>
+                              <label
+                                htmlFor={video.id}
+                                className="flex items-center gap-3 flex-1 cursor-pointer"
+                              >
+                                <div className="w-10 h-14 bg-muted rounded overflow-hidden flex-shrink-0">
+                                  {isImage ? (
+                                    <img
+                                      src={video.image_url || video.video_url}
+                                      alt=""
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <video
+                                      src={video.video_url}
+                                      muted
+                                      playsInline
+                                      preload="metadata"
+                                      className="w-full h-full object-cover"
+                                    />
+                                  )}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-medium truncate">{video.title}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {isImage ? 'Picture' : 'Video'}
+                                    {video.display_duration ? ` · ${video.display_duration}s` : ''}
+                                  </p>
+                                </div>
+                              </label>
+                            </HoverCardTrigger>
+                          </div>
+                          <HoverCardContent side="right" className="w-64 p-2">
+                            <div className="aspect-[9/16] bg-muted rounded overflow-hidden">
+                              {isImage ? (
+                                <img
+                                  src={video.image_url || video.video_url}
+                                  alt={video.title}
+                                  className="w-full h-full object-contain bg-background"
+                                />
+                              ) : (
+                                <video
+                                  src={video.video_url}
+                                  muted
+                                  autoPlay
+                                  loop
+                                  playsInline
+                                  className="w-full h-full object-contain bg-background"
+                                />
+                              )}
+                            </div>
+                            <p className="text-xs font-medium mt-2 truncate">{video.title}</p>
+                          </HoverCardContent>
+                        </HoverCard>
+                      );
+                    })
                   )}
                 </div>
-                <Button 
-                  onClick={handleAddVideos} 
+                <Button
+                  onClick={handleAddVideos}
                   disabled={selectedVideos.length === 0}
                   className="w-full"
                 >
-                  Add {selectedVideos.length} Video(s)
+                  Add {selectedVideos.length} item(s)
                 </Button>
               </TabsContent>
+
               <TabsContent value="upload" className="space-y-4">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="upload-title">Video Title</Label>
+                    <Label htmlFor="upload-title">Video title</Label>
                     <Input
                       id="upload-title"
-                      placeholder="My Video"
+                      placeholder="My video"
                       value={videoTitle}
                       onChange={(e) => setVideoTitle(e.target.value)}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="upload-file">Video File (MP4)</Label>
+                    <Label htmlFor="upload-file">Video file (MP4)</Label>
                     <Input
                       id="upload-file"
                       type="file"
@@ -879,13 +937,60 @@ const Playlists = () => {
                       Recommended: 9:16 portrait orientation for device screens
                     </p>
                   </div>
-                  <Button 
+                  <Button
                     onClick={handleUploadToPlaylist}
                     disabled={!videoFile || !videoTitle || uploadingToPlaylist}
                     className="w-full"
                   >
                     <Upload className="h-4 w-4 mr-2" />
-                    {uploadingToPlaylist ? "Uploading..." : "Upload & Add to Playlist"}
+                    {uploadingToPlaylist ? "Uploading..." : "Upload & add to playlist"}
+                  </Button>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="image" className="space-y-4">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="img-title-pl">Picture title</Label>
+                    <Input
+                      id="img-title-pl"
+                      placeholder="Lunch menu"
+                      value={imageTitle}
+                      onChange={(e) => setImageTitle(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="img-file-pl">Image (JPG / PNG)</Label>
+                    <Input
+                      id="img-file-pl"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                      required
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      We'll auto-resize for every screen — phones get portrait, TVs get landscape.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="img-duration-pl">Display time (seconds)</Label>
+                    <Input
+                      id="img-duration-pl"
+                      type="number"
+                      min={1}
+                      max={600}
+                      value={imageDuration}
+                      onChange={(e) => setImageDuration(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <Button
+                    onClick={handleUploadImageToPlaylist}
+                    disabled={!imageFile || uploadingImage}
+                    className="w-full"
+                  >
+                    <ImageIcon className="h-4 w-4 mr-2" />
+                    {uploadingImage ? "Uploading..." : "Upload & add to playlist"}
                   </Button>
                 </div>
               </TabsContent>
