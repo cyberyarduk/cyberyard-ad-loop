@@ -511,6 +511,18 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   // Safety check: compute safe index without setting state during render
   const safeIndex = currentIndex < videos.length ? currentIndex : 0;
   const currentVideo = videos[safeIndex];
+  const isImageItem = currentVideo?.media_type === 'image';
+
+  // For image items, advance after `display_duration` seconds (default 10s).
+  useEffect(() => {
+    if (!currentVideo || !isImageItem) return;
+    const seconds = Math.max(1, Math.min(600, currentVideo.display_duration ?? 10));
+    const t = setTimeout(() => {
+      handleVideoEnd();
+    }, seconds * 1000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentVideo?.id, safeIndex, isImageItem]);
 
   return (
     <div 
