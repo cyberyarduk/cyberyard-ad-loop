@@ -22,54 +22,8 @@ serve(async (req) => {
     const showBadge = !!limitedOffer;
     const finalBadgeText = (badgeText || 'TODAY ONLY').toString().trim().toUpperCase().slice(0, 20);
 
-    // ===== Build customization prompt fragment =====
-    const fontDescriptions: Record<string, string> = {
-      'bold-sans': 'a bold, heavy sans-serif font (like Impact or Bebas Neue)',
-      'elegant-serif': 'an elegant serif font (like Playfair Display or Didot)',
-      'handwritten': 'a handwritten brush-script font with personality',
-      'modern-display': 'a modern geometric display font (like Futura or Eurostile)',
-      'rounded': 'a rounded, soft, friendly font (like Quicksand or Nunito)',
-      'condensed': 'a tall condensed block font for maximum impact',
-    };
-    const colorDescriptions: Record<string, string> = {
-      white: 'pure white',
-      black: 'deep black',
-      yellow: 'vibrant yellow',
-      red: 'bold red',
-      pink: 'hot pink',
-      blue: 'electric blue',
-      green: 'lime green',
-      orange: 'bright orange',
-    };
-    const overlayDescriptions: Record<string, string> = {
-      'none': 'no background behind the text — let it sit directly on the image',
-      'solid-band': 'a solid colored horizontal band/box behind the text',
-      'semi-dark': 'a semi-transparent dark tinted layer behind the text for readability',
-      'semi-light': 'a semi-transparent light tinted layer behind the text for readability',
-      'gradient-bottom': 'a soft gradient that fades from the bottom of the image to make the text pop',
-      'gradient-top': 'a soft gradient that fades from the top of the image to make the text pop',
-    };
-    const positionDescriptions: Record<string, string> = {
-      top: 'at the TOP of the composition (well within the safe-zone)',
-      middle: 'in the CENTER of the composition',
-      bottom: 'at the BOTTOM of the composition (well within the safe-zone)',
-      infront: 'IN FRONT of the main subject, overlapping it boldly so the text reads on top of the product/person',
-      behind: 'BEHIND the main subject — the text sits as a background layer with the subject occluding part of it for a layered, magazine-style depth effect',
-    };
+    // (Old AI-text customization block removed — text is now rendered by Shotstack, not the AI image.)
 
-    const c = customization || {};
-    const fontDesc = fontDescriptions[c.fontFamily] || fontDescriptions['bold-sans'];
-    const textColorDesc = colorDescriptions[c.textColor] || 'pure white';
-    const positionDesc = positionDescriptions[c.textPosition] || positionDescriptions.middle;
-    const overlayDesc = overlayDescriptions[c.overlayStyle] || overlayDescriptions.none;
-    const overlayColorDesc = c.overlayStyle && c.overlayStyle !== 'none'
-      ? `Use ${colorDescriptions[c.overlayColor] || 'black'} for the overlay/background color. `
-      : '';
-    const themeDesc = c.themePrompt && c.themePrompt.trim().length > 0
-      ? `Additional vibe/theme to incorporate: "${String(c.themePrompt).slice(0, 200)}". `
-      : '';
-
-    const customizationFragment = ` Render the headline text in ${fontDesc}, colored ${textColorDesc}, positioned ${positionDesc}. ${overlayDesc ? `Use ${overlayDesc}. ` : ''}${overlayColorDesc}${themeDesc}`;
 
     const SHOTSTACK_API_KEY = Deno.env.get('SHOTSTACK_API_KEY');
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
