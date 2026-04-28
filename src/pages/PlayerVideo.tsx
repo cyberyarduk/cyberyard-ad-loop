@@ -612,6 +612,22 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           Offline
         </div>
       )}
+
+      {/* Fullscreen toggle — desktop browser only */}
+      {!isNative && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleFullscreen();
+          }}
+          className="absolute bottom-4 right-4 z-50 bg-white/15 hover:bg-white/25 text-white rounded-full w-12 h-12 flex items-center justify-center backdrop-blur-sm transition-colors"
+          aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+          title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+        >
+          {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
+        </button>
+      )}
       
       {/* Tap counter - only show when actively tapping */}
       {tapCount > 0 && (
