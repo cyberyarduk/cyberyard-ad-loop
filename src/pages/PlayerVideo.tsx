@@ -54,6 +54,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const [isPullingToRefresh, setIsPullingToRefresh] = useState(false);
   const [pullStartY, setPullStartY] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const isNative = Capacitor.isNativePlatform();
@@ -534,6 +535,82 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
     };
   }, [_currentForImage?.id, _isImageItemEffect, playlistRevision]);
 
+  // Native Android WebView has repeatedly failed to paint normal <img>/CSS
+  // image layers on some devices. For native image items, render the image and
+  // sparkles into a single canvas so the player does not depend on DOM image
+  // compositing or CSS animation support.
+  useEffect(() => {
+    if (!isNative || !_currentForImage || !_isImageItemEffect) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d', { alpha: false });
+    if (!ctx) return;
+
+    let frameId = 0;
+    let disposed = false;
+    let imageLoaded = false;
+    const img = new Image();
+    img.decoding = 'async';
+
+    const directUrl = appendCacheBust(getPlayableUrl(_currentForImage), playlistRevision);
+    const sourceUrl = imageRenderUrl || directUrl;
+    if (!sourceUrl.startsWith('blob:')) {
+      img.crossOrigin = 'anonymous';
+    }
+
+    const resizeCanvas = () => {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const width = Math.max(1, Math.floor(rect.width * dpr));
+      const height = Math.max(1, Math.floor(rect.height * dpr));
+
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { width: rect.width, height: rect.height };
+    };
+
+    const draw = (time: number) => {
+      if (disposed) return;
+
+      const { width, height } = resizeCanvas();
+      ctx.fillStyle = 'hsl(0 0% 0%)';
+      ctx.fillRect(0, 0, width, height);
+
+      if (imageLoaded) {
+        drawContainedImage(ctx, img, width, height);
+      }
+
+      drawCanvasSparkles(ctx, width, height, time);
+      frameId = requestAnimationFrame(draw);
+    };
+
+    img.onload = () => {
+      imageLoaded = true;
+      console.log('[NativeCanvasImage] Loaded successfully:', sourceUrl);
+    };
+    img.onerror = () => {
+      console.error('[NativeCanvasImage] Load error:', sourceUrl);
+      if (videosRef.current.length > 1) handleVideoEnd();
+    };
+    img.src = sourceUrl;
+
+    window.addEventListener('resize', resizeCanvas);
+    frameId = requestAnimationFrame(draw);
+
+    return () => {
+      disposed = true;
+      cancelAnimationFrame(frameId);
+      window.removeEventListener('resize', resizeCanvas);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNative, _currentForImage?.id, _isImageItemEffect, imageRenderUrl, playlistRevision]);
+
   const toggleFullscreen = async () => {
     try {
       if (!document.fullscreenElement) {
@@ -673,7 +750,16 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
         </div>
       )}
       
-      {currentVideo && isImageItem && (
+      {currentVideo && isImageItem && isNative && (
+        <canvas
+          ref={canvasRef}
+          key={`${currentVideo.id}-${safeIndex}-native-canvas`}
+          className="player-media-fade absolute inset-0 z-10 h-full w-full"
+          aria-label={currentVideo.title}
+        />
+      )}
+
+      {currentVideo && isImageItem && !isNative && (
         <div
           key={`${currentVideo.id}-${safeIndex}`}
           className="player-media-fade absolute inset-0 z-10 bg-black"
@@ -763,7 +849,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
 
       {/* Eye-catching sparkle overlay — pure CSS, sits on top of media,
           ignores pointer events so taps still register on the underlying layer. */}
-      <SparkleOverlay />
+      {!(isNative && isImageItem) && <SparkleOverlay />}
 
       {/* Invisible tap zone indicator (only visible during development) */}
       <div
@@ -772,6 +858,77 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       />
     </div>
   );
+};
+
+// ---------------------------------------------------------------------------
+// Canvas helpers for native Android fallback rendering.
+// ---------------------------------------------------------------------------
+const drawContainedImage = (
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  canvasWidth: number,
+  canvasHeight: number
+) => {
+  const imageWidth = img.naturalWidth || img.width;
+  const imageHeight = img.naturalHeight || img.height;
+  if (!imageWidth || !imageHeight || !canvasWidth || !canvasHeight) return;
+
+  const scale = Math.min(canvasWidth / imageWidth, canvasHeight / imageHeight);
+  const width = imageWidth * scale;
+  const height = imageHeight * scale;
+  const x = (canvasWidth - width) / 2;
+  const y = (canvasHeight - height) / 2;
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, x, y, width, height);
+};
+
+const drawCanvasSparkles = (
+  ctx: CanvasRenderingContext2D,
+  canvasWidth: number,
+  canvasHeight: number,
+  time: number
+) => {
+  const sparkles = [
+    { x: 0.12, y: 0.08, delay: 0, size: 14 },
+    { x: 0.78, y: 0.18, delay: 1.2, size: 18 },
+    { x: 0.06, y: 0.42, delay: 2.4, size: 12 },
+    { x: 0.88, y: 0.60, delay: 0.6, size: 16 },
+    { x: 0.22, y: 0.76, delay: 1.8, size: 14 },
+    { x: 0.68, y: 0.88, delay: 3.0, size: 20 },
+    { x: 0.50, y: 0.30, delay: 2.1, size: 10 },
+    { x: 0.40, y: 0.54, delay: 3.6, size: 12 },
+  ];
+
+  sparkles.forEach((sparkle) => {
+    const phase = (time / 1000 + sparkle.delay) % 2.8;
+    const pulse = (Math.sin((phase / 2.8) * Math.PI * 2 - Math.PI / 2) + 1) / 2;
+    const alpha = 0.18 + pulse * 0.82;
+    const radius = sparkle.size * (0.55 + pulse * 0.63);
+    const x = sparkle.x * canvasWidth;
+    const y = sparkle.y * canvasHeight;
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate((phase / 2.8) * Math.PI);
+    ctx.globalAlpha = alpha;
+    ctx.shadowColor = 'hsl(50 100% 84%)';
+    ctx.shadowBlur = 18;
+    ctx.fillStyle = 'hsl(50 100% 84%)';
+    ctx.beginPath();
+    ctx.moveTo(0, -radius);
+    ctx.lineTo(radius * 0.18, -radius * 0.18);
+    ctx.lineTo(radius, 0);
+    ctx.lineTo(radius * 0.18, radius * 0.18);
+    ctx.lineTo(0, radius);
+    ctx.lineTo(-radius * 0.18, radius * 0.18);
+    ctx.lineTo(-radius, 0);
+    ctx.lineTo(-radius * 0.18, -radius * 0.18);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  });
 };
 
 // ---------------------------------------------------------------------------
