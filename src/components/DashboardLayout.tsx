@@ -31,7 +31,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         <button
           className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
             isActive
-              ? "bg-foreground text-background shadow-sm"
+              ? "bg-primary text-primary-foreground shadow-sm"
               : "text-foreground/70 hover:bg-secondary hover:text-foreground"
           }`}
         >
@@ -86,8 +86,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   return (
     <div className="min-h-screen relative">
       {/* Soft pastel wash matching homepage */}
-      <div className="pointer-events-none fixed inset-0 -z-10 bg-wash-warm opacity-40" />
-      <div className="pointer-events-none fixed inset-0 -z-10 bg-background/60" />
+      <div className="pointer-events-none fixed inset-0 -z-10 bg-wash-warm opacity-80" />
+      <div className="pointer-events-none fixed inset-0 -z-10 bg-background/30" />
 
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 h-16 border-b border-border/60 bg-background/80 backdrop-blur-xl flex items-center px-4 z-50">
