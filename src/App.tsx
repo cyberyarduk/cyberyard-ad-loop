@@ -135,6 +135,7 @@ const App = () => (
             <Route path="/admin/research" element={<ProtectedRoute requireSuperAdmin><ResearchLeads /></ProtectedRoute>} />
             <Route path="/admin/research/new" element={<ProtectedRoute requireSuperAdmin><NewResearchLead /></ProtectedRoute>} />
             <Route path="/admin/research/analytics" element={<ProtectedRoute requireSuperAdmin><ResearchAnalytics /></ProtectedRoute>} />
+            <Route path="/admin/research/:id/post-trial" element={<ProtectedRoute requireSuperAdmin><PostTrialSurvey /></ProtectedRoute>} />
             <Route path="/admin/research/:id" element={<ProtectedRoute requireSuperAdmin><ResearchLeadDetail /></ProtectedRoute>} />
 
             {/* Existing super admin company management */}
