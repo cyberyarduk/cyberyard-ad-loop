@@ -14,13 +14,19 @@ interface Video {
   order_index: number;
   media_type?: 'video' | 'image';
   image_url?: string | null;
+  image_url_landscape?: string | null;
+  video_url_landscape?: string | null;
   display_duration?: number | null;
 }
 
-const getPlayableUrl = (item?: Video | null) => item?.image_url || item?.video_url || "";
+const getPlayableUrl = (item?: Video | null) => item?.image_url || item?.video_url || item?.image_url_landscape || item?.video_url_landscape || "";
 const isImageMedia = (item?: Video | null) => {
   const url = getPlayableUrl(item);
   return item?.media_type === 'image' || /\.(jpe?g|png|gif|webp|avif)(\?|$)/i.test(url);
+};
+const appendCacheBust = (url: string, version: number) => {
+  if (!url || !version) return url;
+  return `${url}${url.includes('?') ? '&' : '?'}pv=${version}`;
 };
 
 interface PlayerVideoProps {
@@ -30,6 +36,7 @@ interface PlayerVideoProps {
 
 const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const [videos, setVideos] = useState<Video[]>([]);
+  const [playlistRevision, setPlaylistRevision] = useState(0);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showAdmin, setShowAdmin] = useState(false);
@@ -46,6 +53,8 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const errorCountRef = useRef(0);
   const lastErrorToastRef = useRef(0);
   const videosRef = useRef<Video[]>([]);
+  const activePlaylistIdRef = useRef<string | null>(null);
+  const deviceId = deviceInfo?.id || deviceInfo?.device_id;
   
   // Keep videosRef in sync with videos state
   useEffect(() => {
@@ -132,6 +141,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
 
       // Device is active - clear suspended state if it was set
       setIsSuspended(false);
+      activePlaylistIdRef.current = data.playlist_id ?? null;
       
       console.log('Fetched videos:', data.videos, 'playlist_id:', data.playlist_id);
       const newVideos = (data.videos || []).filter((item: Video) => !!getPlayableUrl(item));
@@ -140,6 +150,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       if (JSON.stringify(newVideos) !== JSON.stringify(videosRef.current)) {
         console.log('Playlist changed! Switching to new playlist');
         setVideos(newVideos);
+        setPlaylistRevision((version) => version + 1);
         setCurrentIndex(0);
         
         // Force immediate playback of first video in new playlist
