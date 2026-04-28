@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Mail, Phone, MapPin, Building2, Trash2 } from "lucide-react";
+import { ArrowLeft, Mail, Phone, MapPin, Building2, Trash2, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { LEAD_STATUSES, SURVEY_QUESTIONS, getOptionLabel } from "@/lib/survey";
 import { format } from "date-fns";
@@ -78,6 +78,33 @@ const ResearchLeadDetail = () => {
           </div>
           <Button variant="ghost" size="icon" onClick={remove}><Trash2 className="h-4 w-4 text-destructive" /></Button>
         </div>
+
+        {lead.is_trial_lead && lead.status !== "converted" && (
+          <Card className="border-emerald-500/40 bg-emerald-500/5 shadow-sm">
+            <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+              <div>
+                <p className="font-semibold">Trial accepted — ready to onboard?</p>
+                <p className="text-sm text-muted-foreground">Convert this lead into a paying customer. Survey details will pre-fill the wizard.</p>
+              </div>
+              <Button
+                onClick={() => navigate("/admin/new-client", { state: { prefill: {
+                  name: lead.business_name,
+                  business_type: lead.business_type || "",
+                  primary_contact_name: lead.contact_name || "",
+                  primary_contact_email: lead.email || "",
+                  primary_contact_phone: lead.phone || "",
+                  billing_email: lead.email || "",
+                  address_line1: lead.address || "",
+                  city: lead.city || "",
+                  notes: lead.notes || "",
+                  research_lead_id: lead.id,
+                }}})}
+              >
+                <UserPlus className="mr-2 h-4 w-4" /> Convert to Customer
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="border-border/60 shadow-sm">
           <CardHeader><CardTitle className="text-lg">Profile & status</CardTitle></CardHeader>

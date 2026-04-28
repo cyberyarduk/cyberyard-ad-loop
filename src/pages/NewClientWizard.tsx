@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import PortalLayout from "@/components/PortalLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,35 +29,34 @@ const formatGBP = (pence: number) => `£${(pence / 100).toFixed(0)}`;
 
 const NewClientWizard = ({ variant }: Props) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const prefill = (location.state as any)?.prefill || {};
+  const researchLeadId: string | undefined = prefill.research_lead_id;
   const { user, salesperson } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
   const [data, setData] = useState({
-    // Step 1 - Company
-    name: "",
-    business_type: "",
-    primary_contact_name: "",
-    primary_contact_email: "",
-    primary_contact_phone: "",
-    billing_email: "",
-    address_line1: "",
-    city: "",
+    name: prefill.name || "",
+    business_type: prefill.business_type || "",
+    primary_contact_name: prefill.primary_contact_name || "",
+    primary_contact_email: prefill.primary_contact_email || "",
+    primary_contact_phone: prefill.primary_contact_phone || "",
+    billing_email: prefill.billing_email || "",
+    address_line1: prefill.address_line1 || "",
+    city: prefill.city || "",
     postcode: "",
     country: "United Kingdom",
-    // Step 2 - Subscription
     screen_count: 1,
     start_date: format(new Date(), "yyyy-MM-dd"),
-    // Step 3 - Admin account
-    admin_name: "",
-    admin_email: "",
+    admin_name: prefill.primary_contact_name || "",
+    admin_email: prefill.primary_contact_email || "",
     admin_password: "",
-    // Step 4 - DD
     dd_account_holder: "",
     dd_sort_code: "",
     dd_account_number: "",
     dd_bank_name: "",
-    notes: "",
+    notes: prefill.notes || "",
   });
 
   const update = (k: string, v: any) => setData((p) => ({ ...p, [k]: v }));
@@ -159,6 +158,10 @@ const NewClientWizard = ({ variant }: Props) => {
           is_mock: true,
           created_by_user_id: user.id,
         });
+      }
+
+      if (researchLeadId) {
+        await supabase.from("research_leads").update({ status: "converted" }).eq("id", researchLeadId);
       }
 
       toast.success(`${data.name} signed up successfully! 🎉`);
