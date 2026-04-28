@@ -181,6 +181,7 @@ serve(async (req) => {
           video_url: mediaUrl,
           image_url: isImage ? mediaUrl : null,
           display_duration: v.display_duration ?? null,
+          player_overlay: v.player_overlay ?? null,
           order_index: pv.order_index
         };
       })
