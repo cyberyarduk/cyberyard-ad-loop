@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import PlayerAdminMode from "./PlayerAdminMode";
+import PlayerOverlay from "@/components/PlayerOverlay";
 import { Capacitor } from '@capacitor/core';
 import { Device } from '@capacitor/device';
 import { Network } from '@capacitor/network';
@@ -17,6 +18,7 @@ interface Video {
   image_url_landscape?: string | null;
   video_url_landscape?: string | null;
   display_duration?: number | null;
+  player_overlay?: string | null;
 }
 
 const getPlayableUrl = (item?: Video | null) => item?.image_url || item?.video_url || item?.image_url_landscape || item?.video_url_landscape || "";
@@ -755,12 +757,15 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       )}
       
       {currentVideo && isImageItem && isNative && (
-        <canvas
-          ref={canvasRef}
-          key={`${currentVideo.id}-${safeIndex}-native-canvas`}
-          className="player-media-fade absolute inset-0 z-10 h-full w-full"
-          aria-label={currentVideo.title}
-        />
+        <>
+          <canvas
+            ref={canvasRef}
+            key={`${currentVideo.id}-${safeIndex}-native-canvas`}
+            className="player-media-fade absolute inset-0 z-10 h-full w-full"
+            aria-label={currentVideo.title}
+          />
+          <PlayerOverlay kind={currentVideo.player_overlay} />
+        </>
       )}
 
       {currentVideo && isImageItem && !isNative && (
@@ -787,6 +792,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
               if (videos.length > 1) handleVideoEnd();
             }}
           />
+          <PlayerOverlay kind={currentVideo.player_overlay} />
         </div>
       )}
 

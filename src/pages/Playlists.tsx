@@ -72,8 +72,9 @@ const Playlists = () => {
   const [imageDuration, setImageDuration] = useState("10");
   const [uploadingImage, setUploadingImage] = useState(false);
   // Optional animated overlays for uploaded images
-  const [imageAnimatedOverlays, setImageAnimatedOverlays] = useState(false);
-  const [imageOverlayStyle, setImageOverlayStyle] = useState<"boom" | "sparkle" | "stars" | "minimal">("sparkle");
+  // Player-side overlay choice for uploaded images — rendered live by the
+  // player on top of the static image (no Shotstack render, no extra cost).
+  const [imagePlayerOverlay, setImagePlayerOverlay] = useState<"none" | "stars" | "sparkles" | "shimmer">("none");
   const [imageLimitedOffer, setImageLimitedOffer] = useState(false);
   const [imageBadgeText, setImageBadgeText] = useState("TODAY ONLY");
 
@@ -365,86 +366,52 @@ const Playlists = () => {
       const portraitUrl = supabase.storage.from("images").getPublicUrl(portraitPath).data.publicUrl;
       const landscapeUrl = supabase.storage.from("images").getPublicUrl(landscapePath).data.publicUrl;
 
-      // Two paths:
-      //   (a) No animated overlays → save as a static image asset (current
-      //       behaviour — fast, no AI / Shotstack involved).
-      //   (b) Animated overlays on → call the generate-video edge function
-      //       with `useImageAsIs` so the uploaded image becomes the hero
-      //       and we get a video with swiping bars + optional offer badge.
-      if (imageAnimatedOverlays) {
-        toast.info("Adding animated overlays — rendering video (1–2 min)…");
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) throw new Error("Not authenticated");
+      // Static image insert. The chosen `player_overlay` is a live effect
+      // (e.g. golden stars) that the player draws on top of the image —
+      // no Shotstack render, no per-upload cost.
+      const { data: newRow, error: insertError } = await supabase
+        .from("videos")
+        .insert({
+          title: imageTitle || imageFile.name,
+          user_id: user.id,
+          company_id: profile?.company_id,
+          media_type: "image",
+          image_url: portraitUrl,
+          image_url_landscape: landscapeUrl,
+          video_url: portraitUrl,
+          display_duration: dur,
+          source: "image_upload",
+          player_overlay: imagePlayerOverlay,
+        } as any)
+        .select()
+        .single();
+      if (insertError) throw insertError;
 
-        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-video`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${session.access_token}`,
-            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-          body: JSON.stringify({
-            imageUrl: portraitUrl,
-            imageUrlLandscape: landscapeUrl,
-            mainText: imageTitle || imageFile.name,
-            duration: String(Math.max(8, Math.min(20, dur))),
-            style: imageOverlayStyle,
-            playlistId: selectedPlaylist,
-            useImageAsIs: true,
-            animatedOverlays: true,
-            limitedOffer: imageLimitedOffer,
-            badgeText: imageLimitedOffer ? imageBadgeText.trim() : undefined,
-          }),
+      const { data: existingVideos } = await supabase
+        .from("playlist_videos")
+        .select("order_index")
+        .eq("playlist_id", selectedPlaylist)
+        .order("order_index", { ascending: false })
+        .limit(1);
+      const orderIndex = existingVideos && existingVideos.length > 0
+        ? existingVideos[0].order_index + 1
+        : 0;
+
+      const { error: linkError } = await supabase
+        .from("playlist_videos")
+        .insert({
+          playlist_id: selectedPlaylist,
+          video_id: newRow.id,
+          order_index: orderIndex,
         });
-        const data = await response.json();
-        if (!response.ok || !data?.success) {
-          throw new Error(data?.error || "Failed to render animated image");
-        }
-        toast.success("Animated image added to playlist");
-      } else {
-        const { data: newRow, error: insertError } = await supabase
-          .from("videos")
-          .insert({
-            title: imageTitle || imageFile.name,
-            user_id: user.id,
-            company_id: profile?.company_id,
-            media_type: "image",
-            image_url: portraitUrl,
-            image_url_landscape: landscapeUrl,
-            video_url: portraitUrl,
-            display_duration: dur,
-            source: "image_upload",
-          })
-          .select()
-          .single();
-        if (insertError) throw insertError;
+      if (linkError) throw linkError;
 
-        const { data: existingVideos } = await supabase
-          .from("playlist_videos")
-          .select("order_index")
-          .eq("playlist_id", selectedPlaylist)
-          .order("order_index", { ascending: false })
-          .limit(1);
-        const orderIndex = existingVideos && existingVideos.length > 0
-          ? existingVideos[0].order_index + 1
-          : 0;
-
-        const { error: linkError } = await supabase
-          .from("playlist_videos")
-          .insert({
-            playlist_id: selectedPlaylist,
-            video_id: newRow.id,
-            order_index: orderIndex,
-          });
-        if (linkError) throw linkError;
-
-        toast.success("Image added to playlist");
-      }
+      toast.success("Image added to playlist");
 
       setImageFile(null);
       setImageTitle("");
       setImageDuration("10");
-      setImageAnimatedOverlays(false);
+      setImagePlayerOverlay("none");
       setImageLimitedOffer(false);
       setAddVideosOpen(false);
       setSelectedPlaylist(null);
@@ -1031,73 +998,36 @@ const Playlists = () => {
                     />
                   </div>
 
-                  {/* Animated overlays toggle */}
-                  <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
-                    <label className="flex items-start gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={imageAnimatedOverlays}
-                        onChange={(e) => setImageAnimatedOverlays(e.target.checked)}
-                        className="mt-1 h-4 w-4 rounded border-input"
-                      />
-                      <div>
-                        <div className="font-medium text-sm">Add animated overlays</div>
-                        <p className="text-xs text-muted-foreground">
-                          Turn the image into a short looping video with motion (swiping bars, optional offer badge). Leave off for a clean static menu.
-                        </p>
-                      </div>
-                    </label>
-
-                    {imageAnimatedOverlays && (
-                      <div className="ml-7 space-y-3 pt-1">
-                        <div className="space-y-2">
-                          <Label className="text-xs">Overlay style</Label>
-                          <div className="grid grid-cols-2 gap-2">
-                            {([
-                              { v: "boom", label: "💥 BOOM", desc: "Bold red bars" },
-                              { v: "sparkle", label: "✨ Sparkle", desc: "Purple shine" },
-                              { v: "stars", label: "⭐ Stars", desc: "Hot pink pop" },
-                              { v: "minimal", label: "🎯 Minimal", desc: "Clean blue" },
-                            ] as const).map((o) => (
-                              <button
-                                key={o.v}
-                                type="button"
-                                onClick={() => setImageOverlayStyle(o.v)}
-                                className={`rounded-md border p-2 text-left text-xs transition-colors ${
-                                  imageOverlayStyle === o.v
-                                    ? "border-primary ring-2 ring-primary/30 bg-primary/5"
-                                    : "border-border hover:border-primary/50"
-                                }`}
-                              >
-                                <div className="font-medium">{o.label}</div>
-                                <div className="text-[10px] text-muted-foreground">{o.desc}</div>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        <label className="flex items-start gap-3 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={imageLimitedOffer}
-                            onChange={(e) => setImageLimitedOffer(e.target.checked)}
-                            className="mt-1 h-4 w-4 rounded border-input"
-                          />
-                          <div className="flex-1">
-                            <div className="text-sm font-medium">Add a limited-offer badge</div>
-                            {imageLimitedOffer && (
-                              <Input
-                                className="mt-2"
-                                placeholder="TODAY ONLY"
-                                value={imageBadgeText}
-                                onChange={(e) => setImageBadgeText(e.target.value.slice(0, 20))}
-                                maxLength={20}
-                              />
-                            )}
-                          </div>
-                        </label>
-                      </div>
-                    )}
+                  {/* Player overlay picker — a live effect rendered by the
+                      player on top of the static image. Free; no render cost. */}
+                  <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-4">
+                    <Label className="text-sm font-medium">Player overlay</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Pick a live effect the player draws over your image. Choose
+                      "None" for a clean static menu.
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      {([
+                        { v: "none", label: "None", desc: "Plain static" },
+                        { v: "stars", label: "⭐ Golden stars", desc: "Drifting stars" },
+                        { v: "sparkles", label: "✨ Sparkles", desc: "Twinkling specks" },
+                        { v: "shimmer", label: "🌟 Shimmer", desc: "Light sweep" },
+                      ] as const).map((o) => (
+                        <button
+                          key={o.v}
+                          type="button"
+                          onClick={() => setImagePlayerOverlay(o.v)}
+                          className={`rounded-md border p-2 text-left text-xs transition-colors ${
+                            imagePlayerOverlay === o.v
+                              ? "border-primary ring-2 ring-primary/30 bg-primary/5"
+                              : "border-border hover:border-primary/50"
+                          }`}
+                        >
+                          <div className="font-medium">{o.label}</div>
+                          <div className="text-[10px] text-muted-foreground">{o.desc}</div>
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   <Button
@@ -1106,9 +1036,7 @@ const Playlists = () => {
                     className="w-full"
                   >
                     <ImageIcon className="h-4 w-4 mr-2" />
-                    {uploadingImage
-                      ? (imageAnimatedOverlays ? "Rendering video…" : "Uploading…")
-                      : (imageAnimatedOverlays ? "Render & add to playlist" : "Upload & add to playlist")}
+                    {uploadingImage ? "Uploading…" : "Upload & add to playlist"}
                   </Button>
                 </div>
               </TabsContent>
