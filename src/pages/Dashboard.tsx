@@ -39,29 +39,32 @@ const Dashboard = () => {
       title: "Create Offer Video",
       description: "Generate a new offer video",
       to: "/videos/create-ai",
+      tone: "bg-peach",
     },
     {
       icon: Monitor,
       title: "Add new device",
-      description: "Pair a new wearable display",
+      description: "Pair a new screen to your account",
       to: "/devices",
+      tone: "bg-lavender",
     },
     {
       icon: List,
       title: "Manage my playlists",
       description: "Organise what plays on your devices",
       to: "/playlists",
+      tone: "bg-mint",
     },
   ];
 
   return (
     <DashboardLayout>
-      <div className="space-y-10 max-w-4xl">
+      <div className="space-y-10 max-w-5xl">
         <div>
-          <h1 className="text-4xl font-semibold tracking-tight">
+          <h1 className="text-4xl md:text-5xl font-semibold tracking-tight">
             Welcome back{firstName ? `, ${firstName}` : ""}
           </h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-muted-foreground mt-3 text-lg">
             What would you like to do today?
           </p>
         </div>
@@ -71,19 +74,15 @@ const Dashboard = () => {
             const Icon = action.icon;
             return (
               <Link key={action.title} to={action.to}>
-                <Card className="border border-border shadow-sm hover:shadow-md hover:border-primary/40 transition-all h-full cursor-pointer">
-                  <CardContent className="p-6 space-y-4">
-                    <div className="p-3 bg-primary/10 rounded-xl w-fit">
-                      <Icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-lg">{action.title}</h3>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {action.description}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="premium-card card-highlight hover-lift rounded-2xl p-6 h-full cursor-pointer">
+                  <div className={`p-3 ${action.tone} rounded-xl w-fit mb-4`}>
+                    <Icon className="h-6 w-6 text-foreground" />
+                  </div>
+                  <h3 className="font-semibold text-lg tracking-tight">{action.title}</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {action.description}
+                  </p>
+                </div>
               </Link>
             );
           })}
