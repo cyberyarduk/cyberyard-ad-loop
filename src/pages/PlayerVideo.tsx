@@ -17,6 +17,12 @@ interface Video {
   display_duration?: number | null;
 }
 
+const getPlayableUrl = (item?: Video | null) => item?.image_url || item?.video_url || "";
+const isImageMedia = (item?: Video | null) => {
+  const url = getPlayableUrl(item);
+  return item?.media_type === 'image' || /\.(jpe?g|png|gif|webp|avif)(\?|$)/i.test(url);
+};
+
 interface PlayerVideoProps {
   authToken: string;
   deviceInfo: any;
@@ -128,7 +134,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       setIsSuspended(false);
       
       console.log('Fetched videos:', data.videos, 'playlist_id:', data.playlist_id);
-      const newVideos = data.videos || [];
+      const newVideos = (data.videos || []).filter((item: Video) => !!getPlayableUrl(item));
       
       // If videos changed, reset to first video and force playback
       if (JSON.stringify(newVideos) !== JSON.stringify(videosRef.current)) {
@@ -267,7 +273,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           }
           
           if (data.success && data.videos) {
-            const newVideos = data.videos;
+              const newVideos = data.videos.filter((item: Video) => !!getPlayableUrl(item));
             
             if (newVideos.length > 0 && JSON.stringify(newVideos) !== JSON.stringify(videosRef.current)) {
               console.log('New playlist detected - switching immediately');
@@ -437,7 +443,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   // For image items, advance after `display_duration` seconds (default 10s).
   const _safeIdxForImage = currentIndex < videos.length ? currentIndex : 0;
   const _currentForImage = videos[_safeIdxForImage];
-  const _isImageItemEffect = _currentForImage?.media_type === 'image';
+  const _isImageItemEffect = isImageMedia(_currentForImage);
   useEffect(() => {
     if (!_currentForImage || !_isImageItemEffect) return;
     const seconds = Math.max(1, Math.min(600, _currentForImage.display_duration ?? 10));
@@ -510,7 +516,8 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   // Safety check: compute safe index without setting state during render
   const safeIndex = currentIndex < videos.length ? currentIndex : 0;
   const currentVideo = videos[safeIndex];
-  const isImageItem = currentVideo?.media_type === 'image';
+  const isImageItem = isImageMedia(currentVideo);
+  const currentMediaUrl = getPlayableUrl(currentVideo);
 
 
   return (
@@ -549,15 +556,15 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       {currentVideo && isImageItem && (
         <img
           key={`${currentVideo.id}-${safeIndex}`}
-          src={currentVideo.image_url || currentVideo.video_url}
+          src={currentMediaUrl}
           alt={currentVideo.title}
-          className="absolute inset-0 w-full h-full object-contain bg-black animate-fade-in"
+          className="absolute inset-0 z-10 w-full h-full object-contain bg-black animate-fade-in"
           style={{ animationDuration: '450ms' }}
           onLoad={() => {
-            console.log('[Image] Loaded successfully:', currentVideo.image_url || currentVideo.video_url);
+            console.log('[Image] Loaded successfully:', currentMediaUrl);
           }}
           onError={() => {
-            console.error('[Image] Load error for URL:', currentVideo.image_url || currentVideo.video_url);
+            console.error('[Image] Load error for URL:', currentMediaUrl);
             if (videos.length > 1) handleVideoEnd();
           }}
         />
@@ -567,8 +574,8 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
         <video
           ref={videoRef}
           key={`${currentVideo.id}-${safeIndex}`}
-          src={currentVideo.video_url}
-          className="w-full h-full object-contain animate-fade-in"
+          src={currentMediaUrl}
+          className="relative z-10 w-full h-full object-contain animate-fade-in"
           style={{ animationDuration: '450ms' }}
           autoPlay
           muted
@@ -586,7 +593,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           onEnded={handleVideoEnd}
           onError={(e) => {
             console.error('Video playback error:', e);
-            console.error('Failed video URL:', currentVideo.video_url);
+            console.error('Failed video URL:', currentMediaUrl);
             console.error('Video error details:', videoRef.current?.error);
 
             const now = Date.now();
@@ -607,10 +614,10 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
             }
           }}
           onLoadStart={() => {
-            console.log('Video loading started:', currentVideo.video_url);
+            console.log('Video loading started:', currentMediaUrl);
           }}
           onLoadedData={() => {
-            console.log('Video loaded:', currentVideo.video_url);
+            console.log('Video loaded:', currentMediaUrl);
             if (videoRef.current && videoRef.current.paused) {
               videoRef.current.muted = true;
               videoRef.current.play().catch(e => {
@@ -619,7 +626,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
             }
           }}
           onPlay={() => {
-            console.log('Video started playing:', currentVideo.video_url);
+            console.log('Video started playing:', currentMediaUrl);
             errorCountRef.current = 0;
           }}
         />
@@ -660,28 +667,29 @@ const SparkleOverlay = () => {
     <div className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
       <style>{`
         @keyframes sparkleTwinkle {
-          0%, 100% { opacity: 0; transform: scale(0.4) rotate(0deg); }
-          50%      { opacity: 1; transform: scale(1)   rotate(180deg); }
+          0%, 100% { opacity: 0.2; transform: scale(0.55) rotate(0deg); }
+          50%      { opacity: 1; transform: scale(1.18) rotate(180deg); }
         }
         @keyframes flashBurst {
-          0%, 92%, 100% { opacity: 0; }
-          94%           { opacity: 0.55; }
-          96%           { opacity: 0; }
+          0%, 84%, 100% { opacity: 0; }
+          87%           { opacity: 0.72; }
+          90%           { opacity: 0; }
         }
         .cy-sparkle {
           position: absolute;
-          color: #FFF6B0;
-          filter: drop-shadow(0 0 6px rgba(255, 246, 176, 0.9));
-          animation: sparkleTwinkle 4.2s ease-in-out infinite;
+          color: hsl(50 100% 84%);
+          filter: drop-shadow(0 0 10px hsl(50 100% 84% / 0.95)) drop-shadow(0 0 22px hsl(42 100% 56% / 0.7));
+          animation: sparkleTwinkle 2.8s ease-in-out infinite;
+          will-change: transform, opacity;
         }
         .cy-flash {
           position: absolute;
           inset: 0;
           background: radial-gradient(circle at center,
-            rgba(255,255,255,0.85) 0%,
-            rgba(255,255,255,0.3) 25%,
-            rgba(255,255,255,0) 60%);
-          animation: flashBurst 12s ease-in-out infinite;
+            hsl(0 0% 100% / 0.95) 0%,
+            hsl(50 100% 85% / 0.48) 28%,
+            hsl(0 0% 100% / 0) 66%);
+          animation: flashBurst 7s ease-in-out infinite;
           mix-blend-mode: screen;
         }
       `}</style>
@@ -695,6 +703,7 @@ const SparkleOverlay = () => {
             width: s.size * 4,
             height: s.size * 4,
             animationDelay: s.delay,
+            transform: 'translate(-50%, -50%)',
           }}
           viewBox="0 0 24 24"
           fill="currentColor"
