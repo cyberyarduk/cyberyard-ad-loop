@@ -232,10 +232,10 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   useEffect(() => {
     fetchPlaylist();
 
-    // Refresh playlist every 5 seconds for near-instant updates
+    // Refresh playlist every 2 seconds for near-instant content updates on devices
     refreshIntervalRef.current = setInterval(() => {
       fetchPlaylist();
-    }, 5 * 1000);
+    }, 2 * 1000);
 
     // Set up realtime listener for device changes
     const channel = supabase
@@ -246,7 +246,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           event: 'UPDATE',
           schema: 'public',
           table: 'devices',
-          filter: `id=eq.${deviceInfo.id}`
+          filter: `id=eq.${deviceId}`
         },
         async (payload) => {
           console.log('Device updated, fetching new playlist:', payload);
@@ -284,11 +284,13 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           }
           
           if (data.success && data.videos) {
+              activePlaylistIdRef.current = data.playlist_id ?? null;
               const newVideos = data.videos.filter((item: Video) => !!getPlayableUrl(item));
             
             if (newVideos.length > 0 && JSON.stringify(newVideos) !== JSON.stringify(videosRef.current)) {
               console.log('New playlist detected - switching immediately');
               setVideos(newVideos);
+              setPlaylistRevision((version) => version + 1);
               setCurrentIndex(0);
               
               // Force immediate playback of first video in new playlist
@@ -304,6 +306,20 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           }
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'playlist_videos'
+        },
+        async (payload) => {
+          const row = (payload.new || payload.old) as { playlist_id?: string } | null;
+          if (!row?.playlist_id || row.playlist_id !== activePlaylistIdRef.current) return;
+          console.log('Active playlist contents changed, refreshing:', payload);
+          await fetchPlaylist();
+        }
+      )
       .subscribe();
 
     return () => {
@@ -316,7 +332,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       }
       supabase.removeChannel(channel);
     };
-  }, [authToken, deviceInfo.id]);
+  }, [authToken, deviceId, fetchPlaylist]);
 
   const handleVideoEnd = () => {
     console.log('[VideoEnd] Video ended, current index:', currentIndex, 'total videos:', videos.length);
