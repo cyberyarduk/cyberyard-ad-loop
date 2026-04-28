@@ -556,15 +556,15 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       {currentVideo && isImageItem && (
         <img
           key={`${currentVideo.id}-${safeIndex}`}
-          src={currentVideo.image_url || currentVideo.video_url}
+          src={currentMediaUrl}
           alt={currentVideo.title}
-          className="absolute inset-0 w-full h-full object-contain bg-black animate-fade-in"
+          className="absolute inset-0 z-10 w-full h-full object-contain bg-black animate-fade-in"
           style={{ animationDuration: '450ms' }}
           onLoad={() => {
-            console.log('[Image] Loaded successfully:', currentVideo.image_url || currentVideo.video_url);
+            console.log('[Image] Loaded successfully:', currentMediaUrl);
           }}
           onError={() => {
-            console.error('[Image] Load error for URL:', currentVideo.image_url || currentVideo.video_url);
+            console.error('[Image] Load error for URL:', currentMediaUrl);
             if (videos.length > 1) handleVideoEnd();
           }}
         />
@@ -574,8 +574,8 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
         <video
           ref={videoRef}
           key={`${currentVideo.id}-${safeIndex}`}
-          src={currentVideo.video_url}
-          className="w-full h-full object-contain animate-fade-in"
+          src={currentMediaUrl}
+          className="relative z-10 w-full h-full object-contain animate-fade-in"
           style={{ animationDuration: '450ms' }}
           autoPlay
           muted
@@ -593,7 +593,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           onEnded={handleVideoEnd}
           onError={(e) => {
             console.error('Video playback error:', e);
-            console.error('Failed video URL:', currentVideo.video_url);
+            console.error('Failed video URL:', currentMediaUrl);
             console.error('Video error details:', videoRef.current?.error);
 
             const now = Date.now();
@@ -614,10 +614,10 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
             }
           }}
           onLoadStart={() => {
-            console.log('Video loading started:', currentVideo.video_url);
+            console.log('Video loading started:', currentMediaUrl);
           }}
           onLoadedData={() => {
-            console.log('Video loaded:', currentVideo.video_url);
+            console.log('Video loaded:', currentMediaUrl);
             if (videoRef.current && videoRef.current.paused) {
               videoRef.current.muted = true;
               videoRef.current.play().catch(e => {
@@ -626,7 +626,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
             }
           }}
           onPlay={() => {
-            console.log('Video started playing:', currentVideo.video_url);
+            console.log('Video started playing:', currentMediaUrl);
             errorCountRef.current = 0;
           }}
         />
