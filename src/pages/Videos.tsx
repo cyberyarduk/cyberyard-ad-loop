@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { PlaylistSelectorDialog } from "@/components/PlaylistSelectorDialog";
 
 const Videos = () => {
   const [open, setOpen] = useState(false);
