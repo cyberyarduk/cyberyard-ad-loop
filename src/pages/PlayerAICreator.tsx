@@ -22,6 +22,7 @@ const PlayerAICreator = ({ authToken, deviceInfo, onBack, onComplete }: PlayerAI
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [mainText, setMainText] = useState("");
   const [subtext, setSubtext] = useState("");
+  const [limitedOffer, setLimitedOffer] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [playlists, setPlaylists] = useState<any[]>([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState<string>("");
