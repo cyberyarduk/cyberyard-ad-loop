@@ -279,7 +279,7 @@ serve(async (req) => {
               asset: { type: "image", src: portraitImageUrl },
               start: 0,
               length: videoDuration,
-              effect: "slideUp"
+              effect: "zoomIn"
             }]
           }
         ]
@@ -301,7 +301,7 @@ serve(async (req) => {
               asset: { type: "image", src: landscapeImageUrl },
               start: 0,
               length: videoDuration,
-              effect: "slideUp"
+              effect: "zoomIn"
             }]
           }
         ]
