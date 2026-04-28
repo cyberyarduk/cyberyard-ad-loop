@@ -13,57 +13,17 @@ serve(async (req) => {
   }
 
   try {
-    const { imageUrl, imageData, mainText, subtext, duration, style = 'boom', playlistId, deviceToken, customization } = await req.json();
-    console.log('Generating video with params:', { hasImageUrl: !!imageUrl, hasImageData: !!imageData, mainText, subtext, duration, style, playlistId, deviceToken: !!deviceToken, customization });
+    const { imageUrl, imageData, mainText, subtext, duration, style = 'boom', playlistId, deviceToken, customization, price, limitedOffer, badgeText } = await req.json();
+    console.log('Generating video with params:', { hasImageUrl: !!imageUrl, hasImageData: !!imageData, mainText, subtext, duration, style, playlistId, deviceToken: !!deviceToken, customization, price, limitedOffer, badgeText });
 
-    // ===== Build customization prompt fragment =====
-    const fontDescriptions: Record<string, string> = {
-      'bold-sans': 'a bold, heavy sans-serif font (like Impact or Bebas Neue)',
-      'elegant-serif': 'an elegant serif font (like Playfair Display or Didot)',
-      'handwritten': 'a handwritten brush-script font with personality',
-      'modern-display': 'a modern geometric display font (like Futura or Eurostile)',
-      'rounded': 'a rounded, soft, friendly font (like Quicksand or Nunito)',
-      'condensed': 'a tall condensed block font for maximum impact',
-    };
-    const colorDescriptions: Record<string, string> = {
-      white: 'pure white',
-      black: 'deep black',
-      yellow: 'vibrant yellow',
-      red: 'bold red',
-      pink: 'hot pink',
-      blue: 'electric blue',
-      green: 'lime green',
-      orange: 'bright orange',
-    };
-    const overlayDescriptions: Record<string, string> = {
-      'none': 'no background behind the text — let it sit directly on the image',
-      'solid-band': 'a solid colored horizontal band/box behind the text',
-      'semi-dark': 'a semi-transparent dark tinted layer behind the text for readability',
-      'semi-light': 'a semi-transparent light tinted layer behind the text for readability',
-      'gradient-bottom': 'a soft gradient that fades from the bottom of the image to make the text pop',
-      'gradient-top': 'a soft gradient that fades from the top of the image to make the text pop',
-    };
-    const positionDescriptions: Record<string, string> = {
-      top: 'at the TOP of the composition (well within the safe-zone)',
-      middle: 'in the CENTER of the composition',
-      bottom: 'at the BOTTOM of the composition (well within the safe-zone)',
-      infront: 'IN FRONT of the main subject, overlapping it boldly so the text reads on top of the product/person',
-      behind: 'BEHIND the main subject — the text sits as a background layer with the subject occluding part of it for a layered, magazine-style depth effect',
-    };
+    // Resolve title/price: prefer explicit `price`, fall back to subtext for backward compat.
+    const titleText = (mainText || '').toString().trim();
+    const priceText = (price || subtext || '').toString().trim();
+    const showBadge = !!limitedOffer;
+    const finalBadgeText = (badgeText || 'TODAY ONLY').toString().trim().toUpperCase().slice(0, 20);
 
-    const c = customization || {};
-    const fontDesc = fontDescriptions[c.fontFamily] || fontDescriptions['bold-sans'];
-    const textColorDesc = colorDescriptions[c.textColor] || 'pure white';
-    const positionDesc = positionDescriptions[c.textPosition] || positionDescriptions.middle;
-    const overlayDesc = overlayDescriptions[c.overlayStyle] || overlayDescriptions.none;
-    const overlayColorDesc = c.overlayStyle && c.overlayStyle !== 'none'
-      ? `Use ${colorDescriptions[c.overlayColor] || 'black'} for the overlay/background color. `
-      : '';
-    const themeDesc = c.themePrompt && c.themePrompt.trim().length > 0
-      ? `Additional vibe/theme to incorporate: "${String(c.themePrompt).slice(0, 200)}". `
-      : '';
+    // (Old AI-text customization block removed — text is now rendered by Shotstack, not the AI image.)
 
-    const customizationFragment = ` Render the headline text in ${fontDesc}, colored ${textColorDesc}, positioned ${positionDesc}. ${overlayDesc ? `Use ${overlayDesc}. ` : ''}${overlayColorDesc}${themeDesc}`;
 
     const SHOTSTACK_API_KEY = Deno.env.get('SHOTSTACK_API_KEY');
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -124,31 +84,39 @@ serve(async (req) => {
     // Generate complete promotional image with text using Lovable AI
     console.log('Generating complete promotional image with AI...');
     
-    // CRITICAL safe-zone instruction shared by every prompt — text MUST stay
-    // inside a generous inner margin so nothing gets clipped on the device.
-    const SAFE_ZONE = ` CRITICAL TEXT RULES: All text MUST be fully contained inside the central safe area, with at least 22% padding from EVERY edge of the canvas (top, bottom, left, right). Never let any letter touch or extend past the edges. The complete text "${mainText}"${subtext ? ` and "${subtext}"` : ''} must be 100% visible — no cropping, no clipping, no letters cut in half. AGGRESSIVELY reduce the text size or wrap onto multiple lines if needed to keep every letter well within the safe zone. The first and last letters of every word must have clear breathing room from the canvas edge. Preserve the full uploaded product/photo/menu content inside the frame; do not crop off the bottom, top, sides, product, plate, price, or menu text. Use letterboxing, background blur, smaller layout, or extra margins if needed so the full image remains visible on desktop and mobile. Spell every word exactly as written, no extra characters. Compose the image so the headline text occupies a CLEAR, UNCLUTTERED region with simple low-detail background behind it (so motion overlays added afterwards look clean). Keep the layout balanced and centered.`;
+    // === AI generates a CLEAN background image (no text). ===
+    // All text/animation is added by Shotstack so we get real motion design.
+    const themeDesc = customization?.themePrompt && customization.themePrompt.trim().length > 0
+      ? ` Vibe/theme: "${String(customization.themePrompt).slice(0, 200)}".`
+      : '';
 
-    const stylePrompts: Record<string, string> = {
-      boom: `Take this product image and transform it into an eye-catching promotional poster in 1080x1920 portrait format. Add bold, explosive text "${mainText}" with vibrant red and pink gradients, dramatic shadows, and energy burst effects. Make it look like a dramatic product advertisement with WOW factor.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`,
-      sparkle: `Take this product image and transform it into a magical promotional poster in 1080x1920 portrait format. Add elegant text "${mainText}" with purple-to-blue gradients, sparkles, and dreamy glowing effects. Make it enchanting and eye-catching.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`,
-      stars: `Take this product image and transform it into a glamorous promotional poster in 1080x1920 portrait format. Add stylish text "${mainText}" with hot pink colors, star decorations, and dazzling celebrity-style effects. Make it fabulous and attention-grabbing.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`,
-      minimal: `Take this product image and transform it into a clean promotional poster in 1080x1920 portrait format. Add modern text "${mainText}" in bold sans-serif font with simple, professional styling. Keep it minimal but impactful.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`
+    const styleMoodMap: Record<string, string> = {
+      boom: 'high-energy, vibrant, punchy commercial advertising lighting',
+      sparkle: 'magical, dreamy, soft glowing studio lighting with bokeh',
+      stars: 'glamorous, fashion-magazine, premium product lighting',
+      minimal: 'clean, minimal, editorial product photography on a soft neutral backdrop',
+    };
+    const moodDesc = styleMoodMap[style] || styleMoodMap.boom;
+
+    const cleanBgPrompt = (orientation: 'portrait' | 'landscape') => {
+      const dims = orientation === 'portrait' ? '1080x1920 vertical (9:16)' : '1920x1080 horizontal (16:9)';
+      const composition = orientation === 'portrait'
+        ? 'Compose with the subject in the LOWER HALF of the frame so the upper half stays clear for animated text overlay.'
+        : 'Compose with the subject on ONE SIDE (left or right) so the opposite half stays clear for animated text overlay.';
+      return `Take this product photo and transform it into a beautiful, hero-quality promotional BACKGROUND image in ${dims} format. Use ${moodDesc}.${themeDesc}
+
+CRITICAL RULES:
+- Do NOT add any text, words, letters, numbers, prices, or typography of any kind. Zero text. The image must be purely visual.
+- Do NOT add badges, stickers, price tags, "sale" labels, or any callout graphics.
+- ${composition}
+- Make the product look mouth-watering / desirable, with rich lighting and styling.
+- Keep the background relatively clean and uncluttered (it will have animated text placed over it).
+- Output only the styled hero photo. Nothing else.`;
     };
 
-    const landscapeStylePrompts: Record<string, string> = {
-      boom: `Take this product image and transform it into an eye-catching promotional poster in 1920x1080 landscape format. Add bold, explosive text "${mainText}" with vibrant red and pink gradients, dramatic shadows, and energy burst effects. Make it look like a dramatic product advertisement with WOW factor.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`,
-      sparkle: `Take this product image and transform it into a magical promotional poster in 1920x1080 landscape format. Add elegant text "${mainText}" with purple-to-blue gradients, sparkles, and dreamy glowing effects. Make it enchanting and eye-catching.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`,
-      stars: `Take this product image and transform it into a glamorous promotional poster in 1920x1080 landscape format. Add stylish text "${mainText}" with hot pink colors, star decorations, and dazzling celebrity-style effects. Make it fabulous and attention-grabbing.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`,
-      minimal: `Take this product image and transform it into a clean promotional poster in 1920x1080 landscape format. Add modern text "${mainText}" in bold sans-serif font with simple, professional styling. Keep it minimal but impactful.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`
-    };
+    const textPrompt = cleanBgPrompt('portrait');
+    const landscapePrompt = cleanBgPrompt('landscape');
 
-    // Append safe-zone rules to every style
-    for (const k of Object.keys(stylePrompts)) stylePrompts[k] += SAFE_ZONE;
-    for (const k of Object.keys(landscapeStylePrompts)) landscapeStylePrompts[k] += SAFE_ZONE;
-
-    const textPrompt = (stylePrompts[style] || stylePrompts.boom) + customizationFragment;
-    const landscapePrompt = (landscapeStylePrompts[style] || landscapeStylePrompts.boom) + customizationFragment;
-    
     // Generate both portrait and landscape images in parallel
     console.log('Generating portrait and landscape promotional images with AI...');
     
@@ -204,7 +172,6 @@ serve(async (req) => {
       throw new Error('No portrait promotional image generated from AI');
     }
 
-    // Landscape is optional - continue even if it fails
     let landscapeImageBase64 = null;
     if (landscapeAiResponse.ok) {
       const landscapeData = await landscapeAiResponse.json();
@@ -215,10 +182,8 @@ serve(async (req) => {
     }
 
     console.log('Promotional images generated, uploading to storage...');
-    
-    // Upload both images
     const timestamp = Date.now();
-    
+
     const portraitBase64Data = portraitImageBase64.split(',')[1];
     const portraitBinaryData = Uint8Array.from(atob(portraitBase64Data), c => c.charCodeAt(0));
     const portraitImagePath = `promo-images/${timestamp}-portrait.png`;
@@ -266,92 +231,132 @@ serve(async (req) => {
     
     console.log('Promotional images uploaded:', { portrait: portraitImageUrl, landscape: landscapeImageUrl });
 
-    // Create motion-rich Shotstack edits for both formats.
-    // Layers (bottom -> top in Shotstack: LAST track = TOP layer):
-    //   1. AI promo image with subtle Ken Burns zoom (gives the video life)
-    //   2. Twinkling sparkle bursts (multiple short HTML clips, scattered)
-    //   3. Pulsing "Limited Offer" CTA badge (zoomIn / zoomOut chained = pulse)
-    const videoDuration = parseFloat(duration);
+    // ============================================================
+    // SHOTSTACK MULTI-SCENE PROMO
+    // Scene 1 (full duration): Ken Burns background + dim overlay
+    // Scene 2 (~20% in): Title slides up + fades in, holds
+    // Scene 3 (~45% in): Price pops in (zoom) with accent badge, holds
+    // Scene 4 (~70% in, OPTIONAL): Pulsing "TODAY ONLY" badge
+    // ============================================================
+    const videoDuration = Math.max(5, Math.min(30, parseFloat(duration) || 8));
 
-    const ctaHtml = `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">
-      <div style="background:#FACC15;color:#111;font-family:'Helvetica Neue',Arial,sans-serif;font-weight:900;font-size:48px;letter-spacing:0.05em;padding:18px 36px;border-radius:9999px;box-shadow:0 10px 40px rgba(0,0,0,0.35);text-transform:uppercase;">Limited Offer</div>
+    const titleStart = videoDuration * 0.20;
+    const priceStart = videoDuration * 0.45;
+    const badgeStart = videoDuration * 0.70;
+
+    const accentColor = '#FACC15';
+    const accentInk = '#111111';
+    const titleInk = '#FFFFFF';
+
+    const escapeHtml = (s: string) => s
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+
+    const titleHtmlFor = (text: string, fontSize: number) => `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">
+      <div style="font-family:'Helvetica Neue',Arial,sans-serif;font-weight:800;font-size:${fontSize}px;color:${titleInk};letter-spacing:-0.01em;line-height:1.05;text-align:center;text-shadow:0 4px 24px rgba(0,0,0,0.55);padding:0 40px;">${escapeHtml(text)}</div>
     </div>`;
 
-    // Single sparkle SVG — transparent background, bright yellow star
-    const sparkleHtml = `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">
-      <svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-        <defs><radialGradient id="g"><stop offset="0%" stop-color="#fff" stop-opacity="1"/><stop offset="40%" stop-color="#FACC15" stop-opacity="0.9"/><stop offset="100%" stop-color="#FACC15" stop-opacity="0"/></radialGradient></defs>
-        <circle cx="50" cy="50" r="45" fill="url(#g)"/>
-        <path d="M50 10 L55 45 L90 50 L55 55 L50 90 L45 55 L10 50 L45 45 Z" fill="#fff" opacity="0.95"/>
-      </svg>
+    const priceHtmlFor = (text: string, fontSize: number) => `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">
+      <div style="display:inline-block;font-family:'Helvetica Neue',Arial,sans-serif;font-weight:900;font-size:${fontSize}px;color:${accentInk};background:${accentColor};letter-spacing:-0.02em;padding:18px 44px;border-radius:18px;box-shadow:0 14px 50px rgba(0,0,0,0.45);text-transform:uppercase;">${escapeHtml(text)}</div>
     </div>`;
 
-    // Build a constellation of 6 staggered sparkle bursts across the duration.
-    const sparklePositions = [
-      { x: -0.30, y:  0.25, size: 110 },
-      { x:  0.32, y: -0.10, size:  90 },
-      { x: -0.18, y: -0.28, size: 120 },
-      { x:  0.28, y:  0.30, size: 100 },
-      { x:  0.05, y:  0.05, size:  80 },
-      { x: -0.35, y: -0.05, size:  95 },
-    ];
-    const sparkleClips = sparklePositions.map((p, i) => {
-      const start = (videoDuration / sparklePositions.length) * i + 0.2;
-      const length = 1.0;
-      if (start + length > videoDuration) return null;
-      return {
-        asset: { type: "html", html: sparkleHtml, width: p.size, height: p.size },
-        start,
-        length,
-        position: "center",
-        offset: { x: p.x, y: p.y },
-        effect: "zoomIn",
-        transition: { in: "fade", out: "fade" },
-      };
-    }).filter(Boolean);
+    const badgeHtmlFor = (text: string) => `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">
+      <div style="font-family:'Helvetica Neue',Arial,sans-serif;font-weight:900;font-size:42px;color:#FFFFFF;background:#DC2626;letter-spacing:0.08em;padding:14px 28px;border-radius:9999px;box-shadow:0 10px 30px rgba(220,38,38,0.5);text-transform:uppercase;border:3px solid #FFFFFF;">${escapeHtml(text)}</div>
+    </div>`;
+
+    const dimOverlayHtml = `<div style="width:100%;height:100%;background:linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.20) 50%, rgba(0,0,0,0.55) 100%);"></div>`;
 
     const buildTracks = (imageSrc: string, isPortrait: boolean) => {
-      const ctaWidth = isPortrait ? 720 : 600;
-      const ctaHeight = 140;
-      const ctaY = isPortrait ? -0.38 : -0.40; // near top of frame
+      const titleFontSize = isPortrait ? 96 : 84;
+      const priceFontSize = isPortrait ? 140 : 120;
+      const titleWidth = isPortrait ? 1000 : 1500;
+      const titleHeight = isPortrait ? 360 : 260;
+      const priceWidth = isPortrait ? 900 : 1100;
+      const priceHeight = isPortrait ? 280 : 240;
+      const badgeWidth = isPortrait ? 600 : 600;
+      const badgeHeight = 120;
 
-      // Pulsing CTA: chain zoomIn -> zoomOut clips back-to-back.
-      const ctaClips = [];
-      let t = 0.4;
-      const pulseLen = 1.2;
-      let toggle = true;
-      while (t + pulseLen <= videoDuration) {
-        const clip: Record<string, unknown> = {
-          asset: { type: "html", html: ctaHtml, width: ctaWidth, height: ctaHeight },
-          start: t,
-          length: pulseLen,
+      const titleY = isPortrait ? 0.18 : 0.22;
+      const priceY = isPortrait ? -0.12 : -0.10;
+      const badgeY = isPortrait ? -0.38 : -0.36;
+
+      const tracks: Record<string, unknown>[] = [];
+
+      // BG image with slow Ken Burns
+      tracks.push({
+        clips: [{
+          asset: { type: "image", src: imageSrc },
+          start: 0,
+          length: videoDuration,
+          fit: "cover",
+          effect: "zoomIn",
+          transition: { in: "fade", out: "fade" }
+        }]
+      });
+
+      // Dim overlay so text reads on any background
+      tracks.push({
+        clips: [{
+          asset: { type: "html", html: dimOverlayHtml, width: isPortrait ? 1080 : 1920, height: isPortrait ? 1920 : 1080 },
+          start: 0,
+          length: videoDuration,
           position: "center",
-          offset: { x: 0, y: ctaY },
-          effect: toggle ? "zoomIn" : "zoomOut",
-        };
-        if (t === 0.4) clip.transition = { in: "zoom" };
-        ctaClips.push(clip);
-        t += pulseLen;
-        toggle = !toggle;
+        }]
+      });
+
+      // Title slides up and fades in
+      if (titleText) {
+        tracks.push({
+          clips: [{
+            asset: { type: "html", html: titleHtmlFor(titleText, titleFontSize), width: titleWidth, height: titleHeight },
+            start: titleStart,
+            length: videoDuration - titleStart,
+            position: "center",
+            offset: { x: 0, y: titleY },
+            transition: { in: "slideUp", out: "fade" }
+          }]
+        });
       }
 
-      return [
-        // Bottom: AI poster image with slow Ken Burns
-        {
+      // Price pops in with zoom
+      if (priceText) {
+        tracks.push({
           clips: [{
-            asset: { type: "image", src: imageSrc },
-            start: 0,
-            length: videoDuration,
-            fit: "contain",
-            effect: "zoomIn",
-            transition: { in: "fade" }
+            asset: { type: "html", html: priceHtmlFor(priceText, priceFontSize), width: priceWidth, height: priceHeight },
+            start: priceStart,
+            length: videoDuration - priceStart,
+            position: "center",
+            offset: { x: 0, y: priceY },
+            transition: { in: "zoom", out: "fade" },
+            effect: "zoomInSlow"
           }]
-        },
-        // Middle: twinkling sparkles
-        { clips: sparkleClips },
-        // Top: pulsing CTA badge
-        { clips: ctaClips },
-      ];
+        });
+      }
+
+      // Optional pulsing "TODAY ONLY" badge
+      if (showBadge && finalBadgeText) {
+        const pulseLen = 1.0;
+        let t = badgeStart;
+        let toggle = true;
+        while (t + pulseLen <= videoDuration) {
+          const clip: Record<string, unknown> = {
+            asset: { type: "html", html: badgeHtmlFor(finalBadgeText), width: badgeWidth, height: badgeHeight },
+            start: t,
+            length: pulseLen,
+            position: "center",
+            offset: { x: 0, y: badgeY },
+            effect: toggle ? "zoomIn" : "zoomOut",
+          };
+          if (t === badgeStart) clip.transition = { in: "zoom" };
+          tracks.push({ clips: [clip] });
+          t += pulseLen;
+          toggle = !toggle;
+        }
+      }
+
+      return tracks;
     };
 
     const portraitEdit = {

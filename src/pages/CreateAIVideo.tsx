@@ -95,6 +95,8 @@ const CreateAIVideo = () => {
   const [overlayColor, setOverlayColor] = useState("black");
   const [textPosition, setTextPosition] = useState("middle");
   const [themePrompt, setThemePrompt] = useState("");
+  const [limitedOffer, setLimitedOffer] = useState(false);
+  const [badgeText, setBadgeText] = useState("TODAY ONLY");
 
   // Fetch playlists on mount
   useEffect(() => {
@@ -203,6 +205,8 @@ const CreateAIVideo = () => {
           duration,
           style,
           playlistId: firstPlaylistId,
+          limitedOffer,
+          badgeText: limitedOffer ? badgeText.trim() : undefined,
           customization: {
             fontFamily,
             textColor,
@@ -332,16 +336,50 @@ const CreateAIVideo = () => {
                 />
               </div>
 
-              {/* Subtext */}
+              {/* Subtext / Price */}
               <div className="space-y-2">
-                <Label htmlFor="subtext">Subtext (Optional)</Label>
+                <Label htmlFor="subtext">Price or Subtext (Optional)</Label>
                 <Textarea
                   id="subtext"
-                  placeholder="Until 5pm today"
+                  placeholder="ONLY £4.99"
                   value={subtext}
                   onChange={(e) => setSubtext(e.target.value)}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Shown as a bold yellow badge that pops in mid-video. Leave blank to skip.
+                </p>
               </div>
+
+              {/* Limited offer toggle */}
+              <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-4">
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    id="limitedOffer"
+                    checked={limitedOffer}
+                    onCheckedChange={(v) => setLimitedOffer(v === true)}
+                  />
+                  <Label htmlFor="limitedOffer" className="cursor-pointer font-medium">
+                    This is a limited time offer
+                  </Label>
+                </div>
+                {limitedOffer && (
+                  <div className="ml-7 space-y-1">
+                    <Label htmlFor="badgeText" className="text-xs text-muted-foreground">Badge text</Label>
+                    <Input
+                      id="badgeText"
+                      placeholder="TODAY ONLY"
+                      value={badgeText}
+                      onChange={(e) => setBadgeText(e.target.value.slice(0, 20))}
+                      maxLength={20}
+                    />
+                    <p className="text-xs text-muted-foreground">A pulsing red badge will appear near the top. Max 20 chars.</p>
+                  </div>
+                )}
+                {!limitedOffer && (
+                  <p className="ml-7 text-xs text-muted-foreground">No badge will be shown — keeps the advert truthful.</p>
+                )}
+              </div>
+
 
               {/* Duration + Style preset */}
               <div className="grid grid-cols-2 gap-4">
