@@ -73,7 +73,25 @@ const Devices = () => {
     fetchDevices();
     fetchVenues();
     fetchPlaylists();
+    fetchDeviceLimit();
   }, []);
+
+  const fetchDeviceLimit = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single();
+    if (!profile?.company_id) return;
+    const { data: company } = await supabase
+      .from('companies')
+      .select('device_limit, screen_count')
+      .eq('id', profile.company_id)
+      .single();
+    setDeviceLimit(company?.device_limit ?? company?.screen_count ?? null);
+  };
 
   const fetchDevices = async () => {
     const { data: { user } } = await supabase.auth.getUser();
