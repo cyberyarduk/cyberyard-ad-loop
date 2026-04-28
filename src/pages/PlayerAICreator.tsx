@@ -256,16 +256,28 @@ const PlayerAICreator = ({ authToken, deviceInfo, onBack, onComplete }: PlayerAI
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="subtext">Additional Details (Optional)</Label>
+              <Label htmlFor="subtext">Price or Subtext (Optional)</Label>
               <Textarea
                 id="subtext"
-                placeholder="Today only until 5pm"
+                placeholder="ONLY £4.99"
                 value={subtext}
                 onChange={(e) => setSubtext(e.target.value)}
                 maxLength={200}
                 rows={2}
                 disabled={generating}
               />
+            </div>
+
+            <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-3">
+              <Checkbox
+                id="limitedOffer"
+                checked={limitedOffer}
+                onCheckedChange={(v) => setLimitedOffer(v === true)}
+                disabled={generating}
+              />
+              <Label htmlFor="limitedOffer" className="cursor-pointer text-sm font-medium">
+                Limited time offer (adds pulsing "TODAY ONLY" badge)
+              </Label>
             </div>
 
             <div className="space-y-2">
