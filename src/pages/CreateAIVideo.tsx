@@ -238,14 +238,17 @@ const CreateAIVideo = () => {
           }
         }
         toast.success("Video generated successfully!");
+        // Keep the loader on screen and go straight to the media library.
+        // We intentionally do NOT clear `isGenerating` here so the form never
+        // flashes back before the route change.
         navigate("/videos");
+        return;
       } else {
         throw new Error(data?.error || 'Failed to generate video');
       }
     } catch (error) {
       console.error('Video generation error:', error);
       toast.error(error instanceof Error ? error.message : "Failed to generate video. Please try again.");
-    } finally {
       setIsGenerating(false);
     }
   };
