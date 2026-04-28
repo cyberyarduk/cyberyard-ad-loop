@@ -757,12 +757,15 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       )}
       
       {currentVideo && isImageItem && isNative && (
-        <canvas
-          ref={canvasRef}
-          key={`${currentVideo.id}-${safeIndex}-native-canvas`}
-          className="player-media-fade absolute inset-0 z-10 h-full w-full"
-          aria-label={currentVideo.title}
-        />
+        <>
+          <canvas
+            ref={canvasRef}
+            key={`${currentVideo.id}-${safeIndex}-native-canvas`}
+            className="player-media-fade absolute inset-0 z-10 h-full w-full"
+            aria-label={currentVideo.title}
+          />
+          <PlayerOverlay kind={currentVideo.player_overlay} />
+        </>
       )}
 
       {currentVideo && isImageItem && !isNative && (
@@ -789,6 +792,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
               if (videos.length > 1) handleVideoEnd();
             }}
           />
+          <PlayerOverlay kind={currentVideo.player_overlay} />
         </div>
       )}
 
