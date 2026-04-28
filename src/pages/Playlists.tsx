@@ -618,13 +618,21 @@ const Playlists = () => {
                                 className="block w-12 h-16 bg-muted rounded overflow-hidden relative group"
                                 aria-label={`Preview ${video.title}`}
                               >
-                                <video
-                                  src={video.video_url}
-                                  muted
-                                  playsInline
-                                  preload="metadata"
-                                  className="w-full h-full object-cover"
-                                />
+                                {video.media_type === 'image' ? (
+                                  <img
+                                    src={video.image_url || video.video_url}
+                                    alt={video.title}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <video
+                                    src={video.video_url}
+                                    muted
+                                    playsInline
+                                    preload="metadata"
+                                    className="w-full h-full object-cover"
+                                  />
+                                )}
                                 <div className="absolute inset-0 flex items-center justify-center bg-background/40 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <Play className="h-4 w-4 text-foreground" />
                                 </div>
@@ -817,14 +825,22 @@ const Playlists = () => {
             </DialogHeader>
             {previewVideo && (
               <div className="aspect-[9/16] bg-muted">
-                <video
-                  src={previewVideo.video_url}
-                  controls
-                  autoPlay
-                  loop
-                  playsInline
-                  className="w-full h-full object-contain bg-background"
-                />
+                {previewVideo.media_type === 'image' ? (
+                  <img
+                    src={previewVideo.image_url || previewVideo.video_url}
+                    alt={previewVideo.title}
+                    className="w-full h-full object-contain bg-background"
+                  />
+                ) : (
+                  <video
+                    src={previewVideo.video_url}
+                    controls
+                    autoPlay
+                    loop
+                    playsInline
+                    className="w-full h-full object-contain bg-background"
+                  />
+                )}
               </div>
             )}
           </DialogContent>
