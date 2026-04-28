@@ -146,6 +146,34 @@ const Devices = () => {
       .eq('id', user.id)
       .single();
 
+    if (!profile?.company_id) {
+      toast.error("No company associated with your account");
+      return;
+    }
+
+    // Enforce device limit from company settings
+    const { data: company } = await supabase
+      .from('companies')
+      .select('device_limit, screen_count')
+      .eq('id', profile.company_id)
+      .single();
+
+    const limit = company?.device_limit ?? company?.screen_count ?? null;
+
+    if (limit !== null) {
+      const { count: existingCount } = await supabase
+        .from('devices')
+        .select('*', { count: 'exact', head: true })
+        .eq('company_id', profile.company_id);
+
+      if ((existingCount ?? 0) >= limit) {
+        toast.error(
+          `Device limit reached (${limit}). Contact your account manager to add more screens.`
+        );
+        return;
+      }
+    }
+
     const { data, error } = await supabase
       .from('devices')
       .insert({
