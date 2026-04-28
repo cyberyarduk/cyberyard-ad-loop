@@ -13,8 +13,8 @@ serve(async (req) => {
   }
 
   try {
-    const { imageUrl, imageData, mainText, subtext, duration, style = 'boom', playlistId, deviceToken, customization, price, limitedOffer, badgeText, animatedOverlays = true } = await req.json();
-    console.log('Generating video with params:', { hasImageUrl: !!imageUrl, hasImageData: !!imageData, mainText, subtext, duration, style, playlistId, deviceToken: !!deviceToken, customization, price, limitedOffer, badgeText, animatedOverlays });
+    const { imageUrl, imageUrlLandscape, imageData, mainText, subtext, duration, style = 'boom', playlistId, deviceToken, customization, price, limitedOffer, badgeText, animatedOverlays = true, useImageAsIs = false } = await req.json();
+    console.log('Generating video with params:', { hasImageUrl: !!imageUrl, hasImageUrlLandscape: !!imageUrlLandscape, hasImageData: !!imageData, mainText, subtext, duration, style, playlistId, deviceToken: !!deviceToken, customization, price, limitedOffer, badgeText, animatedOverlays, useImageAsIs });
 
     // Resolve title/price: prefer explicit `price`, fall back to subtext for backward compat.
     const titleText = (mainText || '').toString().trim();
@@ -82,118 +82,133 @@ serve(async (req) => {
     }
 
     // ============================================================
-    // STEP 1 — Build a Gemini prompt that bakes the entire promo
-    // poster (image + headline + price + design) into ONE image.
-    // This is the look the user loves (e.g. "Blueberry Muffins 50% off").
-    // We then animate that finished poster in Shotstack with motion.
+    // STEP 1 — Get the hero poster image(s).
+    //
+    // Two paths:
+    //   (a) useImageAsIs = true  → skip Gemini, use the uploaded image
+    //                              directly as the hero (e.g. menu uploads
+    //                              that just want animated overlays on top
+    //                              of their existing artwork).
+    //   (b) useImageAsIs = false → ask Gemini to bake a full promo poster
+    //                              (image + headline + price + design) —
+    //                              the "Blueberry Muffins 50% off" look.
     // ============================================================
-    const fontDescriptions: Record<string, string> = {
-      'bold-sans': 'a bold heavy sans-serif font (like Impact or Bebas Neue)',
-      'elegant-serif': 'an elegant serif font (like Playfair Display or Didot)',
-      'handwritten': 'a handwritten brush-script font with personality',
-      'modern-display': 'a modern geometric display font (like Futura or Eurostile)',
-      'rounded': 'a rounded soft friendly font (like Quicksand or Nunito)',
-      'condensed': 'a tall condensed block font for maximum impact',
-    };
-    const colorDescriptions: Record<string, string> = {
-      white: 'pure white', black: 'deep black', yellow: 'vibrant yellow',
-      red: 'bold red', pink: 'hot pink', blue: 'electric blue',
-      green: 'lime green', orange: 'bright orange',
-    };
-    const overlayDescriptions: Record<string, string> = {
-      'none': 'no background behind the text — let it sit directly on the image',
-      'solid-band': 'a solid coloured horizontal band/box behind the text',
-      'semi-dark': 'a semi-transparent dark tinted layer behind the text for readability',
-      'semi-light': 'a semi-transparent light tinted layer behind the text for readability',
-      'gradient-bottom': 'a soft gradient that fades from the bottom of the image to make the text pop',
-      'gradient-top': 'a soft gradient that fades from the top of the image to make the text pop',
-    };
-    const positionDescriptions: Record<string, string> = {
-      top: 'at the TOP of the composition',
-      middle: 'in the CENTER of the composition',
-      bottom: 'at the BOTTOM of the composition',
-      infront: 'overlapping the front of the subject',
-      behind: 'integrated behind the subject for depth',
-    };
-    const c = customization || {};
-    const fontDesc = fontDescriptions[c.fontFamily as string] || fontDescriptions['bold-sans'];
-    const textColorDesc = colorDescriptions[c.textColor as string] || 'pure white';
-    const positionDesc = positionDescriptions[c.textPosition as string] || positionDescriptions.middle;
-    const overlayDesc = overlayDescriptions[c.overlayStyle as string] || overlayDescriptions.none;
-    const overlayColorDesc = c.overlayStyle && c.overlayStyle !== 'none'
-      ? `Use ${colorDescriptions[c.overlayColor as string] || 'black'} for the overlay/background colour. `
-      : '';
-    const themeDesc = c.themePrompt && String(c.themePrompt).trim().length > 0
-      ? `Additional vibe/theme to incorporate: "${String(c.themePrompt).slice(0, 200)}". `
-      : '';
-    const customizationFragment = ` Render the headline text in ${fontDesc}, coloured ${textColorDesc}, positioned ${positionDesc}. ${overlayDesc ? `Use ${overlayDesc}. ` : ''}${overlayColorDesc}${themeDesc}`;
+    let portraitImageUrl: string;
+    let landscapeImageUrl: string | null;
 
-    const headline = titleText;
-    const priceLine = priceText ? ` Include a large, bold price callout "${priceText}" in a contrasting accent colour.` : '';
-    const badgeLine = (showBadge && finalBadgeText)
-      ? ` Add a small "${finalBadgeText}" badge/sticker in a corner.`
-      : '';
+    if (useImageAsIs) {
+      console.log('Skipping Gemini — using uploaded image as the hero poster');
+      portraitImageUrl = finalImageUrl;
+      landscapeImageUrl = imageUrlLandscape || finalImageUrl;
+    } else {
+      const fontDescriptions: Record<string, string> = {
+        'bold-sans': 'a bold heavy sans-serif font (like Impact or Bebas Neue)',
+        'elegant-serif': 'an elegant serif font (like Playfair Display or Didot)',
+        'handwritten': 'a handwritten brush-script font with personality',
+        'modern-display': 'a modern geometric display font (like Futura or Eurostile)',
+        'rounded': 'a rounded soft friendly font (like Quicksand or Nunito)',
+        'condensed': 'a tall condensed block font for maximum impact',
+      };
+      const colorDescriptions: Record<string, string> = {
+        white: 'pure white', black: 'deep black', yellow: 'vibrant yellow',
+        red: 'bold red', pink: 'hot pink', blue: 'electric blue',
+        green: 'lime green', orange: 'bright orange',
+      };
+      const overlayDescriptions: Record<string, string> = {
+        'none': 'no background behind the text — let it sit directly on the image',
+        'solid-band': 'a solid coloured horizontal band/box behind the text',
+        'semi-dark': 'a semi-transparent dark tinted layer behind the text for readability',
+        'semi-light': 'a semi-transparent light tinted layer behind the text for readability',
+        'gradient-bottom': 'a soft gradient that fades from the bottom of the image to make the text pop',
+        'gradient-top': 'a soft gradient that fades from the top of the image to make the text pop',
+      };
+      const positionDescriptions: Record<string, string> = {
+        top: 'at the TOP of the composition',
+        middle: 'in the CENTER of the composition',
+        bottom: 'at the BOTTOM of the composition',
+        infront: 'overlapping the front of the subject',
+        behind: 'integrated behind the subject for depth',
+      };
+      const c = customization || {};
+      const fontDesc = fontDescriptions[c.fontFamily as string] || fontDescriptions['bold-sans'];
+      const textColorDesc = colorDescriptions[c.textColor as string] || 'pure white';
+      const positionDesc = positionDescriptions[c.textPosition as string] || positionDescriptions.middle;
+      const overlayDesc = overlayDescriptions[c.overlayStyle as string] || overlayDescriptions.none;
+      const overlayColorDesc = c.overlayStyle && c.overlayStyle !== 'none'
+        ? `Use ${colorDescriptions[c.overlayColor as string] || 'black'} for the overlay/background colour. `
+        : '';
+      const themeDesc = c.themePrompt && String(c.themePrompt).trim().length > 0
+        ? `Additional vibe/theme to incorporate: "${String(c.themePrompt).slice(0, 200)}". `
+        : '';
+      const customizationFragment = ` Render the headline text in ${fontDesc}, coloured ${textColorDesc}, positioned ${positionDesc}. ${overlayDesc ? `Use ${overlayDesc}. ` : ''}${overlayColorDesc}${themeDesc}`;
 
-    const stylePrompts: Record<string, (orientation: string) => string> = {
-      boom: (o) => `Take this product image and transform it into an eye-catching promotional poster in ${o} format. Add bold explosive text "${headline}" in huge letters with vibrant red and pink gradients, dramatic shadows, and energy-burst effects. Make it look like a dramatic product advertisement with WOW factor.${priceLine}${badgeLine}`,
-      sparkle: (o) => `Take this product image and transform it into a magical promotional poster in ${o} format. Add elegant text "${headline}" with purple-to-blue gradients, sparkles, and dreamy glowing effects. Make it enchanting and eye-catching.${priceLine}${badgeLine}`,
-      stars: (o) => `Take this product image and transform it into a glamorous promotional poster in ${o} format. Add stylish text "${headline}" with hot pink colours, star decorations, and dazzling celebrity-style effects. Make it fabulous and attention-grabbing.${priceLine}${badgeLine}`,
-      minimal: (o) => `Take this product image and transform it into a clean modern promotional poster in ${o} format. Add modern text "${headline}" in bold sans-serif font with simple, professional styling. Keep it minimal but impactful.${priceLine}${badgeLine}`,
-    };
-    const stylefn = stylePrompts[style] || stylePrompts.boom;
-    const portraitPrompt = stylefn('1080x1920 portrait') + customizationFragment;
-    const landscapePrompt = stylefn('1920x1080 landscape') + customizationFragment;
+      const headline = titleText;
+      const priceLine = priceText ? ` Include a large, bold price callout "${priceText}" in a contrasting accent colour.` : '';
+      const badgeLine = (showBadge && finalBadgeText)
+        ? ` Add a small "${finalBadgeText}" badge/sticker in a corner.`
+        : '';
 
-    const callGemini = (prompt: string) => fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'google/gemini-3-pro-image-preview',
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'text', text: prompt },
-            { type: 'image_url', image_url: { url: finalImageUrl } }
-          ]
-        }],
-        modalities: ['image', 'text']
-      })
-    });
+      const stylePrompts: Record<string, (orientation: string) => string> = {
+        boom: (o) => `Take this product image and transform it into an eye-catching promotional poster in ${o} format. Add bold explosive text "${headline}" in huge letters with vibrant red and pink gradients, dramatic shadows, and energy-burst effects. Make it look like a dramatic product advertisement with WOW factor.${priceLine}${badgeLine}`,
+        sparkle: (o) => `Take this product image and transform it into a magical promotional poster in ${o} format. Add elegant text "${headline}" with purple-to-blue gradients, sparkles, and dreamy glowing effects. Make it enchanting and eye-catching.${priceLine}${badgeLine}`,
+        stars: (o) => `Take this product image and transform it into a glamorous promotional poster in ${o} format. Add stylish text "${headline}" with hot pink colours, star decorations, and dazzling celebrity-style effects. Make it fabulous and attention-grabbing.${priceLine}${badgeLine}`,
+        minimal: (o) => `Take this product image and transform it into a clean modern promotional poster in ${o} format. Add modern text "${headline}" in bold sans-serif font with simple, professional styling. Keep it minimal but impactful.${priceLine}${badgeLine}`,
+      };
+      const stylefn = stylePrompts[style] || stylePrompts.boom;
+      const portraitPrompt = stylefn('1080x1920 portrait') + customizationFragment;
+      const landscapePrompt = stylefn('1920x1080 landscape') + customizationFragment;
 
-    console.log('Generating portrait + landscape promo posters with Gemini...');
-    const [portraitRes, landscapeRes] = await Promise.all([callGemini(portraitPrompt), callGemini(landscapePrompt)]);
-
-    const extractB64 = async (res: Response, label: string): Promise<string | null> => {
-      if (!res.ok) { console.error(`${label} AI error:`, await res.text().catch(() => '')); return null; }
-      try {
-        const json = await res.json();
-        return json.choices?.[0]?.message?.images?.[0]?.image_url?.url ?? null;
-      } catch { return null; }
-    };
-
-    const [portraitB64, landscapeB64] = await Promise.all([
-      extractB64(portraitRes, 'portrait poster'),
-      extractB64(landscapeRes, 'landscape poster'),
-    ]);
-
-    if (!portraitB64) {
-      throw new Error('Failed to generate portrait promotional poster');
-    }
-
-    const ts = Date.now();
-    const uploadPng = async (b64: string, path: string) => {
-      const data = b64.split(',')[1];
-      const bin = Uint8Array.from(atob(data), ch => ch.charCodeAt(0));
-      const { error } = await supabase.storage.from('videos').upload(path, bin, {
-        contentType: 'image/png', upsert: false, cacheControl: '31536000',
+      const callGemini = (prompt: string) => fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'google/gemini-3-pro-image-preview',
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'text', text: prompt },
+              { type: 'image_url', image_url: { url: finalImageUrl } }
+            ]
+          }],
+          modalities: ['image', 'text']
+        })
       });
-      if (error) throw new Error(`Upload failed (${path}): ${error.message}`);
-      return supabase.storage.from('videos').getPublicUrl(path).data.publicUrl;
-    };
 
-    const portraitImageUrl = await uploadPng(portraitB64, `promo-images/${ts}-portrait.png`);
-    const landscapeImageUrl = landscapeB64 ? await uploadPng(landscapeB64, `promo-images/${ts}-landscape.png`) : null;
-    console.log('AI posters uploaded:', { portraitImageUrl, landscapeImageUrl });
+      console.log('Generating portrait + landscape promo posters with Gemini...');
+      const [portraitRes, landscapeRes] = await Promise.all([callGemini(portraitPrompt), callGemini(landscapePrompt)]);
+
+      const extractB64 = async (res: Response, label: string): Promise<string | null> => {
+        if (!res.ok) { console.error(`${label} AI error:`, await res.text().catch(() => '')); return null; }
+        try {
+          const json = await res.json();
+          return json.choices?.[0]?.message?.images?.[0]?.image_url?.url ?? null;
+        } catch { return null; }
+      };
+
+      const [portraitB64, landscapeB64] = await Promise.all([
+        extractB64(portraitRes, 'portrait poster'),
+        extractB64(landscapeRes, 'landscape poster'),
+      ]);
+
+      if (!portraitB64) {
+        throw new Error('Failed to generate portrait promotional poster');
+      }
+
+      const ts = Date.now();
+      const uploadPng = async (b64: string, path: string) => {
+        const data = b64.split(',')[1];
+        const bin = Uint8Array.from(atob(data), ch => ch.charCodeAt(0));
+        const { error } = await supabase.storage.from('videos').upload(path, bin, {
+          contentType: 'image/png', upsert: false, cacheControl: '31536000',
+        });
+        if (error) throw new Error(`Upload failed (${path}): ${error.message}`);
+        return supabase.storage.from('videos').getPublicUrl(path).data.publicUrl;
+      };
+
+      portraitImageUrl = await uploadPng(portraitB64, `promo-images/${ts}-portrait.png`);
+      landscapeImageUrl = landscapeB64 ? await uploadPng(landscapeB64, `promo-images/${ts}-landscape.png`) : null;
+      console.log('AI posters uploaded:', { portraitImageUrl, landscapeImageUrl });
+    }
 
     // ============================================================
     // STEP 2 — Animate the finished AI poster in Shotstack.
