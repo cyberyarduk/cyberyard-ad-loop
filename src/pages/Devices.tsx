@@ -47,6 +47,7 @@ const Devices = () => {
   const [qrCodeUrl, setQrCodeUrl] = useState("");
   const [editDevice, setEditDevice] = useState<any>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [deviceLimit, setDeviceLimit] = useState<number | null>(null);
 
   // Auth check
   useEffect(() => {
@@ -72,7 +73,25 @@ const Devices = () => {
     fetchDevices();
     fetchVenues();
     fetchPlaylists();
+    fetchDeviceLimit();
   }, []);
+
+  const fetchDeviceLimit = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single();
+    if (!profile?.company_id) return;
+    const { data: company } = await supabase
+      .from('companies')
+      .select('device_limit, screen_count')
+      .eq('id', profile.company_id)
+      .single();
+    setDeviceLimit(company?.device_limit ?? company?.screen_count ?? null);
+  };
 
   const fetchDevices = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -145,6 +164,34 @@ const Devices = () => {
       .select('company_id')
       .eq('id', user.id)
       .single();
+
+    if (!profile?.company_id) {
+      toast.error("No company associated with your account");
+      return;
+    }
+
+    // Enforce device limit from company settings
+    const { data: company } = await supabase
+      .from('companies')
+      .select('device_limit, screen_count')
+      .eq('id', profile.company_id)
+      .single();
+
+    const limit = company?.device_limit ?? company?.screen_count ?? null;
+
+    if (limit !== null) {
+      const { count: existingCount } = await supabase
+        .from('devices')
+        .select('*', { count: 'exact', head: true })
+        .eq('company_id', profile.company_id);
+
+      if ((existingCount ?? 0) >= limit) {
+        toast.error(
+          `Device limit reached (${limit}). Contact your account manager to add more screens.`
+        );
+        return;
+      }
+    }
 
     const { data, error } = await supabase
       .from('devices')
@@ -287,12 +334,17 @@ const Devices = () => {
           <div>
             <h1 className="text-3xl font-bold">Devices</h1>
             <p className="text-muted-foreground mt-1">
-              Manage your wearable screen devices
+              Manage your screen devices
+              {deviceLimit !== null && (
+                <span className="ml-2 font-medium">
+                  ({devices.length} of {deviceLimit} used)
+                </span>
+              )}
             </p>
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button disabled={deviceLimit !== null && devices.length >= deviceLimit}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add Device
               </Button>
