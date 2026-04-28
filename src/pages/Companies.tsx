@@ -48,7 +48,7 @@ export default function Companies() {
   };
 
   return (
-    <DashboardLayout>
+    <PortalLayout variant="admin">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
@@ -131,6 +131,6 @@ export default function Companies() {
           </div>
         )}
       </div>
-    </DashboardLayout>
+    </PortalLayout>
   );
 }
