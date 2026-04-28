@@ -170,14 +170,14 @@ const NewResearchLead = () => {
                       );
                     })}
                   </div>
-                ) : (
+                ) : q.type === "text" ? (
                   <Textarea
                     rows={q.multiline ? 3 : 1}
                     placeholder={q.placeholder}
                     value={answers[q.id] || ""}
                     onChange={(e) => setAnswer(q.id, e.target.value)}
                   />
-                )}
+                ) : null}
               </div>
             ))}
           </CardContent>
