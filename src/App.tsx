@@ -26,16 +26,27 @@ import CookiesPolicy from "./pages/CookiesPolicy";
 import DataProcessingAddendum from "./pages/DataProcessingAddendum";
 import RefundPolicy from "./pages/RefundPolicy";
 import AcceptableUsePolicy from "./pages/AcceptableUsePolicy";
+import SalesDashboard from "./pages/SalesDashboard";
+import SalesClients from "./pages/SalesClients";
+import AdminDashboard from "./pages/AdminDashboard";
+import Salespeople from "./pages/Salespeople";
+import NewSalesperson from "./pages/NewSalesperson";
+import NewClientWizard from "./pages/NewClientWizard";
 import { toast } from "sonner";
 
 const queryClient = new QueryClient();
-
-// Check if running as native app
 const isNativeApp = Capacitor.isNativePlatform();
 
-// Protected route wrapper
-function ProtectedRoute({ children, requireSuperAdmin = false }: { children: React.ReactNode; requireSuperAdmin?: boolean }) {
-  const { user, profile, company, loading, isSuperAdmin, checkAccess, signOut } = useAuth();
+function ProtectedRoute({
+  children,
+  requireSuperAdmin = false,
+  requireSalesperson = false,
+}: {
+  children: React.ReactNode;
+  requireSuperAdmin?: boolean;
+  requireSalesperson?: boolean;
+}) {
+  const { user, profile, company, loading, isSuperAdmin, isSalesperson, checkAccess, signOut } = useAuth();
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
@@ -46,11 +57,16 @@ function ProtectedRoute({ children, requireSuperAdmin = false }: { children: Rea
   }
 
   if (requireSuperAdmin && !isSuperAdmin) {
-    toast.error("Access denied. Super admin privileges required.");
+    toast.error("Access denied. Admin privileges required.");
     return <Navigate to="/dashboard" replace />;
   }
 
-  if (!isSuperAdmin && !checkAccess()) {
+  if (requireSalesperson && !isSalesperson && !isSuperAdmin) {
+    toast.error("Access denied. Salesperson access required.");
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  if (!isSuperAdmin && !isSalesperson && !checkAccess()) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center space-y-4 p-8 border rounded-lg max-w-md">
@@ -89,87 +105,33 @@ const App = () => (
             <Route path="/" element={isNativeApp ? <Player /> : <Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
+
+            {/* Customer portal */}
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/venues" element={<Navigate to="/dashboard" replace />} />
-            <Route
-              path="/devices"
-              element={
-                <ProtectedRoute>
-                  <Devices />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/videos"
-              element={
-                <ProtectedRoute>
-                  <Videos />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/videos/create-ai"
-              element={
-                <ProtectedRoute>
-                  <CreateAIVideo />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/playlists"
-              element={
-                <ProtectedRoute>
-                  <Playlists />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/companies"
-              element={
-                <ProtectedRoute requireSuperAdmin>
-                  <Companies />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/companies/new"
-              element={
-                <ProtectedRoute requireSuperAdmin>
-                  <CompanyForm />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/companies/:id"
-              element={
-                <ProtectedRoute requireSuperAdmin>
-                  <CompanyDetail />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/companies/:id/edit"
-              element={
-                <ProtectedRoute requireSuperAdmin>
-                  <CompanyForm />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/devices" element={<ProtectedRoute><Devices /></ProtectedRoute>} />
+            <Route path="/videos" element={<ProtectedRoute><Videos /></ProtectedRoute>} />
+            <Route path="/videos/create-ai" element={<ProtectedRoute><CreateAIVideo /></ProtectedRoute>} />
+            <Route path="/playlists" element={<ProtectedRoute><Playlists /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+
+            {/* Salesperson portal */}
+            <Route path="/sales" element={<ProtectedRoute requireSalesperson><SalesDashboard /></ProtectedRoute>} />
+            <Route path="/sales/clients" element={<ProtectedRoute requireSalesperson><SalesClients /></ProtectedRoute>} />
+            <Route path="/sales/new-client" element={<ProtectedRoute requireSalesperson><NewClientWizard variant="sales" /></ProtectedRoute>} />
+
+            {/* Admin (super admin) portal */}
+            <Route path="/admin" element={<ProtectedRoute requireSuperAdmin><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/salespeople" element={<ProtectedRoute requireSuperAdmin><Salespeople /></ProtectedRoute>} />
+            <Route path="/admin/salespeople/new" element={<ProtectedRoute requireSuperAdmin><NewSalesperson /></ProtectedRoute>} />
+            <Route path="/admin/new-client" element={<ProtectedRoute requireSuperAdmin><NewClientWizard variant="admin" /></ProtectedRoute>} />
+
+            {/* Existing super admin company management */}
+            <Route path="/companies" element={<ProtectedRoute requireSuperAdmin><Companies /></ProtectedRoute>} />
+            <Route path="/companies/new" element={<ProtectedRoute requireSuperAdmin><CompanyForm /></ProtectedRoute>} />
+            <Route path="/companies/:id" element={<ProtectedRoute requireSuperAdmin><CompanyDetail /></ProtectedRoute>} />
+            <Route path="/companies/:id/edit" element={<ProtectedRoute requireSuperAdmin><CompanyForm /></ProtectedRoute>} />
+
             <Route path="/player" element={<Player />} />
             <Route path="/player/:deviceId" element={<Player />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
