@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { PlaylistSelectorDialog } from "@/components/PlaylistSelectorDialog";
 
 const Videos = () => {
   const [open, setOpen] = useState(false);
@@ -46,6 +47,15 @@ const Videos = () => {
   // the static image (no Shotstack render, no extra cost).
   // 'none' = pure menu/poster, 'stars' / 'sparkles' / 'shimmer' = live effect.
   const [imgPlayerOverlay, setImgPlayerOverlay] = useState<"none" | "stars" | "sparkles" | "shimmer">("none");
+
+  // Playlist selector — shared by image upload + AI regenerate flows.
+  // We stash the pending action and re-run it once the user picks a playlist.
+  const [playlistPickerOpen, setPlaylistPickerOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<
+    | { type: "image_upload" }
+    | { type: "regenerate"; video: any }
+    | null
+  >(null);
 
   useEffect(() => {
     fetchVideos();
@@ -130,7 +140,9 @@ const Videos = () => {
     }
   };
 
-  const handleImageSubmit = async (e: React.FormEvent) => {
+  // Step 1: validate the form, then ask which playlist to drop the image into.
+  // The actual upload happens in `uploadImageToPlaylist` once the user picks one.
+  const handleImageSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!imageFile) {
       toast.error("Please select an image");
@@ -141,7 +153,13 @@ const Videos = () => {
       toast.error("Display time must be 1–600 seconds");
       return;
     }
+    setPendingAction({ type: "image_upload" });
+    setPlaylistPickerOpen(true);
+  };
 
+  const uploadImageToPlaylist = async (playlistId: string) => {
+    if (!imageFile) return;
+    const dur = parseInt(imageDuration, 10);
     setUploadingImage(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -153,8 +171,6 @@ const Videos = () => {
         .eq("id", user.id)
         .single();
 
-      // Generate portrait + landscape variants on the client so the same image
-      // looks great on a phone (9:16) and a TV (16:9).
       toast.info("Optimising image for every screen…");
       const { portraitBlob, landscapeBlob } = await generateOrientedVariants(imageFile);
 
@@ -178,23 +194,40 @@ const Videos = () => {
       const portraitUrl = supabase.storage.from("images").getPublicUrl(portraitPath).data.publicUrl;
       const landscapeUrl = supabase.storage.from("images").getPublicUrl(landscapePath).data.publicUrl;
 
-      // Static image insert. The chosen `player_overlay` is a live effect
-      // (e.g. golden stars) that the player renders on top of the image —
-      // no Shotstack render, no per-upload cost.
-      const { error: insertError } = await supabase.from("videos").insert({
-        title: imageTitle || imageFile.name,
-        user_id: user.id,
-        company_id: profile?.company_id,
-        media_type: "image",
-        image_url: portraitUrl,
-        image_url_landscape: landscapeUrl,
-        video_url: portraitUrl, // legacy field — keeps device fallback simple
-        display_duration: dur,
-        source: "image_upload",
-        player_overlay: imgPlayerOverlay,
-      } as any);
+      const { data: inserted, error: insertError } = await supabase
+        .from("videos")
+        .insert({
+          title: imageTitle || imageFile.name,
+          user_id: user.id,
+          company_id: profile?.company_id,
+          media_type: "image",
+          image_url: portraitUrl,
+          image_url_landscape: landscapeUrl,
+          video_url: portraitUrl,
+          display_duration: dur,
+          source: "image_upload",
+          player_overlay: imgPlayerOverlay,
+        } as any)
+        .select("id")
+        .single();
       if (insertError) throw insertError;
-      toast.success("Image added to your library");
+
+      // Append to chosen playlist
+      const { data: existingVideos } = await supabase
+        .from("playlist_videos")
+        .select("order_index")
+        .eq("playlist_id", playlistId)
+        .order("order_index", { ascending: false })
+        .limit(1);
+      const nextOrder = existingVideos && existingVideos.length > 0
+        ? existingVideos[0].order_index + 1
+        : 0;
+      const { error: linkErr } = await supabase
+        .from("playlist_videos")
+        .insert({ playlist_id: playlistId, video_id: inserted!.id, order_index: nextOrder });
+      if (linkErr) throw linkErr;
+
+      toast.success("Image uploaded and added to playlist");
 
       setImageOpen(false);
       setImageTitle("");
@@ -243,12 +276,17 @@ const Videos = () => {
     }
   };
 
-  const handleRegenerate = async (video: any) => {
+  const handleRegenerate = (video: any) => {
     if (!video.ai_prompt || !video.ai_image_url) {
       toast.error("Cannot regenerate: missing original prompt data");
       return;
     }
+    // Ask which playlist the regenerated video should go into.
+    setPendingAction({ type: "regenerate", video });
+    setPlaylistPickerOpen(true);
+  };
 
+  const regenerateIntoPlaylist = async (video: any, playlistId: string) => {
     setRegenerating(video.id);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -264,20 +302,32 @@ const Videos = () => {
           imageUrl: video.ai_image_url,
           mainText: video.ai_prompt,
           duration: video.ai_duration || '5',
-          style: video.ai_style || 'boom'
+          style: video.ai_style || 'boom',
+          playlistId,
         })
       });
 
       const result = await response.json();
       if (!result.success) throw new Error(result.error || 'Failed to regenerate');
 
-      toast.success("Video regenerated successfully");
+      toast.success("Video regenerated and added to playlist");
       fetchVideos();
     } catch (error: any) {
       console.error('Regenerate error:', error);
       toast.error(error.message || "Failed to regenerate video");
     } finally {
       setRegenerating(null);
+    }
+  };
+
+  const handlePlaylistChosen = (playlistId: string) => {
+    const action = pendingAction;
+    setPendingAction(null);
+    if (!action) return;
+    if (action.type === "image_upload") {
+      uploadImageToPlaylist(playlistId);
+    } else if (action.type === "regenerate") {
+      regenerateIntoPlaylist(action.video, playlistId);
     }
   };
 
@@ -656,6 +706,17 @@ const Videos = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <PlaylistSelectorDialog
+          open={playlistPickerOpen}
+          onOpenChange={(o) => {
+            setPlaylistPickerOpen(o);
+            if (!o) setPendingAction(null);
+          }}
+          onSelected={handlePlaylistChosen}
+          title={pendingAction?.type === "regenerate" ? "Add regenerated video to a playlist" : "Add image to a playlist"}
+          description="Pick the playlist this should be added to, or create a new one."
+        />
       </div>
     </DashboardLayout>
   );
