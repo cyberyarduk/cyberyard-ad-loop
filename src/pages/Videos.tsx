@@ -466,6 +466,7 @@ const Videos = () => {
                   ) : (
                     <video
                       src={video.video_url}
+                      poster={video.image_url || undefined}
                       muted
                       loop
                       playsInline

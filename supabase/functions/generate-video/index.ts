@@ -268,7 +268,9 @@ serve(async (req) => {
         }
       }
 
-      // HERO POSTER — the AI-generated promo image with slow Ken Burns
+      // HERO POSTER — the AI-generated promo image with slow Ken Burns.
+      // No in-fade so the FIRST frame is the finished poster (gives us a
+      // clean preview thumbnail in the media library and avoids a black flash).
       tracks.push({
         clips: [{
           asset: { type: 'image', src: posterUrl },
@@ -276,7 +278,7 @@ serve(async (req) => {
           length: videoDuration,
           fit: 'cover',
           effect: 'zoomInSlow',
-          transition: { in: 'fade', out: 'fade' },
+          transition: { out: 'fade' },
         }]
       });
 
@@ -491,7 +493,9 @@ serve(async (req) => {
     console.log('Profile fetched:', profile);
     }
 
-    // Insert video record
+    // Insert video record. We also save the portrait promo poster as
+    // `image_url` so the media library can use it as a <video poster>
+    // thumbnail (otherwise the first frame can flash black).
     const videoData: Record<string, string | null> = {
       title: mainText || 'AI Generated Video',
       video_url: videoUrl,
@@ -501,7 +505,9 @@ serve(async (req) => {
       ai_prompt: mainText,
       ai_style: style,
       ai_duration: duration,
-      ai_image_url: finalImageUrl
+      ai_image_url: finalImageUrl,
+      image_url: portraitImageUrl,
+      image_url_landscape: landscapeImageUrl ?? null,
     };
     
     // Add landscape URL if available
