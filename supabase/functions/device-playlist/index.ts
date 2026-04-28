@@ -160,21 +160,29 @@ serve(async (req) => {
         const isImage = v.media_type === 'image';
         const isLandscape = aspectRatio === 'landscape';
 
+        // Robust fallback: prefer the orientation-matched URL but fall back to
+        // ANY available variant so a phone never gets a null URL when only the
+        // landscape was uploaded (or vice versa).
         const mediaUrl = isImage
-          ? (isLandscape && v.image_url_landscape ? v.image_url_landscape : v.image_url)
-          : (isLandscape && v.video_url_landscape ? v.video_url_landscape : v.video_url);
+          ? (isLandscape
+              ? (v.image_url_landscape || v.image_url)
+              : (v.image_url || v.image_url_landscape))
+          : (isLandscape
+              ? (v.video_url_landscape || v.video_url)
+              : (v.video_url || v.video_url_landscape));
 
         return {
           id: v.id,
           title: v.title,
           media_type: v.media_type ?? 'video',
-          // Keep `video_url` populated for backward-compatible clients
           video_url: mediaUrl,
           image_url: isImage ? mediaUrl : null,
           display_duration: v.display_duration ?? null,
           order_index: pv.order_index
         };
-      });
+      })
+      // Drop any item that has no playable URL so the player doesn't get stuck.
+      .filter(v => !!v.video_url);
 
     console.log(`Returning ${videos.length} videos for device ${device.id}`);
 

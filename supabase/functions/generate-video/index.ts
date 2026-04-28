@@ -122,19 +122,27 @@ serve(async (req) => {
     // Generate complete promotional image with text using Lovable AI
     console.log('Generating complete promotional image with AI...');
     
+    // CRITICAL safe-zone instruction shared by every prompt — text MUST stay
+    // inside a generous inner margin so nothing gets clipped on the device.
+    const SAFE_ZONE = ` CRITICAL TEXT RULES: All text MUST be fully contained inside the central safe area, with at least 12% padding from EVERY edge of the canvas. Never let any letter touch or extend past the edges. The complete text "${mainText}"${subtext ? ` and "${subtext}"` : ''} must be 100% visible — no cropping, no clipping, no letters cut in half. Size the text down if needed to keep it well within the safe zone. Spell every word exactly as written, no extra characters.`;
+
     const stylePrompts: Record<string, string> = {
-      boom: `Take this product image and transform it into an eye-catching promotional poster in 1080x1920 portrait format. Add bold, explosive text "${mainText}" in huge letters with vibrant red and pink gradients, dramatic shadows, and energy burst effects. Make it look like a dramatic product advertisement with WOW factor.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`,
+      boom: `Take this product image and transform it into an eye-catching promotional poster in 1080x1920 portrait format. Add bold, explosive text "${mainText}" with vibrant red and pink gradients, dramatic shadows, and energy burst effects. Make it look like a dramatic product advertisement with WOW factor.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`,
       sparkle: `Take this product image and transform it into a magical promotional poster in 1080x1920 portrait format. Add elegant text "${mainText}" with purple-to-blue gradients, sparkles, and dreamy glowing effects. Make it enchanting and eye-catching.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`,
       stars: `Take this product image and transform it into a glamorous promotional poster in 1080x1920 portrait format. Add stylish text "${mainText}" with hot pink colors, star decorations, and dazzling celebrity-style effects. Make it fabulous and attention-grabbing.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`,
       minimal: `Take this product image and transform it into a clean promotional poster in 1080x1920 portrait format. Add modern text "${mainText}" in bold sans-serif font with simple, professional styling. Keep it minimal but impactful.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`
     };
 
     const landscapeStylePrompts: Record<string, string> = {
-      boom: `Take this product image and transform it into an eye-catching promotional poster in 1920x1080 landscape format. Add bold, explosive text "${mainText}" in huge letters with vibrant red and pink gradients, dramatic shadows, and energy burst effects. Make it look like a dramatic product advertisement with WOW factor.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`,
+      boom: `Take this product image and transform it into an eye-catching promotional poster in 1920x1080 landscape format. Add bold, explosive text "${mainText}" with vibrant red and pink gradients, dramatic shadows, and energy burst effects. Make it look like a dramatic product advertisement with WOW factor.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`,
       sparkle: `Take this product image and transform it into a magical promotional poster in 1920x1080 landscape format. Add elegant text "${mainText}" with purple-to-blue gradients, sparkles, and dreamy glowing effects. Make it enchanting and eye-catching.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`,
       stars: `Take this product image and transform it into a glamorous promotional poster in 1920x1080 landscape format. Add stylish text "${mainText}" with hot pink colors, star decorations, and dazzling celebrity-style effects. Make it fabulous and attention-grabbing.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`,
       minimal: `Take this product image and transform it into a clean promotional poster in 1920x1080 landscape format. Add modern text "${mainText}" in bold sans-serif font with simple, professional styling. Keep it minimal but impactful.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`
     };
+
+    // Append safe-zone rules to every style
+    for (const k of Object.keys(stylePrompts)) stylePrompts[k] += SAFE_ZONE;
+    for (const k of Object.keys(landscapeStylePrompts)) landscapeStylePrompts[k] += SAFE_ZONE;
 
     const textPrompt = (stylePrompts[style] || stylePrompts.boom) + customizationFragment;
     const landscapePrompt = (landscapeStylePrompts[style] || landscapeStylePrompts.boom) + customizationFragment;

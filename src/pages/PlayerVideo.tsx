@@ -551,7 +551,8 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           key={`${currentVideo.id}-${safeIndex}`}
           src={currentVideo.image_url || currentVideo.video_url}
           alt={currentVideo.title}
-          className="absolute inset-0 w-full h-full object-contain bg-black"
+          className="absolute inset-0 w-full h-full object-contain bg-black animate-fade-in"
+          style={{ animationDuration: '450ms' }}
           onLoad={() => {
             console.log('[Image] Loaded successfully:', currentVideo.image_url || currentVideo.video_url);
           }}
@@ -567,7 +568,8 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           ref={videoRef}
           key={`${currentVideo.id}-${safeIndex}`}
           src={currentVideo.video_url}
-          className="w-full h-full object-contain"
+          className="w-full h-full object-contain animate-fade-in"
+          style={{ animationDuration: '450ms' }}
           autoPlay
           muted
           playsInline
@@ -586,23 +588,20 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
             console.error('Video playback error:', e);
             console.error('Failed video URL:', currentVideo.video_url);
             console.error('Video error details:', videoRef.current?.error);
-            
-            // Limit error toasts - only show once every 10 seconds
+
             const now = Date.now();
             if (now - lastErrorToastRef.current > 10000) {
               toast.error(`Tap screen to play video`);
               lastErrorToastRef.current = now;
             }
-            
-            // Track consecutive errors to prevent infinite loops
+
             errorCountRef.current += 1;
             if (errorCountRef.current >= 3) {
               console.error('Too many consecutive errors, pausing playback');
               errorCountRef.current = 0;
               return;
             }
-            
-            // Only try next video if we have more than 1
+
             if (videos.length > 1) {
               handleVideoEnd();
             }
@@ -612,7 +611,6 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           }}
           onLoadedData={() => {
             console.log('Video loaded:', currentVideo.video_url);
-            // Single play attempt when video data is ready
             if (videoRef.current && videoRef.current.paused) {
               videoRef.current.muted = true;
               videoRef.current.play().catch(e => {
@@ -626,12 +624,86 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           }}
         />
       )}
-      
+
+      {/* Eye-catching sparkle / flash overlay — pure CSS, sits on top of media,
+          ignores pointer events so taps still register on the underlying layer. */}
+      <SparkleOverlay />
+
       {/* Invisible tap zone indicator (only visible during development) */}
-      <div 
+      <div
         className="absolute top-0 right-0 w-24 h-24 opacity-0 hover:opacity-10 bg-red-500 pointer-events-none"
         style={{ transition: 'opacity 0.3s' }}
       />
+    </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// SparkleOverlay — small attention-grabbing sparkles + occasional flash burst
+// rendered above the playing media. Pure CSS animation so it costs nothing.
+// pointer-events-none so the 4-tap admin gesture still works underneath.
+// ---------------------------------------------------------------------------
+const SparkleOverlay = () => {
+  // Fixed deterministic positions so render is stable across frames.
+  const sparkles = [
+    { top: '8%',  left: '12%', delay: '0s',   size: 14 },
+    { top: '18%', left: '78%', delay: '1.2s', size: 18 },
+    { top: '42%', left: '6%',  delay: '2.4s', size: 12 },
+    { top: '60%', left: '88%', delay: '0.6s', size: 16 },
+    { top: '76%', left: '22%', delay: '1.8s', size: 14 },
+    { top: '88%', left: '68%', delay: '3.0s', size: 20 },
+    { top: '30%', left: '50%', delay: '2.1s', size: 10 },
+    { top: '54%', left: '40%', delay: '3.6s', size: 12 },
+  ];
+
+  return (
+    <div className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
+      <style>{`
+        @keyframes sparkleTwinkle {
+          0%, 100% { opacity: 0; transform: scale(0.4) rotate(0deg); }
+          50%      { opacity: 1; transform: scale(1)   rotate(180deg); }
+        }
+        @keyframes flashBurst {
+          0%, 92%, 100% { opacity: 0; }
+          94%           { opacity: 0.55; }
+          96%           { opacity: 0; }
+        }
+        .cy-sparkle {
+          position: absolute;
+          color: #FFF6B0;
+          filter: drop-shadow(0 0 6px rgba(255, 246, 176, 0.9));
+          animation: sparkleTwinkle 4.2s ease-in-out infinite;
+        }
+        .cy-flash {
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(circle at center,
+            rgba(255,255,255,0.85) 0%,
+            rgba(255,255,255,0.3) 25%,
+            rgba(255,255,255,0) 60%);
+          animation: flashBurst 12s ease-in-out infinite;
+          mix-blend-mode: screen;
+        }
+      `}</style>
+      {sparkles.map((s, i) => (
+        <svg
+          key={i}
+          className="cy-sparkle"
+          style={{
+            top: s.top,
+            left: s.left,
+            width: s.size * 4,
+            height: s.size * 4,
+            animationDelay: s.delay,
+          }}
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          aria-hidden="true"
+        >
+          <path d="M12 0 L13.5 9 L22 12 L13.5 15 L12 24 L10.5 15 L2 12 L10.5 9 Z" />
+        </svg>
+      ))}
+      <div className="cy-flash" />
     </div>
   );
 };
