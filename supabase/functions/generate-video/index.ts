@@ -100,11 +100,12 @@ serve(async (req) => {
     // Scene 3 (~45% in): Price pops in (zoom) with accent badge, holds
     // Scene 4 (~70% in, OPTIONAL): Pulsing "TODAY ONLY" badge
     // ============================================================
-    const videoDuration = Math.max(5, Math.min(30, parseFloat(duration) || 8));
+    const videoDuration = Math.max(6, Math.min(30, parseFloat(duration) || 10));
 
-    const titleStart = videoDuration * 0.20;
-    const priceStart = videoDuration * 0.45;
-    const badgeStart = videoDuration * 0.70;
+    // Slower, more deliberate timing — text appears earlier and HOLDS longer.
+    const titleStart = 0.6;
+    const priceStart = videoDuration * 0.30;
+    const badgeStart = videoDuration * 0.55;
 
     const accentColor = '#FACC15';
     const accentInk = '#111111';
@@ -127,30 +128,35 @@ serve(async (req) => {
       }
     }
 
-    const buildTracks = (bgSrc: string, heroSrc: string, isPortrait: boolean) => {
+    // Auto-shrink title font if the text is long so it always fits on screen.
+    const titleLen = resolvedTitle.length;
+    const titleSizeKey: 'medium' | 'large' | 'x-large' =
+      titleLen > 32 ? 'medium' : titleLen > 18 ? 'large' : 'x-large';
+
+    const buildTracks = (bgSrc: string, isPortrait: boolean) => {
       const W = isPortrait ? 1080 : 1920;
       const H = isPortrait ? 1920 : 1080;
 
-      const titleY = isPortrait ? 0.34 : 0.32;
-      const priceY = isPortrait ? -0.06 : -0.04;
-      const badgeY = isPortrait ? -0.36 : -0.34;
+      // Layout: title TOP, price CENTER-BOTTOM, badge TOP-RIGHT-ish above title.
+      const titleY = isPortrait ? 0.36 : 0.34;
+      const priceY = isPortrait ? -0.30 : -0.30;
+      const badgeY = isPortrait ? 0.44 : 0.42;
 
-      const priceFontSize = isPortrait ? 180 : 150;
-      const badgeFontSize = isPortrait ? 56 : 48;
+      // Smaller, safer font sizes that always fit in the canvas.
+      const priceFontSize = isPortrait ? 140 : 120;
+      const badgeFontSize = isPortrait ? 44 : 40;
 
       // IMPORTANT: in Shotstack, the FIRST track in the array renders ON TOP.
-      // Order: badge -> price -> title -> hero (product) -> dim -> background.
+      // Order: badge -> price -> title -> dim overlay -> background image.
       const tracks: Record<string, unknown>[] = [];
 
-      // ===== TEXT LAYERS (front) =====
-
-      // BADGE — pulsing "LIMITED" (front-most)
+      // BADGE — pulsing limited offer pill
       if (showBadge && finalBadgeText) {
         const badgeHtml = `<p class="b">${escapeHtml(finalBadgeText)}</p>`;
-        const badgeCss = `.b{font-family:'Open Sans',Arial,sans-serif;font-weight:900;font-size:${badgeFontSize}px;color:#FFFFFF;background:#DC2626;letter-spacing:0.1em;padding:18px 40px;border-radius:9999px;display:inline-block;text-align:center;text-transform:uppercase;margin:0;line-height:1;border:4px solid #FFFFFF;box-shadow:0 8px 24px rgba(220,38,38,0.5);}`;
-        const badgeW = 800;
-        const badgeH = 180;
-        const pulseLen = 0.8;
+        const badgeCss = `.b{font-family:'Open Sans',Arial,sans-serif;font-weight:900;font-size:${badgeFontSize}px;color:#FFFFFF;background:#DC2626;letter-spacing:0.08em;padding:14px 32px;border-radius:9999px;display:inline-block;text-align:center;text-transform:uppercase;margin:0;line-height:1;border:3px solid #FFFFFF;box-shadow:0 6px 20px rgba(220,38,38,0.5);}`;
+        const badgeW = 700;
+        const badgeH = 140;
+        const pulseLen = 0.9;
         let t = badgeStart;
         let toggle = true;
         while (t + pulseLen <= videoDuration) {
@@ -169,12 +175,12 @@ serve(async (req) => {
         }
       }
 
-      // PRICE — big yellow pop badge
+      // PRICE — yellow pop badge, lower portion
       if (resolvedPrice) {
         const priceHtml = `<p class="p">${escapeHtml(resolvedPrice)}</p>`;
-        const priceCss = `.p{font-family:'Open Sans',Arial,sans-serif;font-weight:900;font-size:${priceFontSize}px;color:${accentInk};background:${accentColor};letter-spacing:-0.02em;padding:24px 60px;border-radius:24px;display:inline-block;text-align:center;text-transform:uppercase;margin:0;line-height:1;box-shadow:0 12px 40px rgba(0,0,0,0.4);}`;
-        const priceW = isPortrait ? 1000 : 1400;
-        const priceH = isPortrait ? 360 : 320;
+        const priceCss = `.p{font-family:'Open Sans',Arial,sans-serif;font-weight:900;font-size:${priceFontSize}px;color:${accentInk};background:${accentColor};letter-spacing:-0.02em;padding:20px 48px;border-radius:20px;display:inline-block;text-align:center;text-transform:uppercase;margin:0;line-height:1;box-shadow:0 12px 32px rgba(0,0,0,0.45);white-space:nowrap;}`;
+        const priceW = isPortrait ? 900 : 1200;
+        const priceH = isPortrait ? 280 : 240;
         tracks.push({
           clips: [{
             asset: { type: "html", html: priceHtml, css: priceCss, width: priceW, height: priceH, background: "transparent" },
@@ -188,7 +194,7 @@ serve(async (req) => {
         });
       }
 
-      // TITLE
+      // TITLE — top of frame
       if (resolvedTitle) {
         tracks.push({
           clips: [{
@@ -197,7 +203,7 @@ serve(async (req) => {
               text: resolvedTitle,
               style: "future",
               color: titleInk,
-              size: isPortrait ? "x-large" : "large",
+              size: titleSizeKey,
               background: "transparent",
               position: "center",
             },
@@ -205,33 +211,13 @@ serve(async (req) => {
             length: Math.max(2, videoDuration - titleStart),
             offset: { x: 0, y: titleY },
             transition: { in: "slideUp", out: "fade" },
-            effect: "zoomIn",
           }]
         });
       }
 
-      // ===== HERO PRODUCT LAYER (mid) =====
-      // The user's product (cutout if available, else original upload).
-      // Animated separately from the BG for a 2.5D parallax feel.
-      const heroOffsetY = isPortrait ? -0.05 : -0.02;
-      tracks.push({
-        clips: [{
-          asset: { type: "image", src: heroSrc },
-          start: 0,
-          length: videoDuration,
-          fit: "contain",
-          scale: isPortrait ? 0.78 : 0.62,
-          offset: { x: 0, y: heroOffsetY },
-          effect: "zoomInSlow",
-          transition: { in: "slideUp", out: "fade" },
-        }]
-      });
-
-      // ===== BACKGROUND LAYERS (back) =====
-
-      // Dim gradient overlay sits between bg and hero so product stays vivid
+      // Dim gradient overlay — stronger at top + bottom so text always reads.
       const dimHtml = `<div class="dim"></div>`;
-      const dimCss = `.dim{width:100%;height:100%;background:linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.10) 45%, rgba(0,0,0,0.55) 100%);}`;
+      const dimCss = `.dim{width:100%;height:100%;background:linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.10) 35%, rgba(0,0,0,0.10) 65%, rgba(0,0,0,0.65) 100%);}`;
       tracks.push({
         clips: [{
           asset: { type: "html", html: dimHtml, css: dimCss, width: W, height: H },
@@ -241,14 +227,14 @@ serve(async (req) => {
         }]
       });
 
-      // BG — slow Ken Burns at a DIFFERENT pace to the hero (parallax)
+      // BACKGROUND — the user's uploaded image with slow Ken Burns
       tracks.push({
         clips: [{
           asset: { type: "image", src: bgSrc },
           start: 0,
           length: videoDuration,
           fit: "cover",
-          effect: "zoomOutSlow",
+          effect: "zoomInSlow",
           transition: { in: "fade", out: "fade" }
         }]
       });
@@ -259,7 +245,7 @@ serve(async (req) => {
     const portraitEdit = {
       timeline: {
         background: "#000000",
-        tracks: buildTracks(portraitImageUrl, heroPortraitUrl, true)
+        tracks: buildTracks(portraitImageUrl, true)
       },
       output: {
         format: "mp4",
@@ -272,7 +258,7 @@ serve(async (req) => {
     const landscapeEdit = landscapeImageUrl ? {
       timeline: {
         background: "#000000",
-        tracks: buildTracks(landscapeImageUrl, heroLandscapeUrl, false)
+        tracks: buildTracks(landscapeImageUrl, false)
       },
       output: {
         format: "mp4",
