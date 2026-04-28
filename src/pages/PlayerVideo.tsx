@@ -14,22 +14,35 @@ interface Video {
   order_index: number;
   media_type?: 'video' | 'image';
   image_url?: string | null;
+  image_url_landscape?: string | null;
+  video_url_landscape?: string | null;
   display_duration?: number | null;
 }
 
-const getPlayableUrl = (item?: Video | null) => item?.image_url || item?.video_url || "";
+const getPlayableUrl = (item?: Video | null) => item?.image_url || item?.video_url || item?.image_url_landscape || item?.video_url_landscape || "";
 const isImageMedia = (item?: Video | null) => {
   const url = getPlayableUrl(item);
   return item?.media_type === 'image' || /\.(jpe?g|png|gif|webp|avif)(\?|$)/i.test(url);
 };
+const appendCacheBust = (url: string, version: number) => {
+  if (!url || !version) return url;
+  return `${url}${url.includes('?') ? '&' : '?'}pv=${version}`;
+};
 
 interface PlayerVideoProps {
   authToken: string;
-  deviceInfo: any;
+  deviceInfo: {
+    id?: string;
+    device_id?: string;
+    device_name?: string;
+    company_id?: string;
+    playlist_id?: string | null;
+  };
 }
 
 const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const [videos, setVideos] = useState<Video[]>([]);
+  const [playlistRevision, setPlaylistRevision] = useState(0);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showAdmin, setShowAdmin] = useState(false);
@@ -46,6 +59,8 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const errorCountRef = useRef(0);
   const lastErrorToastRef = useRef(0);
   const videosRef = useRef<Video[]>([]);
+  const activePlaylistIdRef = useRef<string | null>(null);
+  const deviceId = deviceInfo?.id || deviceInfo?.device_id;
   
   // Keep videosRef in sync with videos state
   useEffect(() => {
@@ -132,6 +147,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
 
       // Device is active - clear suspended state if it was set
       setIsSuspended(false);
+      activePlaylistIdRef.current = data.playlist_id ?? null;
       
       console.log('Fetched videos:', data.videos, 'playlist_id:', data.playlist_id);
       const newVideos = (data.videos || []).filter((item: Video) => !!getPlayableUrl(item));
@@ -140,6 +156,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       if (JSON.stringify(newVideos) !== JSON.stringify(videosRef.current)) {
         console.log('Playlist changed! Switching to new playlist');
         setVideos(newVideos);
+        setPlaylistRevision((version) => version + 1);
         setCurrentIndex(0);
         
         // Force immediate playback of first video in new playlist
@@ -184,7 +201,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
 
-    let networkListener: any;
+    let networkListener: Awaited<ReturnType<typeof Network.addListener>> | null = null;
     
     const setupListener = async () => {
       networkListener = await Network.addListener('networkStatusChange', async (status) => {
@@ -221,10 +238,10 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   useEffect(() => {
     fetchPlaylist();
 
-    // Refresh playlist every 5 seconds for near-instant updates
+    // Refresh playlist every 2 seconds for near-instant content updates on devices
     refreshIntervalRef.current = setInterval(() => {
       fetchPlaylist();
-    }, 5 * 1000);
+    }, 2 * 1000);
 
     // Set up realtime listener for device changes
     const channel = supabase
@@ -235,7 +252,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           event: 'UPDATE',
           schema: 'public',
           table: 'devices',
-          filter: `id=eq.${deviceInfo.id}`
+          filter: `id=eq.${deviceId}`
         },
         async (payload) => {
           console.log('Device updated, fetching new playlist:', payload);
@@ -273,11 +290,13 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           }
           
           if (data.success && data.videos) {
+              activePlaylistIdRef.current = data.playlist_id ?? null;
               const newVideos = data.videos.filter((item: Video) => !!getPlayableUrl(item));
             
             if (newVideos.length > 0 && JSON.stringify(newVideos) !== JSON.stringify(videosRef.current)) {
               console.log('New playlist detected - switching immediately');
               setVideos(newVideos);
+              setPlaylistRevision((version) => version + 1);
               setCurrentIndex(0);
               
               // Force immediate playback of first video in new playlist
@@ -293,19 +312,34 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           }
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'playlist_videos'
+        },
+        async (payload) => {
+          const row = (payload.new || payload.old) as { playlist_id?: string } | null;
+          if (!row?.playlist_id || row.playlist_id !== activePlaylistIdRef.current) return;
+          console.log('Active playlist contents changed, refreshing:', payload);
+          await fetchPlaylist();
+        }
+      )
       .subscribe();
 
     return () => {
       if (refreshIntervalRef.current) {
         clearInterval(refreshIntervalRef.current);
       }
-      if (videoRef.current) {
-        videoRef.current.pause();
-        videoRef.current.src = '';
+      const player = videoRef.current;
+      if (player) {
+        player.pause();
+        player.src = '';
       }
       supabase.removeChannel(channel);
     };
-  }, [authToken, deviceInfo.id]);
+  }, [authToken, deviceId, fetchPlaylist]);
 
   const handleVideoEnd = () => {
     console.log('[VideoEnd] Video ended, current index:', currentIndex, 'total videos:', videos.length);
@@ -517,7 +551,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const safeIndex = currentIndex < videos.length ? currentIndex : 0;
   const currentVideo = videos[safeIndex];
   const isImageItem = isImageMedia(currentVideo);
-  const currentMediaUrl = getPlayableUrl(currentVideo);
+  const currentMediaUrl = appendCacheBust(getPlayableUrl(currentVideo), playlistRevision);
 
 
   return (
@@ -531,6 +565,16 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       onTouchEnd={handleTouchEnd}
       onClick={handleTripleTap}
     >
+      <style>{`
+        @keyframes playerMediaFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .player-media-fade {
+          animation: playerMediaFadeIn 450ms ease-in-out both;
+        }
+      `}</style>
+
       {/* Pull to refresh indicator */}
       {isPullingToRefresh && (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white/90 text-black px-4 py-2 rounded-full text-sm font-medium z-50">
@@ -554,20 +598,29 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       )}
       
       {currentVideo && isImageItem && (
-        <img
+        <div
           key={`${currentVideo.id}-${safeIndex}`}
-          src={currentMediaUrl}
-          alt={currentVideo.title}
-          className="absolute inset-0 z-10 w-full h-full object-contain bg-black animate-fade-in"
-          style={{ animationDuration: '450ms' }}
-          onLoad={() => {
-            console.log('[Image] Loaded successfully:', currentMediaUrl);
-          }}
-          onError={() => {
-            console.error('[Image] Load error for URL:', currentMediaUrl);
-            if (videos.length > 1) handleVideoEnd();
-          }}
-        />
+          className="player-media-fade absolute inset-0 z-10 bg-black"
+        >
+          <div
+            className="absolute inset-0 bg-center bg-contain bg-no-repeat"
+            style={{ backgroundImage: `url("${currentMediaUrl.replace(/"/g, '%22')}")` }}
+            aria-hidden="true"
+          />
+          <img
+            src={currentMediaUrl}
+            alt={currentVideo.title}
+            className="absolute inset-0 h-full w-full object-contain opacity-0"
+            decoding="async"
+            onLoad={() => {
+              console.log('[Image] Loaded successfully:', currentMediaUrl);
+            }}
+            onError={() => {
+              console.error('[Image] Load error for URL:', currentMediaUrl);
+              if (videos.length > 1) handleVideoEnd();
+            }}
+          />
+        </div>
       )}
 
       {currentVideo && !isImageItem && (
@@ -575,8 +628,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           ref={videoRef}
           key={`${currentVideo.id}-${safeIndex}`}
           src={currentMediaUrl}
-          className="relative z-10 w-full h-full object-contain animate-fade-in"
-          style={{ animationDuration: '450ms' }}
+          className="player-media-fade relative z-10 w-full h-full object-contain"
           autoPlay
           muted
           playsInline
@@ -632,7 +684,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
         />
       )}
 
-      {/* Eye-catching sparkle / flash overlay — pure CSS, sits on top of media,
+      {/* Eye-catching sparkle overlay — pure CSS, sits on top of media,
           ignores pointer events so taps still register on the underlying layer. */}
       <SparkleOverlay />
 
@@ -646,9 +698,9 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
 };
 
 // ---------------------------------------------------------------------------
-// SparkleOverlay — small attention-grabbing sparkles + occasional flash burst
-// rendered above the playing media. Pure CSS animation so it costs nothing.
-// pointer-events-none so the 4-tap admin gesture still works underneath.
+// SparkleOverlay — small attention-grabbing sparkles rendered above the
+// playing media. Pure CSS animation so it costs nothing. pointer-events-none
+// so the 4-tap admin gesture still works underneath.
 // ---------------------------------------------------------------------------
 const SparkleOverlay = () => {
   // Fixed deterministic positions so render is stable across frames.
@@ -670,27 +722,12 @@ const SparkleOverlay = () => {
           0%, 100% { opacity: 0.2; transform: scale(0.55) rotate(0deg); }
           50%      { opacity: 1; transform: scale(1.18) rotate(180deg); }
         }
-        @keyframes flashBurst {
-          0%, 84%, 100% { opacity: 0; }
-          87%           { opacity: 0.72; }
-          90%           { opacity: 0; }
-        }
         .cy-sparkle {
           position: absolute;
           color: hsl(50 100% 84%);
           filter: drop-shadow(0 0 10px hsl(50 100% 84% / 0.95)) drop-shadow(0 0 22px hsl(42 100% 56% / 0.7));
           animation: sparkleTwinkle 2.8s ease-in-out infinite;
           will-change: transform, opacity;
-        }
-        .cy-flash {
-          position: absolute;
-          inset: 0;
-          background: radial-gradient(circle at center,
-            hsl(0 0% 100% / 0.95) 0%,
-            hsl(50 100% 85% / 0.48) 28%,
-            hsl(0 0% 100% / 0) 66%);
-          animation: flashBurst 7s ease-in-out infinite;
-          mix-blend-mode: screen;
         }
       `}</style>
       {sparkles.map((s, i) => (
@@ -712,7 +749,6 @@ const SparkleOverlay = () => {
           <path d="M12 0 L13.5 9 L22 12 L13.5 15 L12 24 L10.5 15 L2 12 L10.5 9 Z" />
         </svg>
       ))}
-      <div className="cy-flash" />
     </div>
   );
 };
