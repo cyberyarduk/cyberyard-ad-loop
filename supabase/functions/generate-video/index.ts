@@ -267,59 +267,75 @@ serve(async (req) => {
     console.log('Promotional images uploaded:', { portrait: portraitImageUrl, landscape: landscapeImageUrl });
 
     // Create motion-rich Shotstack edits for both formats.
-    // Layers (bottom -> top):
+    // Layers (bottom -> top in Shotstack: LAST track = TOP layer):
     //   1. AI promo image with subtle Ken Burns zoom (gives the video life)
-    //   2. Animated sparkle overlay (looped luma) for shine/sparkle effect
-    //   3. Pulsing "Limited Offer" CTA badge (HTML asset, scale-pulses)
+    //   2. Twinkling sparkle bursts (multiple short HTML clips, scattered)
+    //   3. Pulsing "Limited Offer" CTA badge (zoomIn / zoomOut chained = pulse)
     const videoDuration = parseFloat(duration);
-
-    // Public sparkle/particle overlay (transparent webm-style PNG sequence on Shotstack CDN).
-    // Falls back gracefully if the asset is unavailable — Shotstack will skip the clip.
-    const SPARKLE_OVERLAY = "https://shotstack-assets.s3.amazonaws.com/effects/sparkle-loop.mp4";
 
     const ctaHtml = `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">
       <div style="background:#FACC15;color:#111;font-family:'Helvetica Neue',Arial,sans-serif;font-weight:900;font-size:48px;letter-spacing:0.05em;padding:18px 36px;border-radius:9999px;box-shadow:0 10px 40px rgba(0,0,0,0.35);text-transform:uppercase;">Limited Offer</div>
     </div>`;
+
+    // Single sparkle SVG — transparent background, bright yellow star
+    const sparkleHtml = `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">
+      <svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <defs><radialGradient id="g"><stop offset="0%" stop-color="#fff" stop-opacity="1"/><stop offset="40%" stop-color="#FACC15" stop-opacity="0.9"/><stop offset="100%" stop-color="#FACC15" stop-opacity="0"/></radialGradient></defs>
+        <circle cx="50" cy="50" r="45" fill="url(#g)"/>
+        <path d="M50 10 L55 45 L90 50 L55 55 L50 90 L45 55 L10 50 L45 45 Z" fill="#fff" opacity="0.95"/>
+      </svg>
+    </div>`;
+
+    // Build a constellation of 6 staggered sparkle bursts across the duration.
+    const sparklePositions = [
+      { x: -0.30, y:  0.25, size: 110 },
+      { x:  0.32, y: -0.10, size:  90 },
+      { x: -0.18, y: -0.28, size: 120 },
+      { x:  0.28, y:  0.30, size: 100 },
+      { x:  0.05, y:  0.05, size:  80 },
+      { x: -0.35, y: -0.05, size:  95 },
+    ];
+    const sparkleClips = sparklePositions.map((p, i) => {
+      const start = (videoDuration / sparklePositions.length) * i + 0.2;
+      const length = 1.0;
+      if (start + length > videoDuration) return null;
+      return {
+        asset: { type: "html", html: sparkleHtml, width: p.size, height: p.size },
+        start,
+        length,
+        position: "center",
+        offset: { x: p.x, y: p.y },
+        effect: "zoomIn",
+        transition: { in: "fade", out: "fade" },
+      };
+    }).filter(Boolean);
 
     const buildTracks = (imageSrc: string, isPortrait: boolean) => {
       const ctaWidth = isPortrait ? 720 : 600;
       const ctaHeight = 140;
       const ctaY = isPortrait ? -0.38 : -0.40; // near top of frame
 
+      // Pulsing CTA: chain zoomIn -> zoomOut clips back-to-back.
+      const ctaClips = [];
+      let t = 0.4;
+      const pulseLen = 1.2;
+      let toggle = true;
+      while (t + pulseLen <= videoDuration) {
+        ctaClips.push({
+          asset: { type: "html", html: ctaHtml, width: ctaWidth, height: ctaHeight },
+          start: t,
+          length: pulseLen,
+          position: "center",
+          offset: { x: 0, y: ctaY },
+          effect: toggle ? "zoomIn" : "zoomOut",
+          transition: t === 0.4 ? { in: "zoom" } : undefined,
+        });
+        t += pulseLen;
+        toggle = !toggle;
+      }
+
       return [
-        // Top: pulsing CTA badge (last track = top layer in Shotstack)
-        {
-          clips: [{
-            asset: { type: "html", html: ctaHtml, width: ctaWidth, height: ctaHeight },
-            start: 0.4,
-            length: Math.max(0, videoDuration - 0.4),
-            position: "center",
-            offset: { x: 0, y: ctaY },
-            transition: { in: "zoom", out: "fade" },
-            // Subtle continuous pulse via scale keyframes
-            transform: {
-              scale: [
-                { from: 1.0, to: 1.08, start: 0, length: 0.6 },
-                { from: 1.08, to: 1.0, start: 0.6, length: 0.6 },
-                { from: 1.0, to: 1.08, start: 1.2, length: 0.6 },
-                { from: 1.08, to: 1.0, start: 1.8, length: 0.6 },
-                { from: 1.0, to: 1.08, start: 2.4, length: 0.6 },
-                { from: 1.08, to: 1.0, start: 3.0, length: 0.6 },
-              ]
-            }
-          }]
-        },
-        // Middle: animated sparkle overlay (screen blend gives a shine/sparkle look)
-        {
-          clips: [{
-            asset: { type: "video", src: SPARKLE_OVERLAY, volume: 0 },
-            start: 0,
-            length: videoDuration,
-            fit: "cover",
-            opacity: 0.55,
-          }]
-        },
-        // Bottom: AI poster image with slow Ken Burns zoom for cinematic motion
+        // Bottom: AI poster image with slow Ken Burns
         {
           clips: [{
             asset: { type: "image", src: imageSrc },
@@ -329,7 +345,11 @@ serve(async (req) => {
             effect: "zoomIn",
             transition: { in: "fade" }
           }]
-        }
+        },
+        // Middle: twinkling sparkles
+        { clips: sparkleClips },
+        // Top: pulsing CTA badge
+        { clips: ctaClips },
       ];
     };
 
