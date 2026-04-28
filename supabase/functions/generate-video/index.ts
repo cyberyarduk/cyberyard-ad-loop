@@ -223,7 +223,7 @@ serve(async (req) => {
     const portraitBinaryData = Uint8Array.from(atob(portraitBase64Data), c => c.charCodeAt(0));
     const portraitImagePath = `promo-images/${timestamp}-portrait.png`;
     
-    const uploadPromises: Promise<any>[] = [
+    const uploadPromises: Promise<{ data: unknown; error: { message?: string } | null }>[] = [
       supabase.storage.from('videos').upload(portraitImagePath, portraitBinaryData, {
         contentType: 'image/png',
         upsert: false,
@@ -472,7 +472,7 @@ serve(async (req) => {
     }
 
     // Insert video record
-    const videoData: any = {
+    const videoData: Record<string, string | null> = {
       title: mainText || 'AI Generated Video',
       video_url: videoUrl,
       user_id: userId,
