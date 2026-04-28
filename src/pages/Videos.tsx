@@ -401,8 +401,55 @@ const Videos = () => {
                       How long the image stays on screen before the next item plays.
                     </p>
                   </div>
+                  {/* Animated overlays toggle — turns the static image into a
+                      Shotstack-rendered video with swiping accents. */}
+                  <div className="rounded-md border p-3 space-y-3">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="mt-1 h-4 w-4"
+                        checked={imgAnimatedOverlays}
+                        onChange={(e) => setImgAnimatedOverlays(e.target.checked)}
+                      />
+                      <div>
+                        <div className="font-medium text-sm">Add animated overlays</div>
+                        <p className="text-xs text-muted-foreground">
+                          Render this image as a short video with swiping accent
+                          bars. Leave off for plain menu boards.
+                        </p>
+                      </div>
+                    </label>
+                    {imgAnimatedOverlays && (
+                      <div className="space-y-2 pl-7">
+                        <Label className="text-xs">Overlay style</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { v: "boom", label: "Boom (red)" },
+                            { v: "sparkle", label: "Sparkle (purple)" },
+                            { v: "stars", label: "Stars (pink)" },
+                            { v: "minimal", label: "Minimal (white)" },
+                          ].map((o) => (
+                            <button
+                              key={o.v}
+                              type="button"
+                              onClick={() => setImgOverlayStyle(o.v as any)}
+                              className={`text-xs px-3 py-2 rounded border transition ${
+                                imgOverlayStyle === o.v
+                                  ? "border-primary bg-primary/10 text-foreground"
+                                  : "border-border hover:bg-muted"
+                              }`}
+                            >
+                              {o.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   <Button type="submit" className="w-full" disabled={uploadingImage}>
-                    {uploadingImage ? "Uploading…" : "Upload Image"}
+                    {uploadingImage
+                      ? (imgAnimatedOverlays ? "Rendering video…" : "Uploading…")
+                      : (imgAnimatedOverlays ? "Render & add to library" : "Upload Image")}
                   </Button>
                 </form>
               </DialogContent>
