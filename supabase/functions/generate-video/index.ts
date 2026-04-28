@@ -81,155 +81,126 @@ serve(async (req) => {
       throw new Error('No image provided (imageUrl or imageData required)');
     }
 
-    // Generate complete promotional image with text using Lovable AI
-    console.log('Generating complete promotional image with AI...');
-    
-    // === AI generates a CLEAN background image (no text). ===
-    // All text/animation is added by Shotstack so we get real motion design.
+    // ============================================================
+    // LAYERED ADVERT APPROACH
+    // 1. Use the user's uploaded image AS-IS as the hero subject (no replacement).
+    // 2. Generate a CUTOUT (transparent PNG, subject only) from the uploaded image
+    //    so we can animate the product on its own layer.
+    // 3. Generate a styled BACKGROUND scene (no product, no text) for depth.
+    // 4. Shotstack composites: BG (slow pan) + product cutout (parallax bounce)
+    //    + animated text. This produces a real 2.5D promo, not just a zoom.
+    // If cutout fails, we fall back to the original uploaded image as the hero.
+    // ============================================================
+    console.log('Generating layered advert assets (background + product cutout)...');
+
     const themeDesc = customization?.themePrompt && customization.themePrompt.trim().length > 0
       ? ` Vibe/theme: "${String(customization.themePrompt).slice(0, 200)}".`
       : '';
 
     const styleMoodMap: Record<string, string> = {
-      boom: 'high-energy, vibrant, punchy commercial advertising lighting',
-      sparkle: 'magical, dreamy, soft glowing studio lighting with bokeh',
-      stars: 'glamorous, fashion-magazine, premium product lighting',
-      minimal: 'clean, minimal, editorial product photography on a soft neutral backdrop',
+      boom: 'high-energy, vibrant, punchy commercial advertising lighting with rich saturated colors',
+      sparkle: 'magical, dreamy, soft glowing studio lighting with bokeh particles',
+      stars: 'glamorous, fashion-magazine, premium product lighting on a luxe backdrop',
+      minimal: 'clean, minimal, editorial backdrop with soft neutral tones and gentle shadows',
     };
     const moodDesc = styleMoodMap[style] || styleMoodMap.boom;
 
-    const cleanBgPrompt = (orientation: 'portrait' | 'landscape') => {
+    // --- Prompt 1: BACKGROUND ONLY (no product, no text) ---
+    const bgPrompt = (orientation: 'portrait' | 'landscape') => {
       const dims = orientation === 'portrait' ? '1080x1920 vertical (9:16)' : '1920x1080 horizontal (16:9)';
-      const composition = orientation === 'portrait'
-        ? 'Compose with the subject in the LOWER HALF of the frame so the upper half stays clear for animated text overlay.'
-        : 'Compose with the subject on ONE SIDE (left or right) so the opposite half stays clear for animated text overlay.';
-      return `Take this product photo and transform it into a beautiful, hero-quality promotional BACKGROUND image in ${dims} format. Use ${moodDesc}.${themeDesc}
+      return `Look at this reference product photo to understand the category/colour palette, then create a BEAUTIFUL EMPTY BACKGROUND SCENE in ${dims}. Use ${moodDesc}.${themeDesc}
 
 CRITICAL RULES:
-- Do NOT add any text, words, letters, numbers, prices, or typography of any kind. Zero text. The image must be purely visual.
-- Do NOT add badges, stickers, price tags, "sale" labels, or any callout graphics.
-- ${composition}
-- Make the product look mouth-watering / desirable, with rich lighting and styling.
-- Keep the background relatively clean and uncluttered (it will have animated text placed over it).
-- Output only the styled hero photo. Nothing else.`;
+- The output must be a BACKDROP / SCENE only — DO NOT include the product itself, do NOT include any food, packaging, item, person, or subject.
+- Think: an empty cafe counter, a soft gradient studio backdrop with bokeh, a wooden surface with steam/light rays, a blurred kitchen — context appropriate to the product but EMPTY.
+- ZERO text, words, letters, numbers, prices, badges, stickers, logos.
+- Leave plenty of clean space for animated text overlay.
+- Cinematic, premium, advertising-quality lighting. No clutter.`;
     };
 
-    const textPrompt = cleanBgPrompt('portrait');
-    const landscapePrompt = cleanBgPrompt('landscape');
+    // --- Prompt 2: PRODUCT CUTOUT (transparent background) ---
+    const cutoutPrompt = `Isolate ONLY the main product/subject from this image and place it on a PURE WHITE background (#FFFFFF). 
+CRITICAL RULES:
+- Keep the product photo IDENTICAL — same shape, same colours, same details. Do NOT redesign or restyle it.
+- Remove EVERYTHING else: original background, surfaces, hands, props, shadows.
+- Crop tightly around the subject with a small margin.
+- Solid pure white background only — no gradients, no text, no shadows, no badges.
+- Output must be a clean product cutout suitable for compositing.`;
 
-    // Generate both portrait and landscape images in parallel
-    console.log('Generating portrait and landscape promotional images with AI...');
-    
-    const [portraitAiResponse, landscapeAiResponse] = await Promise.all([
-      fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'google/gemini-3-pro-image-preview',
-          messages: [{
-            role: 'user',
-            content: [
-              { type: 'text', text: textPrompt },
-              { type: 'image_url', image_url: { url: finalImageUrl } }
-            ]
-          }],
-          modalities: ['image', 'text']
-        })
-      }),
-      fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'google/gemini-3-pro-image-preview',
-          messages: [{
-            role: 'user',
-            content: [
-              { type: 'text', text: landscapePrompt },
-              { type: 'image_url', image_url: { url: finalImageUrl } }
-            ]
-          }],
-          modalities: ['image', 'text']
-        })
+    const aiCall = (prompt: string) => fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'google/gemini-3-pro-image-preview',
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            { type: 'image_url', image_url: { url: finalImageUrl } }
+          ]
+        }],
+        modalities: ['image', 'text']
       })
+    });
+
+    const [bgPortraitRes, bgLandscapeRes, cutoutRes] = await Promise.all([
+      aiCall(bgPrompt('portrait')),
+      aiCall(bgPrompt('landscape')),
+      aiCall(cutoutPrompt),
     ]);
 
-    if (!portraitAiResponse.ok) {
-      const errorText = await portraitAiResponse.text();
-      console.error('Portrait AI error:', errorText);
-      throw new Error(`Failed to generate portrait image: ${errorText}`);
+    const extractImage = async (res: Response, label: string): Promise<string | null> => {
+      if (!res.ok) {
+        console.error(`${label} AI error:`, await res.text().catch(() => ''));
+        return null;
+      }
+      try {
+        const json = await res.json();
+        return json.choices?.[0]?.message?.images?.[0]?.image_url?.url ?? null;
+      } catch {
+        return null;
+      }
+    };
+
+    const [bgPortraitB64, bgLandscapeB64, cutoutB64] = await Promise.all([
+      extractImage(bgPortraitRes, 'BG portrait'),
+      extractImage(bgLandscapeRes, 'BG landscape'),
+      extractImage(cutoutRes, 'Cutout'),
+    ]);
+
+    if (!bgPortraitB64) {
+      throw new Error('Failed to generate background scene');
     }
 
-    const portraitData = await portraitAiResponse.json();
-    const portraitImageBase64 = portraitData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    
-    if (!portraitImageBase64) {
-      throw new Error('No portrait promotional image generated from AI');
-    }
+    console.log('Layered assets generated:', {
+      bgPortrait: !!bgPortraitB64, bgLandscape: !!bgLandscapeB64, cutout: !!cutoutB64
+    });
 
-    let landscapeImageBase64 = null;
-    if (landscapeAiResponse.ok) {
-      const landscapeData = await landscapeAiResponse.json();
-      landscapeImageBase64 = landscapeData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-      console.log('Landscape image generated:', !!landscapeImageBase64);
-    } else {
-      console.log('Landscape generation failed, continuing with portrait only');
-    }
-
-    console.log('Promotional images generated, uploading to storage...');
     const timestamp = Date.now();
 
-    const portraitBase64Data = portraitImageBase64.split(',')[1];
-    const portraitBinaryData = Uint8Array.from(atob(portraitBase64Data), c => c.charCodeAt(0));
-    const portraitImagePath = `promo-images/${timestamp}-portrait.png`;
-    
-    const uploadPromises: Promise<{ data: unknown; error: { message?: string } | null }>[] = [
-      supabase.storage.from('videos').upload(portraitImagePath, portraitBinaryData, {
-        contentType: 'image/png',
-        upsert: false,
-        cacheControl: '31536000'
-      })
-    ];
+    const uploadPng = async (b64: string, path: string) => {
+      const data = b64.split(',')[1];
+      const bin = Uint8Array.from(atob(data), c => c.charCodeAt(0));
+      const { error } = await supabase.storage.from('videos').upload(path, bin, {
+        contentType: 'image/png', upsert: false, cacheControl: '31536000'
+      });
+      if (error) throw new Error(`Upload failed (${path}): ${error.message}`);
+      return supabase.storage.from('videos').getPublicUrl(path).data.publicUrl;
+    };
 
-    let landscapeImagePath: string | null = null;
-    if (landscapeImageBase64) {
-      const landscapeBase64Data = landscapeImageBase64.split(',')[1];
-      const landscapeBinaryData = Uint8Array.from(atob(landscapeBase64Data), c => c.charCodeAt(0));
-      landscapeImagePath = `promo-images/${timestamp}-landscape.png`;
-      uploadPromises.push(
-        supabase.storage.from('videos').upload(landscapeImagePath, landscapeBinaryData, {
-          contentType: 'image/png',
-          upsert: false,
-          cacheControl: '31536000'
-        })
-      );
-    }
+    const [bgPortraitUrl, bgLandscapeUrl, cutoutUrl] = await Promise.all([
+      uploadPng(bgPortraitB64, `promo-images/${timestamp}-bg-portrait.png`),
+      bgLandscapeB64 ? uploadPng(bgLandscapeB64, `promo-images/${timestamp}-bg-landscape.png`) : Promise.resolve<string | null>(null),
+      cutoutB64 ? uploadPng(cutoutB64, `promo-images/${timestamp}-cutout.png`) : Promise.resolve<string | null>(null),
+    ]);
 
-    const uploadResults = await Promise.all(uploadPromises);
-    
-    if (uploadResults[0].error) {
-      console.error('Portrait upload error:', uploadResults[0].error);
-      throw new Error(`Failed to upload portrait image: ${uploadResults[0].error.message}`);
-    }
-    
-    const { data: { publicUrl: portraitImageUrl } } = supabase.storage
-      .from('videos')
-      .getPublicUrl(portraitImagePath);
-    
-    let landscapeImageUrl: string | null = null;
-    if (landscapeImagePath && uploadResults[1] && !uploadResults[1].error) {
-      const { data: { publicUrl } } = supabase.storage
-        .from('videos')
-        .getPublicUrl(landscapeImagePath);
-      landscapeImageUrl = publicUrl;
-    }
-    
-    console.log('Promotional images uploaded:', { portrait: portraitImageUrl, landscape: landscapeImageUrl });
+    // Hero subject = AI cutout if available, otherwise the user's original upload.
+    const heroPortraitUrl = cutoutUrl || finalImageUrl;
+    const heroLandscapeUrl = cutoutUrl || finalImageUrl;
+    const portraitImageUrl = bgPortraitUrl;
+    const landscapeImageUrl = bgLandscapeUrl;
+
+    console.log('Layered assets uploaded:', { bgPortraitUrl, bgLandscapeUrl, heroPortraitUrl });
 
     // ============================================================
     // SHOTSTACK MULTI-SCENE PROMO
@@ -265,45 +236,68 @@ CRITICAL RULES:
       }
     }
 
-    const buildTracks = (imageSrc: string, isPortrait: boolean) => {
+    const buildTracks = (bgSrc: string, heroSrc: string, isPortrait: boolean) => {
       const W = isPortrait ? 1080 : 1920;
       const H = isPortrait ? 1920 : 1080;
 
-      const titleY = isPortrait ? 0.32 : 0.30;
-      const priceY = isPortrait ? -0.08 : -0.05;
-      const badgeY = isPortrait ? -0.34 : -0.32;
+      const titleY = isPortrait ? 0.34 : 0.32;
+      const priceY = isPortrait ? -0.06 : -0.04;
+      const badgeY = isPortrait ? -0.36 : -0.34;
 
-      const titleFontSize = isPortrait ? 92 : 78;
       const priceFontSize = isPortrait ? 180 : 150;
       const badgeFontSize = isPortrait ? 56 : 48;
 
+      // IMPORTANT: in Shotstack, the FIRST track in the array renders ON TOP.
+      // Order: badge -> price -> title -> hero (product) -> dim -> background.
       const tracks: Record<string, unknown>[] = [];
 
-      // BG image with slow Ken Burns
-      tracks.push({
-        clips: [{
-          asset: { type: "image", src: imageSrc },
-          start: 0,
-          length: videoDuration,
-          fit: "cover",
-          effect: "zoomIn",
-          transition: { in: "fade", out: "fade" }
-        }]
-      });
+      // ===== TEXT LAYERS (front) =====
 
-      // Dim gradient overlay so text reads on any background
-      const dimHtml = `<div class="dim"></div>`;
-      const dimCss = `.dim{width:100%;height:100%;background:linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 45%, rgba(0,0,0,0.65) 100%);}`;
-      tracks.push({
-        clips: [{
-          asset: { type: "html", html: dimHtml, css: dimCss, width: W, height: H },
-          start: 0,
-          length: videoDuration,
-          position: "center",
-        }]
-      });
+      // BADGE — pulsing "LIMITED" (front-most)
+      if (showBadge && finalBadgeText) {
+        const badgeHtml = `<p class="b">${escapeHtml(finalBadgeText)}</p>`;
+        const badgeCss = `.b{font-family:'Open Sans',Arial,sans-serif;font-weight:900;font-size:${badgeFontSize}px;color:#FFFFFF;background:#DC2626;letter-spacing:0.1em;padding:18px 40px;border-radius:9999px;display:inline-block;text-align:center;text-transform:uppercase;margin:0;line-height:1;border:4px solid #FFFFFF;box-shadow:0 8px 24px rgba(220,38,38,0.5);}`;
+        const badgeW = 800;
+        const badgeH = 180;
+        const pulseLen = 0.8;
+        let t = badgeStart;
+        let toggle = true;
+        while (t + pulseLen <= videoDuration) {
+          const clip: Record<string, unknown> = {
+            asset: { type: "html", html: badgeHtml, css: badgeCss, width: badgeW, height: badgeH, background: "transparent" },
+            start: t,
+            length: pulseLen,
+            position: "center",
+            offset: { x: 0, y: badgeY },
+            effect: toggle ? "zoomIn" : "zoomOut",
+          };
+          if (t === badgeStart) clip.transition = { in: "zoom" };
+          tracks.push({ clips: [clip] });
+          t += pulseLen;
+          toggle = !toggle;
+        }
+      }
 
-      // TITLE — native title asset (guaranteed to render)
+      // PRICE — big yellow pop badge
+      if (resolvedPrice) {
+        const priceHtml = `<p class="p">${escapeHtml(resolvedPrice)}</p>`;
+        const priceCss = `.p{font-family:'Open Sans',Arial,sans-serif;font-weight:900;font-size:${priceFontSize}px;color:${accentInk};background:${accentColor};letter-spacing:-0.02em;padding:24px 60px;border-radius:24px;display:inline-block;text-align:center;text-transform:uppercase;margin:0;line-height:1;box-shadow:0 12px 40px rgba(0,0,0,0.4);}`;
+        const priceW = isPortrait ? 1000 : 1400;
+        const priceH = isPortrait ? 360 : 320;
+        tracks.push({
+          clips: [{
+            asset: { type: "html", html: priceHtml, css: priceCss, width: priceW, height: priceH, background: "transparent" },
+            start: priceStart,
+            length: Math.max(2, videoDuration - priceStart),
+            position: "center",
+            offset: { x: 0, y: priceY },
+            transition: { in: "zoom", out: "fade" },
+            effect: "zoomInSlow",
+          }]
+        });
+      }
+
+      // TITLE
       if (resolvedTitle) {
         tracks.push({
           clips: [{
@@ -325,49 +319,48 @@ CRITICAL RULES:
         });
       }
 
-      // PRICE — big yellow pop badge using HTML (with css field)
-      if (resolvedPrice) {
-        const priceHtml = `<p class="p">${escapeHtml(resolvedPrice)}</p>`;
-        const priceCss = `.p{font-family:'Open Sans',Arial,sans-serif;font-weight:900;font-size:${priceFontSize}px;color:${accentInk};background:${accentColor};letter-spacing:-0.02em;padding:24px 60px;border-radius:24px;display:inline-block;text-align:center;text-transform:uppercase;margin:0;line-height:1;}`;
-        const priceW = isPortrait ? 1000 : 1400;
-        const priceH = isPortrait ? 360 : 320;
-        tracks.push({
-          clips: [{
-            asset: { type: "html", html: priceHtml, css: priceCss, width: priceW, height: priceH, background: "transparent" },
-            start: priceStart,
-            length: Math.max(2, videoDuration - priceStart),
-            position: "center",
-            offset: { x: 0, y: priceY },
-            transition: { in: "zoom", out: "fade" },
-            effect: "zoomInSlow",
-          }]
-        });
-      }
+      // ===== HERO PRODUCT LAYER (mid) =====
+      // The user's product (cutout if available, else original upload).
+      // Animated separately from the BG for a 2.5D parallax feel.
+      const heroOffsetY = isPortrait ? -0.05 : -0.02;
+      tracks.push({
+        clips: [{
+          asset: { type: "image", src: heroSrc },
+          start: 0,
+          length: videoDuration,
+          fit: "contain",
+          scale: isPortrait ? 0.78 : 0.62,
+          offset: { x: 0, y: heroOffsetY },
+          effect: "zoomInSlow",
+          transition: { in: "slideUp", out: "fade" },
+        }]
+      });
 
-      // BADGE — pulsing "TODAY ONLY"
-      if (showBadge && finalBadgeText) {
-        const badgeHtml = `<p class="b">${escapeHtml(finalBadgeText)}</p>`;
-        const badgeCss = `.b{font-family:'Open Sans',Arial,sans-serif;font-weight:900;font-size:${badgeFontSize}px;color:#FFFFFF;background:#DC2626;letter-spacing:0.1em;padding:18px 40px;border-radius:9999px;display:inline-block;text-align:center;text-transform:uppercase;margin:0;line-height:1;border:4px solid #FFFFFF;}`;
-        const badgeW = isPortrait ? 800 : 800;
-        const badgeH = 180;
-        const pulseLen = 0.8;
-        let t = badgeStart;
-        let toggle = true;
-        while (t + pulseLen <= videoDuration) {
-          const clip: Record<string, unknown> = {
-            asset: { type: "html", html: badgeHtml, css: badgeCss, width: badgeW, height: badgeH, background: "transparent" },
-            start: t,
-            length: pulseLen,
-            position: "center",
-            offset: { x: 0, y: badgeY },
-            effect: toggle ? "zoomIn" : "zoomOut",
-          };
-          if (t === badgeStart) clip.transition = { in: "zoom" };
-          tracks.push({ clips: [clip] });
-          t += pulseLen;
-          toggle = !toggle;
-        }
-      }
+      // ===== BACKGROUND LAYERS (back) =====
+
+      // Dim gradient overlay sits between bg and hero so product stays vivid
+      const dimHtml = `<div class="dim"></div>`;
+      const dimCss = `.dim{width:100%;height:100%;background:linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.10) 45%, rgba(0,0,0,0.55) 100%);}`;
+      tracks.push({
+        clips: [{
+          asset: { type: "html", html: dimHtml, css: dimCss, width: W, height: H },
+          start: 0,
+          length: videoDuration,
+          position: "center",
+        }]
+      });
+
+      // BG — slow Ken Burns at a DIFFERENT pace to the hero (parallax)
+      tracks.push({
+        clips: [{
+          asset: { type: "image", src: bgSrc },
+          start: 0,
+          length: videoDuration,
+          fit: "cover",
+          effect: "zoomOutSlow",
+          transition: { in: "fade", out: "fade" }
+        }]
+      });
 
       return tracks;
     };
@@ -375,7 +368,7 @@ CRITICAL RULES:
     const portraitEdit = {
       timeline: {
         background: "#000000",
-        tracks: buildTracks(portraitImageUrl, true)
+        tracks: buildTracks(portraitImageUrl, heroPortraitUrl, true)
       },
       output: {
         format: "mp4",
@@ -388,7 +381,7 @@ CRITICAL RULES:
     const landscapeEdit = landscapeImageUrl ? {
       timeline: {
         background: "#000000",
-        tracks: buildTracks(landscapeImageUrl, false)
+        tracks: buildTracks(landscapeImageUrl, heroLandscapeUrl, false)
       },
       output: {
         format: "mp4",
