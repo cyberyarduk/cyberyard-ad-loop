@@ -126,7 +126,80 @@ const Videos = () => {
     }
   };
 
-  const handleDelete = async (videoId: string, videoUrl: string) => {
+  const handleImageSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!imageFile) {
+      toast.error("Please select an image");
+      return;
+    }
+    const dur = parseInt(imageDuration, 10);
+    if (!dur || dur < 1 || dur > 600) {
+      toast.error("Display time must be 1–600 seconds");
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("company_id")
+        .eq("id", user.id)
+        .single();
+
+      // Generate portrait + landscape variants on the client so the same image
+      // looks great on a phone (9:16) and a TV (16:9).
+      toast.info("Optimising image for every screen…");
+      const { portraitBlob, landscapeBlob } = await generateOrientedVariants(imageFile);
+
+      const stamp = Date.now();
+      const portraitPath = `${user.id}/${stamp}-portrait.jpg`;
+      const landscapePath = `${user.id}/${stamp}-landscape.jpg`;
+
+      const [pUp, lUp] = await Promise.all([
+        supabase.storage.from("images").upload(portraitPath, portraitBlob, {
+          contentType: "image/jpeg",
+          cacheControl: "31536000",
+        }),
+        supabase.storage.from("images").upload(landscapePath, landscapeBlob, {
+          contentType: "image/jpeg",
+          cacheControl: "31536000",
+        }),
+      ]);
+      if (pUp.error) throw pUp.error;
+      if (lUp.error) throw lUp.error;
+
+      const portraitUrl = supabase.storage.from("images").getPublicUrl(portraitPath).data.publicUrl;
+      const landscapeUrl = supabase.storage.from("images").getPublicUrl(landscapePath).data.publicUrl;
+
+      const { error: insertError } = await supabase.from("videos").insert({
+        title: imageTitle || imageFile.name,
+        user_id: user.id,
+        company_id: profile?.company_id,
+        media_type: "image",
+        image_url: portraitUrl,
+        image_url_landscape: landscapeUrl,
+        video_url: portraitUrl, // legacy field — keeps device fallback simple
+        display_duration: dur,
+        source: "image_upload",
+      });
+      if (insertError) throw insertError;
+
+      toast.success("Image added to your library");
+      setImageOpen(false);
+      setImageTitle("");
+      setImageFile(null);
+      setImageDuration("10");
+      fetchVideos();
+    } catch (err: any) {
+      console.error("Image upload error:", err);
+      toast.error(err.message || "Failed to upload image");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
     if (!confirm("Are you sure you want to delete this video?")) return;
 
     try {
