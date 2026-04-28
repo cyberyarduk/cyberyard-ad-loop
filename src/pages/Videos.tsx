@@ -491,7 +491,12 @@ const Videos = () => {
                         {new Date(video.created_at).toLocaleDateString()}
                       </p>
                     </div>
-                    {video.source === 'ai_generated' ? (
+                    {video.media_type === 'image' ? (
+                      <Badge variant="secondary" className="shrink-0">
+                        <ImageIcon className="h-3 w-3 mr-1" />
+                        Image
+                      </Badge>
+                    ) : video.source === 'ai_generated' ? (
                       <Badge variant="secondary" className="shrink-0">
                         <Sparkles className="h-3 w-3 mr-1" />
                         AI
