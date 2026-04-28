@@ -137,7 +137,10 @@ serve(async (req) => {
           video_url,
           video_url_landscape,
           display_duration,
-          company_id
+          company_id,
+          media_type,
+          image_url,
+          image_url_landscape
         )
       `)
       .eq('playlist_id', playlistId)
@@ -149,20 +152,26 @@ serve(async (req) => {
     }
 
     // Filter videos to only include those from this company and format response
-    // Select appropriate video URL based on device aspect ratio
+    // Select appropriate media URL based on device aspect ratio (landscape vs portrait)
     const videos = (playlistVideos || [])
       .filter(pv => pv.videos && pv.videos.company_id === device.company_id)
       .map(pv => {
-        // Use landscape video if device is landscape and landscape version exists
-        const videoUrl = aspectRatio === 'landscape' && pv.videos.video_url_landscape 
-          ? pv.videos.video_url_landscape 
-          : pv.videos.video_url;
-        
+        const v = pv.videos;
+        const isImage = v.media_type === 'image';
+        const isLandscape = aspectRatio === 'landscape';
+
+        const mediaUrl = isImage
+          ? (isLandscape && v.image_url_landscape ? v.image_url_landscape : v.image_url)
+          : (isLandscape && v.video_url_landscape ? v.video_url_landscape : v.video_url);
+
         return {
-          id: pv.videos.id,
-          title: pv.videos.title,
-          video_url: videoUrl,
-          display_duration: pv.videos.display_duration ?? null,
+          id: v.id,
+          title: v.title,
+          media_type: v.media_type ?? 'video',
+          // Keep `video_url` populated for backward-compatible clients
+          video_url: mediaUrl,
+          image_url: isImage ? mediaUrl : null,
+          display_duration: v.display_duration ?? null,
           order_index: pv.order_index
         };
       });
