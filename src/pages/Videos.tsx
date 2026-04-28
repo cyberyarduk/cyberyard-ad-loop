@@ -178,57 +178,29 @@ const Videos = () => {
       const portraitUrl = supabase.storage.from("images").getPublicUrl(portraitPath).data.publicUrl;
       const landscapeUrl = supabase.storage.from("images").getPublicUrl(landscapePath).data.publicUrl;
 
-      // Two paths:
-      //   (a) No overlays → save as a static image asset
-      //   (b) Overlays on → call generate-video to render a Shotstack video
-      //       that uses this image as-is with animated swiping accents.
-      if (imgAnimatedOverlays) {
-        toast.info("Adding animated overlays — rendering video (1–2 min)…");
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) throw new Error("Not authenticated");
-
-        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-video`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            imageUrl: portraitUrl,
-            imageUrlLandscape: landscapeUrl,
-            mainText: imageTitle || imageFile.name,
-            duration: String(Math.min(Math.max(dur, 5), 30)),
-            style: imgOverlayStyle,
-            animatedOverlays: true,
-            useImageAsIs: true,
-          }),
-        });
-        if (!res.ok) {
-          const t = await res.text();
-          throw new Error(t || "Failed to render animated video");
-        }
-        toast.success("Animated video added to your library");
-      } else {
-        const { error: insertError } = await supabase.from("videos").insert({
-          title: imageTitle || imageFile.name,
-          user_id: user.id,
-          company_id: profile?.company_id,
-          media_type: "image",
-          image_url: portraitUrl,
-          image_url_landscape: landscapeUrl,
-          video_url: portraitUrl, // legacy field — keeps device fallback simple
-          display_duration: dur,
-          source: "image_upload",
-        });
-        if (insertError) throw insertError;
-        toast.success("Image added to your library");
-      }
+      // Static image insert. The chosen `player_overlay` is a live effect
+      // (e.g. golden stars) that the player renders on top of the image —
+      // no Shotstack render, no per-upload cost.
+      const { error: insertError } = await supabase.from("videos").insert({
+        title: imageTitle || imageFile.name,
+        user_id: user.id,
+        company_id: profile?.company_id,
+        media_type: "image",
+        image_url: portraitUrl,
+        image_url_landscape: landscapeUrl,
+        video_url: portraitUrl, // legacy field — keeps device fallback simple
+        display_duration: dur,
+        source: "image_upload",
+        player_overlay: imgPlayerOverlay,
+      } as any);
+      if (insertError) throw insertError;
+      toast.success("Image added to your library");
 
       setImageOpen(false);
       setImageTitle("");
       setImageFile(null);
       setImageDuration("10");
-      setImgAnimatedOverlays(false);
+      setImgPlayerOverlay("none");
       fetchVideos();
     } catch (err: any) {
       console.error("Image upload error:", err);
