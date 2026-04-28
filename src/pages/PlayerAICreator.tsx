@@ -144,6 +144,8 @@ const PlayerAICreator = ({ authToken, deviceInfo, onBack, onComplete }: PlayerAI
             duration: '5',
             style: 'boom',
             deviceToken: authToken,
+            limitedOffer,
+            ...(limitedOffer ? { badgeText: 'TODAY ONLY' } : {}),
             ...(selectedPlaylist && { playlistId: selectedPlaylist })
           })
         }
