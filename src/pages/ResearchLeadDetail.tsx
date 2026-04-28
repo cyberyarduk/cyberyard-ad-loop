@@ -5,9 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Mail, Phone, MapPin, Building2, Trash2, UserPlus } from "lucide-react";
+import { ArrowLeft, Mail, Phone, MapPin, Building2, Trash2, UserPlus, ClipboardCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { LEAD_STATUSES, SURVEY_QUESTIONS, getOptionLabel } from "@/lib/survey";
+import { LEAD_STATUSES, SURVEY_QUESTIONS, POST_TRIAL_QUESTIONS, SURVEY_VERSION, POST_TRIAL_SURVEY_VERSION, getOptionLabel } from "@/lib/survey";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -16,21 +16,23 @@ const ResearchLeadDetail = () => {
   const navigate = useNavigate();
   const [lead, setLead] = useState<any>(null);
   const [response, setResponse] = useState<any>(null);
+  const [postTrial, setPostTrial] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       if (!id) return;
       const { data: l } = await supabase.from("research_leads").select("*").eq("id", id).maybeSingle();
-      const { data: r } = await supabase
+      const { data: rs } = await supabase
         .from("research_responses")
         .select("*")
         .eq("lead_id", id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order("created_at", { ascending: false });
+      const v1 = rs?.find((r: any) => r.survey_version === SURVEY_VERSION) || null;
+      const v2 = rs?.find((r: any) => r.survey_version === POST_TRIAL_SURVEY_VERSION) || null;
       setLead(l);
-      setResponse(r);
+      setResponse(v1);
+      setPostTrial(v2);
       setLoading(false);
     };
     load();
