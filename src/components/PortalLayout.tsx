@@ -2,7 +2,7 @@ import { ReactNode, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { LayoutDashboard, Users, UserPlus, LogOut, Menu, Target, Building2 } from "lucide-react";
+import { LayoutDashboard, Users, UserPlus, LogOut, Menu, Target, Building2, ClipboardList, BarChart3 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/logo.png";
 
@@ -29,6 +29,8 @@ const PortalLayout = ({ children, variant }: PortalLayoutProps) => {
           { path: "/admin/salespeople/new", icon: UserPlus, label: "New Salesperson" },
           { path: "/companies", icon: Building2, label: "All Clients" },
           { path: "/admin/new-client", icon: Target, label: "Create Client" },
+          { path: "/admin/research", icon: ClipboardList, label: "Market Research" },
+          { path: "/admin/research/analytics", icon: BarChart3, label: "Research Analytics" },
         ];
 
   const accent = variant === "sales"

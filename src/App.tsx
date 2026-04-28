@@ -32,6 +32,11 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Salespeople from "./pages/Salespeople";
 import NewSalesperson from "./pages/NewSalesperson";
 import NewClientWizard from "./pages/NewClientWizard";
+import SalespersonDetail from "./pages/SalespersonDetail";
+import ResearchLeads from "./pages/ResearchLeads";
+import NewResearchLead from "./pages/NewResearchLead";
+import ResearchLeadDetail from "./pages/ResearchLeadDetail";
+import ResearchAnalytics from "./pages/ResearchAnalytics";
 import { toast } from "sonner";
 
 const queryClient = new QueryClient();
@@ -124,7 +129,12 @@ const App = () => (
             <Route path="/admin" element={<ProtectedRoute requireSuperAdmin><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/salespeople" element={<ProtectedRoute requireSuperAdmin><Salespeople /></ProtectedRoute>} />
             <Route path="/admin/salespeople/new" element={<ProtectedRoute requireSuperAdmin><NewSalesperson /></ProtectedRoute>} />
+            <Route path="/admin/salespeople/:id" element={<ProtectedRoute requireSuperAdmin><SalespersonDetail /></ProtectedRoute>} />
             <Route path="/admin/new-client" element={<ProtectedRoute requireSuperAdmin><NewClientWizard variant="admin" /></ProtectedRoute>} />
+            <Route path="/admin/research" element={<ProtectedRoute requireSuperAdmin><ResearchLeads /></ProtectedRoute>} />
+            <Route path="/admin/research/new" element={<ProtectedRoute requireSuperAdmin><NewResearchLead /></ProtectedRoute>} />
+            <Route path="/admin/research/analytics" element={<ProtectedRoute requireSuperAdmin><ResearchAnalytics /></ProtectedRoute>} />
+            <Route path="/admin/research/:id" element={<ProtectedRoute requireSuperAdmin><ResearchLeadDetail /></ProtectedRoute>} />
 
             {/* Existing super admin company management */}
             <Route path="/companies" element={<ProtectedRoute requireSuperAdmin><Companies /></ProtectedRoute>} />
