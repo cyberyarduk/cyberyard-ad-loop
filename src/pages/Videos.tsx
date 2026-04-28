@@ -200,6 +200,8 @@ const Videos = () => {
       setUploadingImage(false);
     }
   };
+
+  const handleDelete = async (videoId: string, videoUrl: string) => {
     if (!confirm("Are you sure you want to delete this video?")) return;
 
     try {
