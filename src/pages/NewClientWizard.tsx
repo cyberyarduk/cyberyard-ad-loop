@@ -12,6 +12,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { format, addMonths } from "date-fns";
 import { Check, ArrowRight, ArrowLeft, Monitor, Building2, UserCircle2, Banknote, CheckCircle2, Info } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { BUSINESS_TYPES } from "@/lib/businessTypes";
 
 interface Props {
   variant: "sales" | "admin";
@@ -34,6 +36,7 @@ const NewClientWizard = ({ variant }: Props) => {
   const [data, setData] = useState({
     // Step 1 - Company
     name: "",
+    business_type: "",
     primary_contact_name: "",
     primary_contact_email: "",
     primary_contact_phone: "",
@@ -63,8 +66,8 @@ const NewClientWizard = ({ variant }: Props) => {
 
   const validateStep = (s: number) => {
     if (s === 1) {
-      if (!data.name || !data.primary_contact_name || !data.primary_contact_email || !data.billing_email || !data.address_line1 || !data.city || !data.postcode) {
-        toast.error("Please complete all required fields.");
+      if (!data.name || !data.business_type || !data.primary_contact_name || !data.primary_contact_email || !data.billing_email || !data.address_line1 || !data.city || !data.postcode) {
+        toast.error("Please complete all required fields (including business type).");
         return false;
       }
     }
@@ -101,6 +104,7 @@ const NewClientWizard = ({ variant }: Props) => {
         .insert({
           name: data.name,
           slug,
+          business_type: data.business_type,
           primary_contact_name: data.primary_contact_name,
           primary_contact_email: data.primary_contact_email,
           primary_contact_phone: data.primary_contact_phone || null,
@@ -213,6 +217,15 @@ const NewClientWizard = ({ variant }: Props) => {
             {step === 1 && (
               <>
                 <Field label="Company name *" value={data.name} onChange={(v) => update("name", v)} />
+                <div className="space-y-1.5">
+                  <Label>Business type *</Label>
+                  <Select value={data.business_type} onValueChange={(v) => update("business_type", v)}>
+                    <SelectTrigger><SelectValue placeholder="Select business type…" /></SelectTrigger>
+                    <SelectContent>
+                      {BUSINESS_TYPES.map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <Field label="Primary contact name *" value={data.primary_contact_name} onChange={(v) => update("primary_contact_name", v)} />
                   <Field label="Phone" value={data.primary_contact_phone} onChange={(v) => update("primary_contact_phone", v)} />
