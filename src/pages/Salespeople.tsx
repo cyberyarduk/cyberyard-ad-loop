@@ -61,29 +61,35 @@ const Salespeople = () => {
             ) : (
               <div className="divide-y">
                 {list.map((sp) => (
-                  <div key={sp.id} className="py-4 grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
-                    <div className="sm:col-span-4">
-                      <p className="font-medium">{sp.full_name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        #{sp.employee_number} · {sp.email}
-                      </p>
+                  <Link
+                    key={sp.id}
+                    to={`/admin/salespeople/${sp.id}`}
+                    className="block py-4 px-2 -mx-2 rounded-lg hover:bg-muted/50 transition"
+                  >
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                      <div className="sm:col-span-4">
+                        <p className="font-medium">{sp.full_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          #{sp.employee_number} · {sp.email}
+                        </p>
+                      </div>
+                      <div className="sm:col-span-2 text-sm">{sp.area || "—"}</div>
+                      <div className="sm:col-span-2 text-sm">
+                        <span className="font-medium">{sp.month}</span>
+                        <span className="text-muted-foreground"> / {sp.monthly_target}</span>
+                        <p className="text-xs text-muted-foreground">this month</p>
+                      </div>
+                      <div className="sm:col-span-2 text-sm">
+                        <p className="font-medium">{sp.total}</p>
+                        <p className="text-xs text-muted-foreground">all-time</p>
+                      </div>
+                      <div className="sm:col-span-2 text-right">
+                        <Badge variant={sp.active ? "default" : "secondary"}>
+                          {sp.active ? "Active" : "Inactive"}
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="sm:col-span-2 text-sm">{sp.area || "—"}</div>
-                    <div className="sm:col-span-2 text-sm">
-                      <span className="font-medium">{sp.month}</span>
-                      <span className="text-muted-foreground"> / {sp.monthly_target}</span>
-                      <p className="text-xs text-muted-foreground">this month</p>
-                    </div>
-                    <div className="sm:col-span-2 text-sm">
-                      <p className="font-medium">{sp.total}</p>
-                      <p className="text-xs text-muted-foreground">all-time</p>
-                    </div>
-                    <div className="sm:col-span-2 text-right">
-                      <Badge variant={sp.active ? "default" : "secondary"}>
-                        {sp.active ? "Active" : "Inactive"}
-                      </Badge>
-                    </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}
