@@ -181,8 +181,17 @@ const CreateAIVideo = () => {
       toast.info("Starting video generation. This may take 1-2 minutes...");
 
       const firstPlaylistId = selectedPlaylistIds[0] || null;
-      const { data, error } = await supabase.functions.invoke('generate-video', {
-        body: {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-video`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+          "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({
           imageUrl: publicUrl,
           mainText,
           subtext,
@@ -197,10 +206,12 @@ const CreateAIVideo = () => {
             textPosition,
             themePrompt: themePrompt.trim(),
           },
-        }
+        })
       });
 
-      if (error) throw error;
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data?.error || "Video generation failed");
 
       if (data?.success) {
         const extraPlaylistIds = selectedPlaylistIds.slice(1);
