@@ -21,6 +21,7 @@ export type Database = {
           billing_cycle: string
           billing_email: string
           billing_start_date: string | null
+          business_type: string | null
           city: string
           connectivity_type: Database["public"]["Enums"]["connectivity_type"]
           contract_type: string | null
@@ -53,6 +54,7 @@ export type Database = {
           billing_cycle?: string
           billing_email: string
           billing_start_date?: string | null
+          business_type?: string | null
           city: string
           connectivity_type: Database["public"]["Enums"]["connectivity_type"]
           contract_type?: string | null
@@ -85,6 +87,7 @@ export type Database = {
           billing_cycle?: string
           billing_email?: string
           billing_start_date?: string | null
+          business_type?: string | null
           city?: string
           connectivity_type?: Database["public"]["Enums"]["connectivity_type"]
           contract_type?: string | null
@@ -446,6 +449,92 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      research_leads: {
+        Row: {
+          address: string | null
+          business_name: string
+          business_type: string | null
+          city: string | null
+          contact_name: string | null
+          created_at: string
+          created_by_user_id: string
+          email: string | null
+          id: string
+          is_trial_lead: boolean
+          notes: string | null
+          phone: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          business_name: string
+          business_type?: string | null
+          city?: string | null
+          contact_name?: string | null
+          created_at?: string
+          created_by_user_id: string
+          email?: string | null
+          id?: string
+          is_trial_lead?: boolean
+          notes?: string | null
+          phone?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          business_name?: string
+          business_type?: string | null
+          city?: string | null
+          contact_name?: string | null
+          created_at?: string
+          created_by_user_id?: string
+          email?: string | null
+          id?: string
+          is_trial_lead?: boolean
+          notes?: string | null
+          phone?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      research_responses: {
+        Row: {
+          answers: Json
+          created_at: string
+          id: string
+          lead_id: string
+          submitted_by_user_id: string
+          survey_version: string
+        }
+        Insert: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          lead_id: string
+          submitted_by_user_id: string
+          survey_version?: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          lead_id?: string
+          submitted_by_user_id?: string
+          survey_version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "research_responses_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "research_leads"
             referencedColumns: ["id"]
           },
         ]
