@@ -491,6 +491,26 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_currentForImage?.id, _safeIdxForImage, _isImageItemEffect]);
 
+  // Track fullscreen state changes (Esc key, etc.) — must stay before any
+  // conditional returns so React hook order is stable when media loads.
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handler);
+    return () => document.removeEventListener('fullscreenchange', handler);
+  }, []);
+
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await containerRef.current?.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch (err) {
+      console.error('Fullscreen toggle failed:', err);
+    }
+  };
+
   if (showAdmin) {
     return (
       <PlayerAdminMode
@@ -556,25 +576,6 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const isImageItem = isImageMedia(currentVideo);
   const currentMediaUrl = appendCacheBust(getPlayableUrl(currentVideo), playlistRevision);
 
-
-  // Track fullscreen state changes (Esc key, etc.)
-  useEffect(() => {
-    const handler = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener('fullscreenchange', handler);
-    return () => document.removeEventListener('fullscreenchange', handler);
-  }, []);
-
-  const toggleFullscreen = async () => {
-    try {
-      if (!document.fullscreenElement) {
-        await containerRef.current?.requestFullscreen();
-      } else {
-        await document.exitFullscreen();
-      }
-    } catch (err) {
-      console.error('Fullscreen toggle failed:', err);
-    }
-  };
 
   return (
     <div
@@ -649,8 +650,9 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           <img
             src={currentMediaUrl}
             alt={currentVideo.title}
-            className="absolute inset-0 h-full w-full object-contain opacity-0"
+            className="absolute inset-0 h-full w-full object-contain"
             decoding="async"
+            loading="eager"
             onLoad={() => {
               console.log('[Image] Loaded successfully:', currentMediaUrl);
             }}
