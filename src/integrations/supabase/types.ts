@@ -20,14 +20,17 @@ export type Database = {
           address_line2: string | null
           billing_cycle: string
           billing_email: string
+          billing_start_date: string | null
           city: string
           connectivity_type: Database["public"]["Enums"]["connectivity_type"]
+          contract_type: string | null
           country: string
           created_at: string
           created_by_user_id: string
           device_limit: number | null
           end_date: string
           id: string
+          monthly_price_pence: number | null
           name: string
           notes: string | null
           plan_type: Database["public"]["Enums"]["plan_type"]
@@ -36,6 +39,8 @@ export type Database = {
           primary_contact_email: string
           primary_contact_name: string
           primary_contact_phone: string | null
+          screen_count: number | null
+          signed_up_by_salesperson_id: string | null
           slug: string
           start_date: string
           status: Database["public"]["Enums"]["company_status"]
@@ -47,14 +52,17 @@ export type Database = {
           address_line2?: string | null
           billing_cycle?: string
           billing_email: string
+          billing_start_date?: string | null
           city: string
           connectivity_type: Database["public"]["Enums"]["connectivity_type"]
+          contract_type?: string | null
           country: string
           created_at?: string
           created_by_user_id: string
           device_limit?: number | null
           end_date: string
           id?: string
+          monthly_price_pence?: number | null
           name: string
           notes?: string | null
           plan_type: Database["public"]["Enums"]["plan_type"]
@@ -63,6 +71,8 @@ export type Database = {
           primary_contact_email: string
           primary_contact_name: string
           primary_contact_phone?: string | null
+          screen_count?: number | null
+          signed_up_by_salesperson_id?: string | null
           slug: string
           start_date: string
           status?: Database["public"]["Enums"]["company_status"]
@@ -74,14 +84,17 @@ export type Database = {
           address_line2?: string | null
           billing_cycle?: string
           billing_email?: string
+          billing_start_date?: string | null
           city?: string
           connectivity_type?: Database["public"]["Enums"]["connectivity_type"]
+          contract_type?: string | null
           country?: string
           created_at?: string
           created_by_user_id?: string
           device_limit?: number | null
           end_date?: string
           id?: string
+          monthly_price_pence?: number | null
           name?: string
           notes?: string | null
           plan_type?: Database["public"]["Enums"]["plan_type"]
@@ -90,13 +103,23 @@ export type Database = {
           primary_contact_email?: string
           primary_contact_name?: string
           primary_contact_phone?: string | null
+          screen_count?: number | null
+          signed_up_by_salesperson_id?: string | null
           slug?: string
           start_date?: string
           status?: Database["public"]["Enums"]["company_status"]
           term_months?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "companies_signed_up_by_salesperson_id_fkey"
+            columns: ["signed_up_by_salesperson_id"]
+            isOneToOne: false
+            referencedRelation: "salespeople"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       company_credits: {
         Row: {
@@ -256,6 +279,65 @@ export type Database = {
           },
         ]
       }
+      direct_debit_mandates: {
+        Row: {
+          account_holder_name: string
+          account_number_last4: string
+          bank_name: string | null
+          company_id: string
+          created_at: string
+          created_by_user_id: string | null
+          gocardless_customer_id: string | null
+          gocardless_mandate_id: string | null
+          id: string
+          is_mock: boolean
+          notes: string | null
+          sort_code: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          account_holder_name: string
+          account_number_last4: string
+          bank_name?: string | null
+          company_id: string
+          created_at?: string
+          created_by_user_id?: string | null
+          gocardless_customer_id?: string | null
+          gocardless_mandate_id?: string | null
+          id?: string
+          is_mock?: boolean
+          notes?: string | null
+          sort_code: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          account_holder_name?: string
+          account_number_last4?: string
+          bank_name?: string | null
+          company_id?: string
+          created_at?: string
+          created_by_user_id?: string | null
+          gocardless_customer_id?: string | null
+          gocardless_mandate_id?: string | null
+          id?: string
+          is_mock?: boolean
+          notes?: string | null
+          sort_code?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "direct_debit_mandates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       playlist_videos: {
         Row: {
           created_at: string
@@ -368,6 +450,54 @@ export type Database = {
           },
         ]
       }
+      salespeople: {
+        Row: {
+          active: boolean
+          area: string | null
+          created_at: string
+          email: string
+          employee_number: string
+          full_name: string
+          id: string
+          monthly_target: number
+          notes: string | null
+          phone: string | null
+          start_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          area?: string | null
+          created_at?: string
+          email: string
+          employee_number: string
+          full_name: string
+          id?: string
+          monthly_target?: number
+          notes?: string | null
+          phone?: string | null
+          start_date?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          area?: string | null
+          created_at?: string
+          email?: string
+          employee_number?: string
+          full_name?: string
+          id?: string
+          monthly_target?: number
+          notes?: string | null
+          phone?: string | null
+          start_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       venues: {
         Row: {
           company_id: string | null
@@ -464,6 +594,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      current_salesperson_id: { Args: never; Returns: string }
       deduct_credits: {
         Args: {
           _amount: number
@@ -480,6 +611,7 @@ export type Database = {
         Returns: Database["public"]["Enums"]["user_role"]
       }
       hash_pin: { Args: { pin: string }; Returns: string }
+      is_salesperson: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { user_id: string }; Returns: boolean }
       verify_pin: {
         Args: { hashed_pin: string; pin: string }
@@ -490,7 +622,11 @@ export type Database = {
       company_status: "pending" | "active" | "expired" | "suspended"
       connectivity_type: "wifi" | "cyberyard_anywhere"
       plan_type: "wifi" | "anywhere"
-      user_role: "super_admin" | "company_admin" | "company_user"
+      user_role:
+        | "super_admin"
+        | "company_admin"
+        | "company_user"
+        | "salesperson"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -621,7 +757,12 @@ export const Constants = {
       company_status: ["pending", "active", "expired", "suspended"],
       connectivity_type: ["wifi", "cyberyard_anywhere"],
       plan_type: ["wifi", "anywhere"],
-      user_role: ["super_admin", "company_admin", "company_user"],
+      user_role: [
+        "super_admin",
+        "company_admin",
+        "company_user",
+        "salesperson",
+      ],
     },
   },
 } as const
