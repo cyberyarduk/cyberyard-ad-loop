@@ -635,6 +635,7 @@ export type Database = {
           image_url: string | null
           image_url_landscape: string | null
           media_type: string
+          player_overlay: string | null
           source: string | null
           title: string
           user_id: string
@@ -653,6 +654,7 @@ export type Database = {
           image_url?: string | null
           image_url_landscape?: string | null
           media_type?: string
+          player_overlay?: string | null
           source?: string | null
           title: string
           user_id: string
@@ -671,6 +673,7 @@ export type Database = {
           image_url?: string | null
           image_url_landscape?: string | null
           media_type?: string
+          player_overlay?: string | null
           source?: string | null
           title?: string
           user_id?: string
