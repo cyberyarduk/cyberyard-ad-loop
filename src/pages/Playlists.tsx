@@ -71,6 +71,11 @@ const Playlists = () => {
   const [imageTitle, setImageTitle] = useState("");
   const [imageDuration, setImageDuration] = useState("10");
   const [uploadingImage, setUploadingImage] = useState(false);
+  // Optional animated overlays for uploaded images
+  const [imageAnimatedOverlays, setImageAnimatedOverlays] = useState(false);
+  const [imageOverlayStyle, setImageOverlayStyle] = useState<"boom" | "sparkle" | "stars" | "minimal">("sparkle");
+  const [imageLimitedOffer, setImageLimitedOffer] = useState(false);
+  const [imageBadgeText, setImageBadgeText] = useState("TODAY ONLY");
 
   useEffect(() => {
     checkAuth();
