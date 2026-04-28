@@ -62,7 +62,15 @@ const Dashboard = () => {
       <div className="space-y-10 max-w-5xl">
         <div>
           <h1 className="text-4xl md:text-5xl font-semibold tracking-tight">
-            Welcome back{firstName ? `, ${firstName}` : ""}
+            Welcome back{firstName ? (
+              <>
+                ,{" "}
+                <span className="relative inline-block">
+                  <span className="relative z-10">{firstName}</span>
+                  <span className="absolute inset-x-0 bottom-1 md:bottom-2 h-3 md:h-4 bg-yellow-bright/60 -z-0 rounded-sm" />
+                </span>
+              </>
+            ) : ""}
           </h1>
           <p className="text-muted-foreground mt-3 text-lg">
             What would you like to do today?
