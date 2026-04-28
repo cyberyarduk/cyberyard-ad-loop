@@ -66,6 +66,12 @@ const Playlists = () => {
   const [renameTarget, setRenameTarget] = useState<{ id: string; name: string } | null>(null);
   const [savingRename, setSavingRename] = useState(false);
 
+  // Image upload (within Add Media dialog)
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageTitle, setImageTitle] = useState("");
+  const [imageDuration, setImageDuration] = useState("10");
+  const [uploadingImage, setUploadingImage] = useState(false);
+
   useEffect(() => {
     checkAuth();
   }, []);
