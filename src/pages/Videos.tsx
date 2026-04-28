@@ -48,6 +48,15 @@ const Videos = () => {
   // 'none' = pure menu/poster, 'stars' / 'sparkles' / 'shimmer' = live effect.
   const [imgPlayerOverlay, setImgPlayerOverlay] = useState<"none" | "stars" | "sparkles" | "shimmer">("none");
 
+  // Playlist selector — shared by image upload + AI regenerate flows.
+  // We stash the pending action and re-run it once the user picks a playlist.
+  const [playlistPickerOpen, setPlaylistPickerOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<
+    | { type: "image_upload" }
+    | { type: "regenerate"; video: any }
+    | null
+  >(null);
+
   useEffect(() => {
     fetchVideos();
   }, []);
