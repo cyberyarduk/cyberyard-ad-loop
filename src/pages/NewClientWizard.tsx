@@ -160,6 +160,10 @@ const NewClientWizard = ({ variant }: Props) => {
         });
       }
 
+      if (researchLeadId) {
+        await supabase.from("research_leads").update({ status: "converted" }).eq("id", researchLeadId);
+      }
+
       toast.success(`${data.name} signed up successfully! 🎉`);
       navigate(variant === "sales" ? "/sales" : "/admin");
     } catch (e: any) {
