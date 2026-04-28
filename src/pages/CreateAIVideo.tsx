@@ -97,6 +97,7 @@ const CreateAIVideo = () => {
   const [themePrompt, setThemePrompt] = useState("");
   const [limitedOffer, setLimitedOffer] = useState(false);
   const [badgeText, setBadgeText] = useState("TODAY ONLY");
+  const [animatedOverlays, setAnimatedOverlays] = useState(true);
 
   // Fetch playlists on mount
   useEffect(() => {
@@ -207,6 +208,7 @@ const CreateAIVideo = () => {
           playlistId: firstPlaylistId,
           limitedOffer,
           badgeText: limitedOffer ? badgeText.trim() : undefined,
+          animatedOverlays,
           customization: {
             fontFamily,
             textColor,
