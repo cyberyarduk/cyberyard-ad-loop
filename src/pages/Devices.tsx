@@ -334,12 +334,17 @@ const Devices = () => {
           <div>
             <h1 className="text-3xl font-bold">Devices</h1>
             <p className="text-muted-foreground mt-1">
-              Manage your wearable screen devices
+              Manage your screen devices
+              {deviceLimit !== null && (
+                <span className="ml-2 font-medium">
+                  ({devices.length} of {deviceLimit} used)
+                </span>
+              )}
             </p>
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button disabled={deviceLimit !== null && devices.length >= deviceLimit}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add Device
               </Button>
