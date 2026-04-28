@@ -126,7 +126,7 @@ serve(async (req) => {
     
     // CRITICAL safe-zone instruction shared by every prompt — text MUST stay
     // inside a generous inner margin so nothing gets clipped on the device.
-    const SAFE_ZONE = ` CRITICAL TEXT RULES: All text MUST be fully contained inside the central safe area, with at least 22% padding from EVERY edge of the canvas (top, bottom, left, right). Never let any letter touch or extend past the edges. The complete text "${mainText}"${subtext ? ` and "${subtext}"` : ''} must be 100% visible — no cropping, no clipping, no letters cut in half. AGGRESSIVELY reduce the text size or wrap onto multiple lines if needed to keep every letter well within the safe zone. The first and last letters of every word must have clear breathing room from the canvas edge. Preserve the full uploaded product/photo/menu content inside the frame; do not crop off the bottom, top, sides, product, plate, price, or menu text. Use letterboxing, background blur, smaller layout, or extra margins if needed so the full image remains visible on desktop and mobile. Spell every word exactly as written, no extra characters. The final video must be a LOCKED-OFF STATIC SHOT: no camera movement, no zoom, no pan, no slide, no scrolling text, no transitions inside the video. Keep all text fixed in place for the full duration. Only add small environmental effects around the food/product, such as steam rising from hot food, subtle sparkle glints, soft flashes, or tiny burst accents that do not move or obscure the text.`;
+    const SAFE_ZONE = ` CRITICAL TEXT RULES: All text MUST be fully contained inside the central safe area, with at least 22% padding from EVERY edge of the canvas (top, bottom, left, right). Never let any letter touch or extend past the edges. The complete text "${mainText}"${subtext ? ` and "${subtext}"` : ''} must be 100% visible — no cropping, no clipping, no letters cut in half. AGGRESSIVELY reduce the text size or wrap onto multiple lines if needed to keep every letter well within the safe zone. The first and last letters of every word must have clear breathing room from the canvas edge. Preserve the full uploaded product/photo/menu content inside the frame; do not crop off the bottom, top, sides, product, plate, price, or menu text. Use letterboxing, background blur, smaller layout, or extra margins if needed so the full image remains visible on desktop and mobile. Spell every word exactly as written, no extra characters. Compose the image so the headline text occupies a CLEAR, UNCLUTTERED region with simple low-detail background behind it (so motion overlays added afterwards look clean). Keep the layout balanced and centered.`;
 
     const stylePrompts: Record<string, string> = {
       boom: `Take this product image and transform it into an eye-catching promotional poster in 1080x1920 portrait format. Add bold, explosive text "${mainText}" with vibrant red and pink gradients, dramatic shadows, and energy burst effects. Make it look like a dramatic product advertisement with WOW factor.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`,
@@ -266,50 +266,117 @@ serve(async (req) => {
     
     console.log('Promotional images uploaded:', { portrait: portraitImageUrl, landscape: landscapeImageUrl });
 
-    // Create Shotstack edits for both formats
+    // Create motion-rich Shotstack edits for both formats.
+    // Layers (bottom -> top in Shotstack: LAST track = TOP layer):
+    //   1. AI promo image with subtle Ken Burns zoom (gives the video life)
+    //   2. Twinkling sparkle bursts (multiple short HTML clips, scattered)
+    //   3. Pulsing "Limited Offer" CTA badge (zoomIn / zoomOut chained = pulse)
     const videoDuration = parseFloat(duration);
 
-    // Simple portrait edit - static image only; motion/effects are baked into the AI image prompt.
+    const ctaHtml = `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">
+      <div style="background:#FACC15;color:#111;font-family:'Helvetica Neue',Arial,sans-serif;font-weight:900;font-size:48px;letter-spacing:0.05em;padding:18px 36px;border-radius:9999px;box-shadow:0 10px 40px rgba(0,0,0,0.35);text-transform:uppercase;">Limited Offer</div>
+    </div>`;
+
+    // Single sparkle SVG — transparent background, bright yellow star
+    const sparkleHtml = `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">
+      <svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <defs><radialGradient id="g"><stop offset="0%" stop-color="#fff" stop-opacity="1"/><stop offset="40%" stop-color="#FACC15" stop-opacity="0.9"/><stop offset="100%" stop-color="#FACC15" stop-opacity="0"/></radialGradient></defs>
+        <circle cx="50" cy="50" r="45" fill="url(#g)"/>
+        <path d="M50 10 L55 45 L90 50 L55 55 L50 90 L45 55 L10 50 L45 45 Z" fill="#fff" opacity="0.95"/>
+      </svg>
+    </div>`;
+
+    // Build a constellation of 6 staggered sparkle bursts across the duration.
+    const sparklePositions = [
+      { x: -0.30, y:  0.25, size: 110 },
+      { x:  0.32, y: -0.10, size:  90 },
+      { x: -0.18, y: -0.28, size: 120 },
+      { x:  0.28, y:  0.30, size: 100 },
+      { x:  0.05, y:  0.05, size:  80 },
+      { x: -0.35, y: -0.05, size:  95 },
+    ];
+    const sparkleClips = sparklePositions.map((p, i) => {
+      const start = (videoDuration / sparklePositions.length) * i + 0.2;
+      const length = 1.0;
+      if (start + length > videoDuration) return null;
+      return {
+        asset: { type: "html", html: sparkleHtml, width: p.size, height: p.size },
+        start,
+        length,
+        position: "center",
+        offset: { x: p.x, y: p.y },
+        effect: "zoomIn",
+        transition: { in: "fade", out: "fade" },
+      };
+    }).filter(Boolean);
+
+    const buildTracks = (imageSrc: string, isPortrait: boolean) => {
+      const ctaWidth = isPortrait ? 720 : 600;
+      const ctaHeight = 140;
+      const ctaY = isPortrait ? -0.38 : -0.40; // near top of frame
+
+      // Pulsing CTA: chain zoomIn -> zoomOut clips back-to-back.
+      const ctaClips = [];
+      let t = 0.4;
+      const pulseLen = 1.2;
+      let toggle = true;
+      while (t + pulseLen <= videoDuration) {
+        const clip: Record<string, unknown> = {
+          asset: { type: "html", html: ctaHtml, width: ctaWidth, height: ctaHeight },
+          start: t,
+          length: pulseLen,
+          position: "center",
+          offset: { x: 0, y: ctaY },
+          effect: toggle ? "zoomIn" : "zoomOut",
+        };
+        if (t === 0.4) clip.transition = { in: "zoom" };
+        ctaClips.push(clip);
+        t += pulseLen;
+        toggle = !toggle;
+      }
+
+      return [
+        // Bottom: AI poster image with slow Ken Burns
+        {
+          clips: [{
+            asset: { type: "image", src: imageSrc },
+            start: 0,
+            length: videoDuration,
+            fit: "contain",
+            effect: "zoomIn",
+            transition: { in: "fade" }
+          }]
+        },
+        // Middle: twinkling sparkles
+        { clips: sparkleClips },
+        // Top: pulsing CTA badge
+        { clips: ctaClips },
+      ];
+    };
+
     const portraitEdit = {
       timeline: {
         background: "#000000",
-        tracks: [
-          {
-            clips: [{
-              asset: { type: "image", src: portraitImageUrl },
-              start: 0,
-              length: videoDuration,
-              fit: "contain"
-            }]
-          }
-        ]
+        tracks: buildTracks(portraitImageUrl, true)
       },
       output: {
         format: "mp4",
         aspectRatio: "9:16",
-        size: { width: 1080, height: 1920 }
+        size: { width: 1080, height: 1920 },
+        fps: 30
       }
     };
 
-    // Simple landscape edit - static image only; no slide/zoom/camera movement.
     const landscapeEdit = landscapeImageUrl ? {
       timeline: {
         background: "#000000",
-        tracks: [
-          {
-            clips: [{
-              asset: { type: "image", src: landscapeImageUrl },
-              start: 0,
-              length: videoDuration,
-              fit: "contain"
-            }]
-          }
-        ]
+        tracks: buildTracks(landscapeImageUrl, false)
       },
       output: {
         format: "mp4",
         aspectRatio: "16:9",
-        size: { width: 1920, height: 1080 }
+        size: { width: 1920, height: 1080 },
+        fps: 30
       }
     } : null;
 
