@@ -449,6 +449,21 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
     }
   }, [currentIndex, videos.length]);
 
+  // Image item auto-advance timer (must be before conditional returns).
+  // For image items, advance after `display_duration` seconds (default 10s).
+  const _safeIdxForImage = currentIndex < videos.length ? currentIndex : 0;
+  const _currentForImage = videos[_safeIdxForImage];
+  const _isImageItemEffect = _currentForImage?.media_type === 'image';
+  useEffect(() => {
+    if (!_currentForImage || !_isImageItemEffect) return;
+    const seconds = Math.max(1, Math.min(600, _currentForImage.display_duration ?? 10));
+    const t = setTimeout(() => {
+      handleVideoEnd();
+    }, seconds * 1000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_currentForImage?.id, _safeIdxForImage, _isImageItemEffect]);
+
   if (showAdmin) {
     return (
       <PlayerAdminMode
