@@ -499,7 +499,7 @@ const Videos = () => {
                     ) : video.source === 'ai_generated' ? (
                       <Badge variant="secondary" className="shrink-0">
                         <Sparkles className="h-3 w-3 mr-1" />
-                        AI
+                        Video
                       </Badge>
                     ) : (
                       <Badge variant="outline" className="shrink-0">Upload</Badge>

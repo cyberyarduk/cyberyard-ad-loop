@@ -5,7 +5,7 @@ import PlayerAdminMode from "./PlayerAdminMode";
 import { Capacitor } from '@capacitor/core';
 import { Device } from '@capacitor/device';
 import { Network } from '@capacitor/network';
-import { Loader2, WifiOff } from "lucide-react";
+import { Loader2, WifiOff, Maximize, Minimize } from "lucide-react";
 
 interface Video {
   id: string;
@@ -53,6 +53,9 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const [isPullingToRefresh, setIsPullingToRefresh] = useState(false);
   const [pullStartY, setPullStartY] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const isNative = Capacitor.isNativePlatform();
   const tapTimerRef = useRef<NodeJS.Timeout | null>(null);
   const tapCountRef = useRef(0);
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -554,8 +557,28 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const currentMediaUrl = appendCacheBust(getPlayableUrl(currentVideo), playlistRevision);
 
 
+  // Track fullscreen state changes (Esc key, etc.)
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handler);
+    return () => document.removeEventListener('fullscreenchange', handler);
+  }, []);
+
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await containerRef.current?.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch (err) {
+      console.error('Fullscreen toggle failed:', err);
+    }
+  };
+
   return (
-    <div 
+    <div
+      ref={containerRef}
       className="fixed inset-0 bg-black overflow-hidden"
       onTouchStart={(e) => {
         handleTripleTap(e);
@@ -588,6 +611,22 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           <WifiOff className="h-4 w-4" />
           Offline
         </div>
+      )}
+
+      {/* Fullscreen toggle — desktop browser only */}
+      {!isNative && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleFullscreen();
+          }}
+          className="absolute bottom-4 right-4 z-50 bg-white/15 hover:bg-white/25 text-white rounded-full w-12 h-12 flex items-center justify-center backdrop-blur-sm transition-colors"
+          aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+          title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+        >
+          {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
+        </button>
       )}
       
       {/* Tap counter - only show when actively tapping */}
