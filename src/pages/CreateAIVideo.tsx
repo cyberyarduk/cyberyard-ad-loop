@@ -95,6 +95,8 @@ const CreateAIVideo = () => {
   const [overlayColor, setOverlayColor] = useState("black");
   const [textPosition, setTextPosition] = useState("middle");
   const [themePrompt, setThemePrompt] = useState("");
+  const [limitedOffer, setLimitedOffer] = useState(false);
+  const [badgeText, setBadgeText] = useState("TODAY ONLY");
 
   // Fetch playlists on mount
   useEffect(() => {
