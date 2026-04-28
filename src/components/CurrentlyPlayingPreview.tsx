@@ -33,6 +33,8 @@ interface DeviceInfo {
   video_url: string | null;
   video_title: string | null;
   total_videos: number;
+  media_type: 'video' | 'image' | null;
+  image_url: string | null;
 }
 
 interface PlaylistOption {
