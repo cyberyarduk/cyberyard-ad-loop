@@ -140,7 +140,8 @@ serve(async (req) => {
           company_id,
           media_type,
           image_url,
-          image_url_landscape
+          image_url_landscape,
+          player_overlay
         )
       `)
       .eq('playlist_id', playlistId)
