@@ -82,125 +82,16 @@ serve(async (req) => {
     }
 
     // ============================================================
-    // LAYERED ADVERT APPROACH
-    // 1. Use the user's uploaded image AS-IS as the hero subject (no replacement).
-    // 2. Generate a CUTOUT (transparent PNG, subject only) from the uploaded image
-    //    so we can animate the product on its own layer.
-    // 3. Generate a styled BACKGROUND scene (no product, no text) for depth.
-    // 4. Shotstack composites: BG (slow pan) + product cutout (parallax bounce)
-    //    + animated text. This produces a real 2.5D promo, not just a zoom.
-    // If cutout fails, we fall back to the original uploaded image as the hero.
+    // SIMPLE, RELIABLE APPROACH
+    // The user's uploaded image IS the advert background.
+    // No AI cutout (was producing white-box rectangles).
+    // No AI background replacement (was replacing the actual product).
+    // Shotstack adds: slow Ken Burns motion + dim overlay + animated text.
     // ============================================================
-    console.log('Generating layered advert assets (background + product cutout)...');
+    console.log('Using uploaded image directly as advert background.');
 
-    const themeDesc = customization?.themePrompt && customization.themePrompt.trim().length > 0
-      ? ` Vibe/theme: "${String(customization.themePrompt).slice(0, 200)}".`
-      : '';
-
-    const styleMoodMap: Record<string, string> = {
-      boom: 'high-energy, vibrant, punchy commercial advertising lighting with rich saturated colors',
-      sparkle: 'magical, dreamy, soft glowing studio lighting with bokeh particles',
-      stars: 'glamorous, fashion-magazine, premium product lighting on a luxe backdrop',
-      minimal: 'clean, minimal, editorial backdrop with soft neutral tones and gentle shadows',
-    };
-    const moodDesc = styleMoodMap[style] || styleMoodMap.boom;
-
-    // --- Prompt 1: BACKGROUND ONLY (no product, no text) ---
-    const bgPrompt = (orientation: 'portrait' | 'landscape') => {
-      const dims = orientation === 'portrait' ? '1080x1920 vertical (9:16)' : '1920x1080 horizontal (16:9)';
-      return `Look at this reference product photo to understand the category/colour palette, then create a BEAUTIFUL EMPTY BACKGROUND SCENE in ${dims}. Use ${moodDesc}.${themeDesc}
-
-CRITICAL RULES:
-- The output must be a BACKDROP / SCENE only — DO NOT include the product itself, do NOT include any food, packaging, item, person, or subject.
-- Think: an empty cafe counter, a soft gradient studio backdrop with bokeh, a wooden surface with steam/light rays, a blurred kitchen — context appropriate to the product but EMPTY.
-- ZERO text, words, letters, numbers, prices, badges, stickers, logos.
-- Leave plenty of clean space for animated text overlay.
-- Cinematic, premium, advertising-quality lighting. No clutter.`;
-    };
-
-    // --- Prompt 2: PRODUCT CUTOUT (transparent background) ---
-    const cutoutPrompt = `Isolate ONLY the main product/subject from this image and place it on a PURE WHITE background (#FFFFFF). 
-CRITICAL RULES:
-- Keep the product photo IDENTICAL — same shape, same colours, same details. Do NOT redesign or restyle it.
-- Remove EVERYTHING else: original background, surfaces, hands, props, shadows.
-- Crop tightly around the subject with a small margin.
-- Solid pure white background only — no gradients, no text, no shadows, no badges.
-- Output must be a clean product cutout suitable for compositing.`;
-
-    const aiCall = (prompt: string) => fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'google/gemini-3-pro-image-preview',
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'text', text: prompt },
-            { type: 'image_url', image_url: { url: finalImageUrl } }
-          ]
-        }],
-        modalities: ['image', 'text']
-      })
-    });
-
-    const [bgPortraitRes, bgLandscapeRes, cutoutRes] = await Promise.all([
-      aiCall(bgPrompt('portrait')),
-      aiCall(bgPrompt('landscape')),
-      aiCall(cutoutPrompt),
-    ]);
-
-    const extractImage = async (res: Response, label: string): Promise<string | null> => {
-      if (!res.ok) {
-        console.error(`${label} AI error:`, await res.text().catch(() => ''));
-        return null;
-      }
-      try {
-        const json = await res.json();
-        return json.choices?.[0]?.message?.images?.[0]?.image_url?.url ?? null;
-      } catch {
-        return null;
-      }
-    };
-
-    const [bgPortraitB64, bgLandscapeB64, cutoutB64] = await Promise.all([
-      extractImage(bgPortraitRes, 'BG portrait'),
-      extractImage(bgLandscapeRes, 'BG landscape'),
-      extractImage(cutoutRes, 'Cutout'),
-    ]);
-
-    if (!bgPortraitB64) {
-      throw new Error('Failed to generate background scene');
-    }
-
-    console.log('Layered assets generated:', {
-      bgPortrait: !!bgPortraitB64, bgLandscape: !!bgLandscapeB64, cutout: !!cutoutB64
-    });
-
-    const timestamp = Date.now();
-
-    const uploadPng = async (b64: string, path: string) => {
-      const data = b64.split(',')[1];
-      const bin = Uint8Array.from(atob(data), c => c.charCodeAt(0));
-      const { error } = await supabase.storage.from('videos').upload(path, bin, {
-        contentType: 'image/png', upsert: false, cacheControl: '31536000'
-      });
-      if (error) throw new Error(`Upload failed (${path}): ${error.message}`);
-      return supabase.storage.from('videos').getPublicUrl(path).data.publicUrl;
-    };
-
-    const [bgPortraitUrl, bgLandscapeUrl, cutoutUrl] = await Promise.all([
-      uploadPng(bgPortraitB64, `promo-images/${timestamp}-bg-portrait.png`),
-      bgLandscapeB64 ? uploadPng(bgLandscapeB64, `promo-images/${timestamp}-bg-landscape.png`) : Promise.resolve<string | null>(null),
-      cutoutB64 ? uploadPng(cutoutB64, `promo-images/${timestamp}-cutout.png`) : Promise.resolve<string | null>(null),
-    ]);
-
-    // Hero subject = AI cutout if available, otherwise the user's original upload.
-    const heroPortraitUrl = cutoutUrl || finalImageUrl;
-    const heroLandscapeUrl = cutoutUrl || finalImageUrl;
-    const portraitImageUrl = bgPortraitUrl;
-    const landscapeImageUrl = bgLandscapeUrl;
-
-    console.log('Layered assets uploaded:', { bgPortraitUrl, bgLandscapeUrl, heroPortraitUrl });
+    const portraitImageUrl = finalImageUrl;
+    const landscapeImageUrl = finalImageUrl;
 
     // ============================================================
     // SHOTSTACK MULTI-SCENE PROMO
@@ -209,11 +100,12 @@ CRITICAL RULES:
     // Scene 3 (~45% in): Price pops in (zoom) with accent badge, holds
     // Scene 4 (~70% in, OPTIONAL): Pulsing "TODAY ONLY" badge
     // ============================================================
-    const videoDuration = Math.max(5, Math.min(30, parseFloat(duration) || 8));
+    const videoDuration = Math.max(6, Math.min(30, parseFloat(duration) || 10));
 
-    const titleStart = videoDuration * 0.20;
-    const priceStart = videoDuration * 0.45;
-    const badgeStart = videoDuration * 0.70;
+    // Slower, more deliberate timing — text appears earlier and HOLDS longer.
+    const titleStart = 0.6;
+    const priceStart = videoDuration * 0.30;
+    const badgeStart = videoDuration * 0.55;
 
     const accentColor = '#FACC15';
     const accentInk = '#111111';
@@ -236,30 +128,35 @@ CRITICAL RULES:
       }
     }
 
-    const buildTracks = (bgSrc: string, heroSrc: string, isPortrait: boolean) => {
+    // Auto-shrink title font if the text is long so it always fits on screen.
+    const titleLen = resolvedTitle.length;
+    const titleSizeKey: 'medium' | 'large' | 'x-large' =
+      titleLen > 32 ? 'medium' : titleLen > 18 ? 'large' : 'x-large';
+
+    const buildTracks = (bgSrc: string, isPortrait: boolean) => {
       const W = isPortrait ? 1080 : 1920;
       const H = isPortrait ? 1920 : 1080;
 
-      const titleY = isPortrait ? 0.34 : 0.32;
-      const priceY = isPortrait ? -0.06 : -0.04;
-      const badgeY = isPortrait ? -0.36 : -0.34;
+      // Layout: title TOP, price CENTER-BOTTOM, badge TOP-RIGHT-ish above title.
+      const titleY = isPortrait ? 0.36 : 0.34;
+      const priceY = isPortrait ? -0.30 : -0.30;
+      const badgeY = isPortrait ? 0.44 : 0.42;
 
-      const priceFontSize = isPortrait ? 180 : 150;
-      const badgeFontSize = isPortrait ? 56 : 48;
+      // Smaller, safer font sizes that always fit in the canvas.
+      const priceFontSize = isPortrait ? 140 : 120;
+      const badgeFontSize = isPortrait ? 44 : 40;
 
       // IMPORTANT: in Shotstack, the FIRST track in the array renders ON TOP.
-      // Order: badge -> price -> title -> hero (product) -> dim -> background.
+      // Order: badge -> price -> title -> dim overlay -> background image.
       const tracks: Record<string, unknown>[] = [];
 
-      // ===== TEXT LAYERS (front) =====
-
-      // BADGE — pulsing "LIMITED" (front-most)
+      // BADGE — pulsing limited offer pill
       if (showBadge && finalBadgeText) {
         const badgeHtml = `<p class="b">${escapeHtml(finalBadgeText)}</p>`;
-        const badgeCss = `.b{font-family:'Open Sans',Arial,sans-serif;font-weight:900;font-size:${badgeFontSize}px;color:#FFFFFF;background:#DC2626;letter-spacing:0.1em;padding:18px 40px;border-radius:9999px;display:inline-block;text-align:center;text-transform:uppercase;margin:0;line-height:1;border:4px solid #FFFFFF;box-shadow:0 8px 24px rgba(220,38,38,0.5);}`;
-        const badgeW = 800;
-        const badgeH = 180;
-        const pulseLen = 0.8;
+        const badgeCss = `.b{font-family:'Open Sans',Arial,sans-serif;font-weight:900;font-size:${badgeFontSize}px;color:#FFFFFF;background:#DC2626;letter-spacing:0.08em;padding:14px 32px;border-radius:9999px;display:inline-block;text-align:center;text-transform:uppercase;margin:0;line-height:1;border:3px solid #FFFFFF;box-shadow:0 6px 20px rgba(220,38,38,0.5);}`;
+        const badgeW = 700;
+        const badgeH = 140;
+        const pulseLen = 0.9;
         let t = badgeStart;
         let toggle = true;
         while (t + pulseLen <= videoDuration) {
@@ -278,12 +175,12 @@ CRITICAL RULES:
         }
       }
 
-      // PRICE — big yellow pop badge
+      // PRICE — yellow pop badge, lower portion
       if (resolvedPrice) {
         const priceHtml = `<p class="p">${escapeHtml(resolvedPrice)}</p>`;
-        const priceCss = `.p{font-family:'Open Sans',Arial,sans-serif;font-weight:900;font-size:${priceFontSize}px;color:${accentInk};background:${accentColor};letter-spacing:-0.02em;padding:24px 60px;border-radius:24px;display:inline-block;text-align:center;text-transform:uppercase;margin:0;line-height:1;box-shadow:0 12px 40px rgba(0,0,0,0.4);}`;
-        const priceW = isPortrait ? 1000 : 1400;
-        const priceH = isPortrait ? 360 : 320;
+        const priceCss = `.p{font-family:'Open Sans',Arial,sans-serif;font-weight:900;font-size:${priceFontSize}px;color:${accentInk};background:${accentColor};letter-spacing:-0.02em;padding:20px 48px;border-radius:20px;display:inline-block;text-align:center;text-transform:uppercase;margin:0;line-height:1;box-shadow:0 12px 32px rgba(0,0,0,0.45);white-space:nowrap;}`;
+        const priceW = isPortrait ? 900 : 1200;
+        const priceH = isPortrait ? 280 : 240;
         tracks.push({
           clips: [{
             asset: { type: "html", html: priceHtml, css: priceCss, width: priceW, height: priceH, background: "transparent" },
@@ -297,7 +194,7 @@ CRITICAL RULES:
         });
       }
 
-      // TITLE
+      // TITLE — top of frame
       if (resolvedTitle) {
         tracks.push({
           clips: [{
@@ -306,7 +203,7 @@ CRITICAL RULES:
               text: resolvedTitle,
               style: "future",
               color: titleInk,
-              size: isPortrait ? "x-large" : "large",
+              size: titleSizeKey,
               background: "transparent",
               position: "center",
             },
@@ -314,33 +211,13 @@ CRITICAL RULES:
             length: Math.max(2, videoDuration - titleStart),
             offset: { x: 0, y: titleY },
             transition: { in: "slideUp", out: "fade" },
-            effect: "zoomIn",
           }]
         });
       }
 
-      // ===== HERO PRODUCT LAYER (mid) =====
-      // The user's product (cutout if available, else original upload).
-      // Animated separately from the BG for a 2.5D parallax feel.
-      const heroOffsetY = isPortrait ? -0.05 : -0.02;
-      tracks.push({
-        clips: [{
-          asset: { type: "image", src: heroSrc },
-          start: 0,
-          length: videoDuration,
-          fit: "contain",
-          scale: isPortrait ? 0.78 : 0.62,
-          offset: { x: 0, y: heroOffsetY },
-          effect: "zoomInSlow",
-          transition: { in: "slideUp", out: "fade" },
-        }]
-      });
-
-      // ===== BACKGROUND LAYERS (back) =====
-
-      // Dim gradient overlay sits between bg and hero so product stays vivid
+      // Dim gradient overlay — stronger at top + bottom so text always reads.
       const dimHtml = `<div class="dim"></div>`;
-      const dimCss = `.dim{width:100%;height:100%;background:linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.10) 45%, rgba(0,0,0,0.55) 100%);}`;
+      const dimCss = `.dim{width:100%;height:100%;background:linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.10) 35%, rgba(0,0,0,0.10) 65%, rgba(0,0,0,0.65) 100%);}`;
       tracks.push({
         clips: [{
           asset: { type: "html", html: dimHtml, css: dimCss, width: W, height: H },
@@ -350,14 +227,14 @@ CRITICAL RULES:
         }]
       });
 
-      // BG — slow Ken Burns at a DIFFERENT pace to the hero (parallax)
+      // BACKGROUND — the user's uploaded image with slow Ken Burns
       tracks.push({
         clips: [{
           asset: { type: "image", src: bgSrc },
           start: 0,
           length: videoDuration,
           fit: "cover",
-          effect: "zoomOutSlow",
+          effect: "zoomInSlow",
           transition: { in: "fade", out: "fade" }
         }]
       });
@@ -368,7 +245,7 @@ CRITICAL RULES:
     const portraitEdit = {
       timeline: {
         background: "#000000",
-        tracks: buildTracks(portraitImageUrl, heroPortraitUrl, true)
+        tracks: buildTracks(portraitImageUrl, true)
       },
       output: {
         format: "mp4",
@@ -381,7 +258,7 @@ CRITICAL RULES:
     const landscapeEdit = landscapeImageUrl ? {
       timeline: {
         background: "#000000",
-        tracks: buildTracks(landscapeImageUrl, heroLandscapeUrl, false)
+        tracks: buildTracks(landscapeImageUrl, false)
       },
       output: {
         format: "mp4",
