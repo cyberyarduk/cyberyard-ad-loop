@@ -316,6 +316,102 @@ const Playlists = () => {
     }
   };
 
+  const handleUploadImageToPlaylist = async () => {
+    if (!imageFile || !selectedPlaylist) {
+      toast.error("Please select an image");
+      return;
+    }
+    const dur = parseInt(imageDuration, 10);
+    if (!dur || dur < 1 || dur > 600) {
+      toast.error("Display time must be 1–600 seconds");
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("company_id")
+        .eq("id", user.id)
+        .single();
+
+      toast.info("Optimising image for every screen…");
+      const { portraitBlob, landscapeBlob } = await generateOrientedVariants(imageFile);
+      const stamp = Date.now();
+      const portraitPath = `${user.id}/${stamp}-portrait.jpg`;
+      const landscapePath = `${user.id}/${stamp}-landscape.jpg`;
+
+      const [pUp, lUp] = await Promise.all([
+        supabase.storage.from("images").upload(portraitPath, portraitBlob, {
+          contentType: "image/jpeg",
+          cacheControl: "31536000",
+        }),
+        supabase.storage.from("images").upload(landscapePath, landscapeBlob, {
+          contentType: "image/jpeg",
+          cacheControl: "31536000",
+        }),
+      ]);
+      if (pUp.error) throw pUp.error;
+      if (lUp.error) throw lUp.error;
+
+      const portraitUrl = supabase.storage.from("images").getPublicUrl(portraitPath).data.publicUrl;
+      const landscapeUrl = supabase.storage.from("images").getPublicUrl(landscapePath).data.publicUrl;
+
+      const { data: newRow, error: insertError } = await supabase
+        .from("videos")
+        .insert({
+          title: imageTitle || imageFile.name,
+          user_id: user.id,
+          company_id: profile?.company_id,
+          media_type: "image",
+          image_url: portraitUrl,
+          image_url_landscape: landscapeUrl,
+          video_url: portraitUrl,
+          display_duration: dur,
+          source: "image_upload",
+        })
+        .select()
+        .single();
+      if (insertError) throw insertError;
+
+      const { data: existingVideos } = await supabase
+        .from("playlist_videos")
+        .select("order_index")
+        .eq("playlist_id", selectedPlaylist)
+        .order("order_index", { ascending: false })
+        .limit(1);
+      const orderIndex = existingVideos && existingVideos.length > 0
+        ? existingVideos[0].order_index + 1
+        : 0;
+
+      const { error: linkError } = await supabase
+        .from("playlist_videos")
+        .insert({
+          playlist_id: selectedPlaylist,
+          video_id: newRow.id,
+          order_index: orderIndex,
+        });
+      if (linkError) throw linkError;
+
+      toast.success("Image added to playlist");
+      setImageFile(null);
+      setImageTitle("");
+      setImageDuration("10");
+      setAddVideosOpen(false);
+      setSelectedPlaylist(null);
+      fetchPlaylists();
+      fetchVideos();
+    } catch (err: any) {
+      console.error("Image upload error:", err);
+      toast.error(err.message || "Failed to upload image");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const fetchDevices = async () => {
     const { data, error } = await supabase
       .from("devices")
