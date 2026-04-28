@@ -4,9 +4,10 @@ import PortalLayout from "@/components/PortalLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Building2, MapPin, Calendar, PoundSterling } from "lucide-react";
+import { ArrowLeft, Building2, MapPin, Calendar, PoundSterling, Ban, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 const SalespersonDetail = () => {
   const { id } = useParams();
@@ -43,6 +44,16 @@ const SalespersonDetail = () => {
     byType[k] = (byType[k] || 0) + 1;
   }
 
+  const toggleActive = async () => {
+    if (!sp) return;
+    const next = !sp.active;
+    if (!confirm(next ? `Reactivate ${sp.full_name}? They will be able to log in again.` : `Suspend ${sp.full_name}? They will be blocked from logging in. Their data and signups will be preserved.`)) return;
+    const { error } = await supabase.from("salespeople").update({ active: next }).eq("id", sp.id);
+    if (error) { toast.error(error.message); return; }
+    setSp({ ...sp, active: next });
+    toast.success(next ? "Salesperson reactivated" : "Salesperson suspended");
+  };
+
   return (
     <PortalLayout variant="admin">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -50,14 +61,26 @@ const SalespersonDetail = () => {
           <Button variant="ghost" size="icon" onClick={() => navigate("/admin/salespeople")}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">{sp?.full_name || "Loading…"}</h1>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-3xl font-bold tracking-tight">{sp?.full_name || "Loading…"}</h1>
+              {sp && !sp.active && <Badge variant="destructive">Suspended</Badge>}
+            </div>
             {sp && (
               <p className="text-muted-foreground mt-1">
                 #{sp.employee_number} · {sp.email} · {sp.area || "No area"}
               </p>
             )}
           </div>
+          {sp && (
+            <Button
+              variant={sp.active ? "outline" : "default"}
+              onClick={toggleActive}
+              className={sp.active ? "text-destructive hover:text-destructive" : ""}
+            >
+              {sp.active ? <><Ban className="mr-2 h-4 w-4" /> Suspend</> : <><CheckCircle2 className="mr-2 h-4 w-4" /> Reactivate</>}
+            </Button>
+          )}
         </div>
 
         <div className="grid sm:grid-cols-4 gap-4">
