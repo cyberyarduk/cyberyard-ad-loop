@@ -683,9 +683,9 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
 };
 
 // ---------------------------------------------------------------------------
-// SparkleOverlay — small attention-grabbing sparkles + occasional flash burst
-// rendered above the playing media. Pure CSS animation so it costs nothing.
-// pointer-events-none so the 4-tap admin gesture still works underneath.
+// SparkleOverlay — small attention-grabbing sparkles rendered above the
+// playing media. Pure CSS animation so it costs nothing. pointer-events-none
+// so the 4-tap admin gesture still works underneath.
 // ---------------------------------------------------------------------------
 const SparkleOverlay = () => {
   // Fixed deterministic positions so render is stable across frames.
@@ -707,27 +707,12 @@ const SparkleOverlay = () => {
           0%, 100% { opacity: 0.2; transform: scale(0.55) rotate(0deg); }
           50%      { opacity: 1; transform: scale(1.18) rotate(180deg); }
         }
-        @keyframes flashBurst {
-          0%, 84%, 100% { opacity: 0; }
-          87%           { opacity: 0.72; }
-          90%           { opacity: 0; }
-        }
         .cy-sparkle {
           position: absolute;
           color: hsl(50 100% 84%);
           filter: drop-shadow(0 0 10px hsl(50 100% 84% / 0.95)) drop-shadow(0 0 22px hsl(42 100% 56% / 0.7));
           animation: sparkleTwinkle 2.8s ease-in-out infinite;
           will-change: transform, opacity;
-        }
-        .cy-flash {
-          position: absolute;
-          inset: 0;
-          background: radial-gradient(circle at center,
-            hsl(0 0% 100% / 0.95) 0%,
-            hsl(50 100% 85% / 0.48) 28%,
-            hsl(0 0% 100% / 0) 66%);
-          animation: flashBurst 7s ease-in-out infinite;
-          mix-blend-mode: screen;
         }
       `}</style>
       {sparkles.map((s, i) => (
@@ -749,7 +734,6 @@ const SparkleOverlay = () => {
           <path d="M12 0 L13.5 9 L22 12 L13.5 15 L12 24 L10.5 15 L2 12 L10.5 9 Z" />
         </svg>
       ))}
-      <div className="cy-flash" />
     </div>
   );
 };
