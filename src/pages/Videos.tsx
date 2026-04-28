@@ -15,7 +15,8 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Video, Trash2, Sparkles, RefreshCw, Clock, Play } from "lucide-react";
+import { Plus, Video, Trash2, Sparkles, RefreshCw, Clock, Play, Image as ImageIcon } from "lucide-react";
+import { generateOrientedVariants } from "@/lib/imageOrient";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
@@ -34,6 +35,13 @@ const Videos = () => {
   const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [videoFile, setVideoFile] = useState<File | null>(null);
+
+  // Image upload state
+  const [imageOpen, setImageOpen] = useState(false);
+  const [imageTitle, setImageTitle] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageDuration, setImageDuration] = useState<string>("10");
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     fetchVideos();
@@ -115,6 +123,81 @@ const Videos = () => {
       toast.error(error.message || "Failed to upload video");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleImageSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!imageFile) {
+      toast.error("Please select an image");
+      return;
+    }
+    const dur = parseInt(imageDuration, 10);
+    if (!dur || dur < 1 || dur > 600) {
+      toast.error("Display time must be 1–600 seconds");
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("company_id")
+        .eq("id", user.id)
+        .single();
+
+      // Generate portrait + landscape variants on the client so the same image
+      // looks great on a phone (9:16) and a TV (16:9).
+      toast.info("Optimising image for every screen…");
+      const { portraitBlob, landscapeBlob } = await generateOrientedVariants(imageFile);
+
+      const stamp = Date.now();
+      const portraitPath = `${user.id}/${stamp}-portrait.jpg`;
+      const landscapePath = `${user.id}/${stamp}-landscape.jpg`;
+
+      const [pUp, lUp] = await Promise.all([
+        supabase.storage.from("images").upload(portraitPath, portraitBlob, {
+          contentType: "image/jpeg",
+          cacheControl: "31536000",
+        }),
+        supabase.storage.from("images").upload(landscapePath, landscapeBlob, {
+          contentType: "image/jpeg",
+          cacheControl: "31536000",
+        }),
+      ]);
+      if (pUp.error) throw pUp.error;
+      if (lUp.error) throw lUp.error;
+
+      const portraitUrl = supabase.storage.from("images").getPublicUrl(portraitPath).data.publicUrl;
+      const landscapeUrl = supabase.storage.from("images").getPublicUrl(landscapePath).data.publicUrl;
+
+      const { error: insertError } = await supabase.from("videos").insert({
+        title: imageTitle || imageFile.name,
+        user_id: user.id,
+        company_id: profile?.company_id,
+        media_type: "image",
+        image_url: portraitUrl,
+        image_url_landscape: landscapeUrl,
+        video_url: portraitUrl, // legacy field — keeps device fallback simple
+        display_duration: dur,
+        source: "image_upload",
+      });
+      if (insertError) throw insertError;
+
+      toast.success("Image added to your library");
+      setImageOpen(false);
+      setImageTitle("");
+      setImageFile(null);
+      setImageDuration("10");
+      fetchVideos();
+    } catch (err: any) {
+      console.error("Image upload error:", err);
+      toast.error(err.message || "Failed to upload image");
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -232,6 +315,62 @@ const Videos = () => {
                 Create Offer Video
               </Button>
             </Link>
+            <Dialog open={imageOpen} onOpenChange={setImageOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <ImageIcon className="mr-2 h-4 w-4" />
+                  Upload Image
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Upload an image</DialogTitle>
+                  <DialogDescription>
+                    Add a menu, promo or any picture. We'll auto-resize it for
+                    every screen — phones play it portrait, TVs play it landscape.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleImageSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="img-title">Title</Label>
+                    <Input
+                      id="img-title"
+                      placeholder="Lunch menu"
+                      value={imageTitle}
+                      onChange={(e) => setImageTitle(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="img-file">Image (JPG or PNG)</Label>
+                    <Input
+                      id="img-file"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="img-duration">Display time (seconds)</Label>
+                    <Input
+                      id="img-duration"
+                      type="number"
+                      min={1}
+                      max={600}
+                      value={imageDuration}
+                      onChange={(e) => setImageDuration(e.target.value)}
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      How long the image stays on screen before the next item plays.
+                    </p>
+                  </div>
+                  <Button type="submit" className="w-full" disabled={uploadingImage}>
+                    {uploadingImage ? "Uploading…" : "Upload Image"}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
                 <Button>
@@ -318,20 +457,28 @@ const Videos = () => {
                   className="block w-full aspect-[9/16] bg-muted relative group"
                   aria-label={`Preview ${video.title}`}
                 >
-                  <video
-                    src={video.video_url}
-                    muted
-                    loop
-                    playsInline
-                    preload="metadata"
-                    className="w-full h-full object-cover"
-                    onMouseEnter={(e) => (e.currentTarget as HTMLVideoElement).play().catch(() => {})}
-                    onMouseLeave={(e) => {
-                      const v = e.currentTarget as HTMLVideoElement;
-                      v.pause();
-                      v.currentTime = 0;
-                    }}
-                  />
+                  {video.media_type === 'image' ? (
+                    <img
+                      src={video.image_url || video.video_url}
+                      alt={video.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <video
+                      src={video.video_url}
+                      muted
+                      loop
+                      playsInline
+                      preload="metadata"
+                      className="w-full h-full object-cover"
+                      onMouseEnter={(e) => (e.currentTarget as HTMLVideoElement).play().catch(() => {})}
+                      onMouseLeave={(e) => {
+                        const v = e.currentTarget as HTMLVideoElement;
+                        v.pause();
+                        v.currentTime = 0;
+                      }}
+                    />
+                  )}
                   <div className="absolute inset-0 flex items-center justify-center bg-background/30 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Play className="h-10 w-10 text-foreground" />
                   </div>
@@ -344,7 +491,12 @@ const Videos = () => {
                         {new Date(video.created_at).toLocaleDateString()}
                       </p>
                     </div>
-                    {video.source === 'ai_generated' ? (
+                    {video.media_type === 'image' ? (
+                      <Badge variant="secondary" className="shrink-0">
+                        <ImageIcon className="h-3 w-3 mr-1" />
+                        Image
+                      </Badge>
+                    ) : video.source === 'ai_generated' ? (
                       <Badge variant="secondary" className="shrink-0">
                         <Sparkles className="h-3 w-3 mr-1" />
                         AI
@@ -361,7 +513,11 @@ const Videos = () => {
                   >
                     <Clock className="h-3.5 w-3.5" />
                     <span className="flex-1 text-left">
-                      {video.display_duration ? `Plays for ${video.display_duration}s` : "Use video length"}
+                      {video.display_duration
+                        ? `Plays for ${video.display_duration}s`
+                        : video.media_type === 'image'
+                          ? 'Set display time'
+                          : 'Use video length'}
                     </span>
                     <span className="text-primary font-medium">Edit</span>
                   </button>
@@ -403,14 +559,22 @@ const Videos = () => {
             </DialogHeader>
             {previewVideo && (
               <div className="aspect-[9/16] bg-muted">
-                <video
-                  src={previewVideo.video_url}
-                  controls
-                  autoPlay
-                  loop
-                  playsInline
-                  className="w-full h-full object-contain bg-background"
-                />
+                {previewVideo.media_type === 'image' ? (
+                  <img
+                    src={previewVideo.image_url || previewVideo.video_url}
+                    alt={previewVideo.title}
+                    className="w-full h-full object-contain bg-background"
+                  />
+                ) : (
+                  <video
+                    src={previewVideo.video_url}
+                    controls
+                    autoPlay
+                    loop
+                    playsInline
+                    className="w-full h-full object-contain bg-background"
+                  />
+                )}
               </div>
             )}
           </DialogContent>

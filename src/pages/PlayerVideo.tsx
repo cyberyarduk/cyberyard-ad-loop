@@ -12,6 +12,9 @@ interface Video {
   title: string;
   video_url: string;
   order_index: number;
+  media_type?: 'video' | 'image';
+  image_url?: string | null;
+  display_duration?: number | null;
 }
 
 interface PlayerVideoProps {
@@ -508,6 +511,18 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   // Safety check: compute safe index without setting state during render
   const safeIndex = currentIndex < videos.length ? currentIndex : 0;
   const currentVideo = videos[safeIndex];
+  const isImageItem = currentVideo?.media_type === 'image';
+
+  // For image items, advance after `display_duration` seconds (default 10s).
+  useEffect(() => {
+    if (!currentVideo || !isImageItem) return;
+    const seconds = Math.max(1, Math.min(600, currentVideo.display_duration ?? 10));
+    const t = setTimeout(() => {
+      handleVideoEnd();
+    }, seconds * 1000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentVideo?.id, safeIndex, isImageItem]);
 
   return (
     <div 
@@ -542,7 +557,20 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
         </div>
       )}
       
-      {currentVideo && (
+      {currentVideo && isImageItem && (
+        <img
+          key={`${currentVideo.id}-${safeIndex}`}
+          src={currentVideo.image_url || currentVideo.video_url}
+          alt={currentVideo.title}
+          className="w-full h-full object-contain"
+          onError={() => {
+            console.error('Image load error:', currentVideo.image_url || currentVideo.video_url);
+            if (videos.length > 1) handleVideoEnd();
+          }}
+        />
+      )}
+
+      {currentVideo && !isImageItem && (
         <video
           ref={videoRef}
           key={`${currentVideo.id}-${safeIndex}`}

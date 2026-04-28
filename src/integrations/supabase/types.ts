@@ -632,10 +632,13 @@ export type Database = {
           created_at: string
           display_duration: number | null
           id: string
+          image_url: string | null
+          image_url_landscape: string | null
+          media_type: string
           source: string | null
           title: string
           user_id: string
-          video_url: string
+          video_url: string | null
           video_url_landscape: string | null
         }
         Insert: {
@@ -647,10 +650,13 @@ export type Database = {
           created_at?: string
           display_duration?: number | null
           id?: string
+          image_url?: string | null
+          image_url_landscape?: string | null
+          media_type?: string
           source?: string | null
           title: string
           user_id: string
-          video_url: string
+          video_url?: string | null
           video_url_landscape?: string | null
         }
         Update: {
@@ -662,10 +668,13 @@ export type Database = {
           created_at?: string
           display_duration?: number | null
           id?: string
+          image_url?: string | null
+          image_url_landscape?: string | null
+          media_type?: string
           source?: string | null
           title?: string
           user_id?: string
-          video_url?: string
+          video_url?: string | null
           video_url_landscape?: string | null
         }
         Relationships: [
