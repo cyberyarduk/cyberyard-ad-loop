@@ -15,7 +15,8 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Video, Trash2, Sparkles, RefreshCw, Clock, Play } from "lucide-react";
+import { Plus, Video, Trash2, Sparkles, RefreshCw, Clock, Play, Image as ImageIcon } from "lucide-react";
+import { generateOrientedVariants } from "@/lib/imageOrient";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
@@ -34,6 +35,13 @@ const Videos = () => {
   const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [videoFile, setVideoFile] = useState<File | null>(null);
+
+  // Image upload state
+  const [imageOpen, setImageOpen] = useState(false);
+  const [imageTitle, setImageTitle] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageDuration, setImageDuration] = useState<string>("10");
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     fetchVideos();
