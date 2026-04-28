@@ -21,13 +21,14 @@ const STYLE_PRESETS = [
   { value: "minimal", label: "🎯 Minimal", description: "Clean & professional" },
 ];
 
+// Each font has a CSS family stack so the picker shows what it'll actually look like
 const FONT_OPTIONS = [
-  { value: "bold-sans", label: "Bold Sans", description: "Strong, modern, attention-grabbing" },
-  { value: "elegant-serif", label: "Elegant Serif", description: "Classic, refined, premium feel" },
-  { value: "handwritten", label: "Handwritten Script", description: "Friendly, casual, personal" },
-  { value: "modern-display", label: "Modern Display", description: "Geometric, futuristic" },
-  { value: "rounded", label: "Rounded Soft", description: "Playful, approachable" },
-  { value: "condensed", label: "Condensed Block", description: "Tall, dense, impactful" },
+  { value: "bold-sans", label: "Bold Sans", description: "Strong, modern, attention-grabbing", css: "'Impact', 'Arial Black', system-ui, sans-serif", weight: 900 },
+  { value: "elegant-serif", label: "Elegant Serif", description: "Classic, refined, premium feel", css: "'Playfair Display', 'Didot', Georgia, serif", weight: 700 },
+  { value: "handwritten", label: "Handwritten Script", description: "Friendly, casual, personal", css: "'Brush Script MT', 'Lucida Handwriting', cursive", weight: 400 },
+  { value: "modern-display", label: "Modern Display", description: "Geometric, futuristic", css: "'Futura', 'Century Gothic', 'Trebuchet MS', sans-serif", weight: 700 },
+  { value: "rounded", label: "Rounded Soft", description: "Playful, approachable", css: "'Quicksand', 'Nunito', 'Comic Sans MS', sans-serif", weight: 700 },
+  { value: "condensed", label: "Condensed Block", description: "Tall, dense, impactful", css: "'Oswald', 'Bebas Neue', 'Arial Narrow', sans-serif", weight: 800 },
 ];
 
 const TEXT_COLOR_OPTIONS = [
@@ -60,9 +61,11 @@ const OVERLAY_COLOR_OPTIONS = [
 ];
 
 const POSITION_OPTIONS = [
-  { value: "top", label: "Top" },
-  { value: "middle", label: "Middle" },
-  { value: "bottom", label: "Bottom" },
+  { value: "top", label: "Top", description: "Above the subject" },
+  { value: "middle", label: "Middle", description: "Centered" },
+  { value: "bottom", label: "Bottom", description: "Below the subject" },
+  { value: "infront", label: "In Front", description: "Overlapping the subject" },
+  { value: "behind", label: "Behind", description: "Behind the subject" },
 ];
 
 const CreateAIVideo = () => {
