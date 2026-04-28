@@ -360,6 +360,44 @@ serve(async (req) => {
       throw new Error('Portrait video generation timed out');
     }
 
+    // ============================================================
+    // PERSIST VIDEOS — Shotstack sandbox URLs expire (typically 24h),
+    // so download the rendered MP4s and re-upload to our Supabase
+    // storage bucket so they remain playable forever.
+    // ============================================================
+    const persistVideo = async (sourceUrl: string, label: string): Promise<string> => {
+      try {
+        console.log(`Downloading ${label} from Shotstack...`);
+        const res = await fetch(sourceUrl);
+        if (!res.ok) {
+          console.error(`${label} download failed: ${res.status}`);
+          return sourceUrl; // fall back to Shotstack URL
+        }
+        const buf = new Uint8Array(await res.arrayBuffer());
+        const path = `ai-renders/${Date.now()}-${crypto.randomUUID()}-${label}.mp4`;
+        const { error } = await supabase.storage.from('videos').upload(path, buf, {
+          contentType: 'video/mp4',
+          upsert: false,
+          cacheControl: '31536000',
+        });
+        if (error) {
+          console.error(`${label} upload failed:`, error.message);
+          return sourceUrl;
+        }
+        const publicUrl = supabase.storage.from('videos').getPublicUrl(path).data.publicUrl;
+        console.log(`${label} persisted to:`, publicUrl);
+        return publicUrl;
+      } catch (e) {
+        console.error(`${label} persist error:`, e);
+        return sourceUrl;
+      }
+    };
+
+    videoUrl = await persistVideo(videoUrl, 'portrait');
+    if (videoUrlLandscape) {
+      videoUrlLandscape = await persistVideo(videoUrlLandscape, 'landscape');
+    }
+
     // Save video to database
     let userId: string;
     let companyId: string | null = null;
