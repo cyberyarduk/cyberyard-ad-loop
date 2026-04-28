@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,62 +15,65 @@ import {
   Monitor,
   Zap,
   Smartphone,
+  Tablet,
+  Laptop,
+  Tv,
   Clock,
   Sparkles,
   Eye,
   TrendingUp,
   Check,
   Play,
-  Battery,
   Wifi,
+  Cloud,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 import Reveal from "@/components/premium/Reveal";
 
 const stats = [
-  { value: "92%", label: "Of shoppers notice wearable displays" },
-  { value: "3×", label: "More views than static signage" },
-  { value: "<2s", label: "To push promos to every device" },
-  { value: "0", label: "Training required to use" },
+  { value: "100%", label: "Browser-based — no apps to install" },
+  { value: "3×", label: "More attention than static signage" },
+  { value: "<2s", label: "To push promos to every screen" },
+  { value: "Any", label: "Screen — TV, tablet, phone or laptop" },
 ];
 
 const features = [
   {
-    icon: Monitor,
-    title: "Wearable displays",
-    desc: "Turn staff movement into marketing impact. Every step a touchpoint.",
+    icon: Cloud,
+    title: "Works on any screen",
+    desc: "TVs, tablets, phones, laptops — if it has a screen and internet, it runs Cyberyard.",
     tone: "yellow",
   },
   {
     icon: Clock,
     title: "Instant content updates",
-    desc: "Push new promotions to every device in seconds. No printing, no delays.",
+    desc: "Push new promotions to every screen in seconds. No printing, no waiting, no fuss.",
     tone: "lavender",
   },
   {
     icon: Zap,
     title: "AI-powered creation",
-    desc: "Snap a photo, generate an offer video instantly — right on the shop floor.",
+    desc: "Snap a photo, type an offer, get a polished promo video in seconds.",
     tone: "peach",
   },
   {
     icon: Smartphone,
-    title: "Smart dashboard",
-    desc: "Monitor devices, batteries, playlists and content. Full control.",
+    title: "One simple dashboard",
+    desc: "Manage screens, playlists and content from anywhere — phone or desktop.",
     tone: "mint",
   },
 ] as const;
 
 const useCases = [
-  { icon: Coffee, title: "Cafés & Bakeries", body: "Promote fresh pastries, lunch deals or end-of-day reductions.", tone: "peach" },
-  { icon: ShoppingBag, title: "Retail Stores", body: "Highlight offers, new arrivals or flash sales as staff move through the store.", tone: "lavender" },
-  { icon: Dumbbell, title: "Gyms & Leisure", body: "Upsell memberships, classes and supplements.", tone: "mint" },
-  { icon: Car, title: "Car Dealerships", body: "Show finance deals, service plans and promotions on the showroom floor.", tone: "sky" },
-  { icon: Wine, title: "Bars & Restaurants", body: "Promote cocktails, happy hour and specials.", tone: "yellow" },
-  { icon: Calendar, title: "Events & Conferences", body: "Display schedules, sponsors and announcements on event staff.", tone: "lavender" },
+  { icon: Coffee,      title: "Cafés & Bakeries", body: "Show today's specials on a counter tablet or window TV.", tone: "peach" },
+  { icon: ShoppingBag, title: "Retail Stores",    body: "Run flash sales and new arrivals on screens around the shop.", tone: "lavender" },
+  { icon: Dumbbell,    title: "Gyms & Studios",   body: "Promote memberships and class timetables across the floor.", tone: "mint" },
+  { icon: Car,         title: "Dealerships",      body: "Showcase finance offers and service plans on showroom TVs.", tone: "sky" },
+  { icon: Wine,        title: "Bars & Restaurants", body: "Push happy hour and specials to bar-top screens instantly.", tone: "yellow" },
+  { icon: Calendar,    title: "Events & Pop-ups", body: "Run rotating sponsor reels and schedules on any device.", tone: "lavender" },
 ] as const;
 
-const trustedBy = ["Retail", "Hospitality", "Automotive", "Gyms", "Food & Beverage", "Events", "Conferences", "Showrooms"];
+const trustedBy = ["Retail", "Hospitality", "Automotive", "Gyms", "Food & Beverage", "Events", "Salons", "Showrooms"];
 
 const toneClasses: Record<string, { bg: string; text: string; ring: string }> = {
   yellow:   { bg: "bg-yellow-soft",   text: "text-foreground",      ring: "ring-yellow-bright/30" },
@@ -79,15 +83,130 @@ const toneClasses: Record<string, { bg: string; text: string; ring: string }> = 
   sky:      { bg: "bg-sky",           text: "text-sky-deep",        ring: "ring-sky-deep/30" },
 };
 
+// Device showcase — rotates between TV, Tablet, Phone, Laptop
+const devices = [
+  { key: "tv",     label: "Smart TV",   icon: Tv },
+  { key: "tablet", label: "Tablet",     icon: Tablet },
+  { key: "phone",  label: "Phone",      icon: Smartphone },
+  { key: "laptop", label: "Laptop",     icon: Laptop },
+] as const;
+
+const DeviceShowcase = () => {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => setIndex((i) => (i + 1) % devices.length), 3200);
+    return () => clearInterval(id);
+  }, []);
+
+  const screen = (
+    <div className="w-full h-full bg-gradient-to-br from-yellow-bright via-peach-deep to-lavender-deep relative overflow-hidden">
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
+        <p className="text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-foreground/80 mb-2">
+          Today's Offer
+        </p>
+        <p className="font-semibold text-xl md:text-3xl text-foreground leading-tight">
+          Buy 2 get 1<br />FREE
+        </p>
+        <div className="mt-3 px-3 py-1 rounded-full bg-foreground text-background text-[10px] md:text-xs font-bold">
+          SAVE 33%
+        </div>
+      </div>
+    </div>
+  );
+
+  const current = devices[index];
+
+  return (
+    <div className="relative w-full h-full flex items-center justify-center">
+      {/* TV */}
+      <div
+        className={`absolute transition-all duration-700 ease-out ${
+          current.key === "tv" ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"
+        }`}
+      >
+        <div className="w-[340px] md:w-[460px]">
+          <div className="rounded-2xl bg-foreground p-2 md:p-3 shadow-2xl shadow-foreground/30">
+            <div className="aspect-video rounded-xl overflow-hidden">{screen}</div>
+          </div>
+          <div className="mx-auto mt-2 h-3 w-24 rounded-b-xl bg-foreground/80" />
+          <div className="mx-auto mt-1 h-1.5 w-40 rounded-full bg-foreground/40" />
+        </div>
+      </div>
+
+      {/* Laptop */}
+      <div
+        className={`absolute transition-all duration-700 ease-out ${
+          current.key === "laptop" ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"
+        }`}
+      >
+        <div className="w-[340px] md:w-[460px]">
+          <div className="rounded-t-2xl bg-foreground p-2 md:p-3 shadow-2xl shadow-foreground/30">
+            <div className="aspect-video rounded-md overflow-hidden">{screen}</div>
+          </div>
+          <div className="h-2 md:h-3 w-[110%] -ml-[5%] rounded-b-2xl bg-foreground/90 shadow-lg" />
+        </div>
+      </div>
+
+      {/* Tablet */}
+      <div
+        className={`absolute transition-all duration-700 ease-out ${
+          current.key === "tablet" ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"
+        }`}
+      >
+        <div className="w-[260px] md:w-[320px] aspect-[3/4] rounded-[2rem] bg-foreground p-3 shadow-2xl shadow-foreground/30">
+          <div className="w-full h-full rounded-[1.5rem] overflow-hidden">{screen}</div>
+        </div>
+      </div>
+
+      {/* Phone */}
+      <div
+        className={`absolute transition-all duration-700 ease-out ${
+          current.key === "phone" ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"
+        }`}
+      >
+        <div className="w-44 md:w-56 aspect-[9/16] rounded-[2.5rem] bg-foreground p-2.5 shadow-2xl shadow-foreground/30 relative">
+          <div className="w-full h-full rounded-[2rem] overflow-hidden">{screen}</div>
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1 rounded-full bg-background/40" />
+        </div>
+      </div>
+
+      {/* Device selector pills */}
+      <div className="absolute -bottom-4 md:-bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-background/90 backdrop-blur-xl border border-border rounded-full px-2 py-2 shadow-lg">
+        {devices.map((d, i) => {
+          const Icon = d.icon;
+          const active = i === index;
+          return (
+            <button
+              key={d.key}
+              type="button"
+              onClick={() => setIndex(i)}
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
+                active
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              aria-label={d.label}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">{d.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 const Index = () => {
   return (
     <div className="min-h-screen bg-background text-foreground antialiased overflow-x-hidden">
-      {/* NAV */}
-      <nav className="fixed top-0 w-full z-50 bg-background/75 backdrop-blur-xl border-b border-border/60">
-        <div className="container mx-auto px-6 py-3.5">
+      {/* NAV — dark for logo contrast */}
+      <nav className="fixed top-0 w-full z-50 bg-foreground/95 backdrop-blur-xl border-b border-foreground/20">
+        <div className="container mx-auto px-6 py-3">
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center gap-3">
-              <img src={logo} alt="Cyberyard" className="h-10 md:h-12 w-auto" />
+              <img src={logo} alt="Cyberyard" className="h-9 md:h-11 w-auto brightness-0 invert" />
             </Link>
             <div className="hidden md:flex items-center gap-8">
               {[
@@ -99,19 +218,19 @@ const Index = () => {
                 <a
                   key={l.href}
                   href={l.href}
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors link-underline"
+                  className="text-sm font-medium text-background/70 hover:text-background transition-colors link-underline"
                 >
                   {l.label}
                 </a>
               ))}
               <Link to="/auth">
-                <Button size="sm" className="bg-foreground text-background hover:bg-foreground/90 rounded-full px-5 font-semibold h-9">
+                <Button size="sm" className="bg-yellow-bright text-foreground hover:bg-yellow-bright/90 rounded-full px-5 font-semibold h-9">
                   Login
                 </Button>
               </Link>
             </div>
             <Link to="/auth" className="md:hidden">
-              <Button size="sm" className="bg-foreground text-background hover:bg-foreground/90 rounded-full">
+              <Button size="sm" className="bg-yellow-bright text-foreground hover:bg-yellow-bright/90 rounded-full">
                 Login
               </Button>
             </Link>
@@ -120,13 +239,9 @@ const Index = () => {
       </nav>
 
       {/* HERO */}
-      <section className="relative pt-32 md:pt-40 pb-24 md:pb-32 px-6 overflow-hidden">
-        {/* Pastel wash background */}
+      <section className="relative pt-32 md:pt-40 pb-32 md:pb-40 px-6 overflow-hidden">
+        {/* Static pastel wash background — no floating orbs to avoid motion sickness */}
         <div className="absolute inset-0 bg-wash-warm opacity-90 pointer-events-none" />
-        {/* Floating orbs */}
-        <div className="absolute top-32 -left-20 w-96 h-96 orb bg-peach animate-float" />
-        <div className="absolute top-20 right-0 w-80 h-80 orb bg-lavender animate-float-delay" />
-        <div className="absolute bottom-0 left-1/3 w-[500px] h-[400px] orb bg-yellow-soft animate-float-slow opacity-60" />
 
         <div className="relative container mx-auto max-w-6xl">
           {/* Eyebrow */}
@@ -134,28 +249,29 @@ const Index = () => {
             <div className="flex justify-center mb-8">
               <div className="chip border border-border/60 bg-background/80 backdrop-blur-sm">
                 <Sparkles className="h-3.5 w-3.5 text-yellow-bright" />
-                <span>The future of in-store advertising</span>
+                <span>In-store advertising — on any screen you already own</span>
               </div>
             </div>
           </Reveal>
 
           {/* Headline */}
           <Reveal delay={100}>
-            <h1 className="text-display-lg font-semibold text-center max-w-5xl mx-auto tracking-tight">
-              Promotions that <span className="relative inline-block">
-                <span className="relative z-10">walk the floor</span>
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-semibold text-center max-w-5xl mx-auto tracking-tight leading-[1.05]">
+              Turn any screen into a{" "}
+              <span className="relative inline-block">
+                <span className="relative z-10">live promo</span>
                 <span className="absolute inset-x-0 bottom-1 md:bottom-2 h-3 md:h-5 bg-yellow-bright/60 -z-0 rounded-sm" />
               </span>
               <br />
-              with your team.
+              for your shop.
             </h1>
           </Reveal>
 
           {/* Sub */}
           <Reveal delay={200}>
             <p className="mt-8 text-lg md:text-xl text-muted-foreground text-center max-w-2xl mx-auto leading-relaxed">
-              Wearable displays + a powerful dashboard. Push live offers to your staff in
-              seconds — and turn every customer interaction into a marketing moment.
+              Cyberyard runs on TVs, tablets, phones and laptops — anything with a screen and internet.
+              Push offers to every device in seconds, from one simple dashboard.
             </p>
           </Reveal>
 
@@ -180,94 +296,10 @@ const Index = () => {
             </div>
           </Reveal>
 
-          {/* Hero visual — floating UI cards */}
+          {/* Hero visual — rotating device showcase */}
           <Reveal delay={400}>
-            <div className="relative mt-20 md:mt-24 max-w-5xl mx-auto h-[380px] md:h-[460px]">
-              {/* Center: device frame */}
-              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
-                <div className="relative w-44 md:w-56 aspect-[9/16] rounded-[2.5rem] bg-foreground p-2.5 shadow-2xl shadow-foreground/30">
-                  <div className="w-full h-full rounded-[2rem] bg-gradient-to-br from-yellow-bright via-peach-deep to-lavender-deep relative overflow-hidden">
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
-                      <p className="text-xs font-bold uppercase tracking-widest text-foreground/80 mb-2">Today's Offer</p>
-                      <p className="font-semibold text-2xl md:text-3xl text-foreground leading-tight">Buy 2 get 1<br />FREE</p>
-                      <div className="mt-4 px-3 py-1 rounded-full bg-foreground text-background text-xs font-bold">
-                        SAVE 33%
-                      </div>
-                    </div>
-                  </div>
-                  {/* notch */}
-                  <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1 rounded-full bg-background/40" />
-                </div>
-              </div>
-
-              {/* Floating card top-left: Devices online */}
-              <div className="hidden md:block absolute left-0 top-8 z-10 animate-float">
-                <div className="premium-card rounded-2xl p-4 w-56">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Devices live</p>
-                    <span className="flex h-2 w-2 rounded-full bg-mint-deep animate-pulse" />
-                  </div>
-                  <p className="text-3xl font-bold tracking-tight">24<span className="text-base font-medium text-muted-foreground">/24</span></p>
-                  <div className="mt-3 flex gap-1">
-                    {Array.from({ length: 12 }).map((_, i) => (
-                      <div key={i} className="h-6 flex-1 rounded-sm bg-mint-deep/80" />
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Floating card right: Push playlist */}
-              <div className="hidden md:block absolute right-0 top-16 z-10 animate-float-delay">
-                <div className="premium-card rounded-2xl p-4 w-60">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-8 h-8 rounded-lg bg-yellow-soft flex items-center justify-center">
-                      <Zap className="h-4 w-4 text-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold">Playlist pushed</p>
-                      <p className="text-xs text-muted-foreground">to all devices · 1.2s</p>
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    {["Weekend Sale", "New Arrivals", "Loyalty Offer"].map((p) => (
-                      <div key={p} className="flex items-center gap-2 text-xs">
-                        <Check className="h-3 w-3 text-mint-deep" strokeWidth={3} />
-                        <span className="text-foreground/80">{p}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Floating card bottom-left: Battery */}
-              <div className="hidden md:block absolute left-12 bottom-4 z-10 animate-float-slow">
-                <div className="premium-card rounded-2xl p-4 w-52">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-mint flex items-center justify-center">
-                      <Battery className="h-5 w-5 text-mint-deep" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Avg battery</p>
-                      <p className="text-lg font-bold">87%</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Floating card bottom-right: Connected */}
-              <div className="hidden md:block absolute right-12 bottom-12 z-10 animate-float">
-                <div className="premium-card rounded-2xl p-4 w-52">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-sky flex items-center justify-center">
-                      <Wifi className="h-5 w-5 text-sky-deep" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Network</p>
-                      <p className="text-sm font-semibold">All connected</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div className="relative mt-20 md:mt-24 max-w-4xl mx-auto h-[420px] md:h-[500px]">
+              <DeviceShowcase />
             </div>
           </Reveal>
         </div>
@@ -298,8 +330,8 @@ const Index = () => {
           <Reveal>
             <div className="text-center mb-16 max-w-3xl mx-auto">
               <span className="chip mb-5">By the numbers</span>
-              <h2 className="text-display-md font-semibold tracking-tight">
-                Wearable signage actually <span className="text-foreground">works</span>.
+              <h2 className="text-display-md text-3xl md:text-5xl font-semibold tracking-tight">
+                In-store advertising that <span className="text-foreground">actually works</span>.
               </h2>
             </div>
           </Reveal>
@@ -324,14 +356,15 @@ const Index = () => {
           <Reveal>
             <div className="text-center mb-16 max-w-3xl mx-auto">
               <span className="chip mb-5">Features</span>
-              <h2 className="text-display-md font-semibold tracking-tight">
-                Everything you need to go <span className="relative inline-block">
+              <h2 className="text-3xl md:text-5xl font-semibold tracking-tight">
+                Everything you need to go{" "}
+                <span className="relative inline-block">
                   <span className="relative z-10">live</span>
                   <span className="absolute inset-x-0 bottom-1 md:bottom-2 h-3 md:h-4 bg-yellow-bright/60 -z-0 rounded-sm" />
                 </span>.
               </h2>
               <p className="mt-5 text-lg text-muted-foreground">
-                A complete platform for wearable signage — designed for marketing teams.
+                A complete in-store advertising platform — built for shops of every size.
               </p>
             </div>
           </Reveal>
@@ -362,17 +395,17 @@ const Index = () => {
           <Reveal>
             <div className="text-center mb-16 max-w-3xl mx-auto">
               <span className="chip mb-5">How it works</span>
-              <h2 className="text-display-md font-semibold tracking-tight">
-                From box to live in <span className="text-foreground">three steps</span>.
+              <h2 className="text-3xl md:text-5xl font-semibold tracking-tight">
+                From sign-up to live in <span className="text-foreground">three steps</span>.
               </h2>
             </div>
           </Reveal>
 
           <div className="grid md:grid-cols-3 gap-5 md:gap-6">
             {[
-              { n: "01", title: "Pair your devices", body: "Scan a QR code. Wearable displays connect instantly.", tone: "peach" },
-              { n: "02", title: "Create or upload", body: "Upload videos or generate AI offer videos in seconds.", tone: "lavender" },
-              { n: "03", title: "Push live", body: "Assign a playlist and watch promos update across the floor in real time.", tone: "yellow" },
+              { n: "01", title: "Open on any screen", body: "Sign in on a TV, tablet, phone or laptop. No app needed.", tone: "peach" },
+              { n: "02", title: "Create or upload", body: "Upload your videos or generate AI offer videos in seconds.", tone: "lavender" },
+              { n: "03", title: "Push live", body: "Assign a playlist and watch promos update across every screen instantly.", tone: "yellow" },
             ].map((step, i) => {
               const tone = toneClasses[step.tone];
               return (
@@ -396,8 +429,8 @@ const Index = () => {
           <Reveal>
             <div className="text-center mb-16 max-w-3xl mx-auto">
               <span className="chip mb-5">Use cases</span>
-              <h2 className="text-display-md font-semibold tracking-tight">
-                Made for places where <span className="text-foreground">people gather</span>.
+              <h2 className="text-3xl md:text-5xl font-semibold tracking-tight">
+                Built for any shop with <span className="text-foreground">a screen on the wall</span>.
               </h2>
             </div>
           </Reveal>
@@ -431,17 +464,17 @@ const Index = () => {
           <Reveal>
             <div className="text-center mb-16 max-w-3xl mx-auto">
               <span className="chip mb-5">Why it works</span>
-              <h2 className="text-display-md font-semibold tracking-tight">
-                The science of <span className="text-foreground">human attention</span>.
+              <h2 className="text-3xl md:text-5xl font-semibold tracking-tight">
+                Screens grab attention — <span className="text-foreground">we make them sell</span>.
               </h2>
             </div>
           </Reveal>
 
           <div className="grid md:grid-cols-3 gap-5 md:gap-6">
             {[
-              { icon: Eye,         title: "Movement gets noticed", body: "Our brains are hardwired to detect motion — it's instinct.", tone: "yellow" },
-              { icon: TrendingUp,  title: "People follow people",  body: "If your staff are engaged, customers notice — and follow.", tone: "lavender" },
-              { icon: Monitor,     title: "Trust is personal",     body: "A screen on a person feels credible, human and real.", tone: "mint" },
+              { icon: Eye,        title: "Motion gets noticed",   body: "A moving promo on a screen pulls more eyes than any printed sign.", tone: "yellow" },
+              { icon: TrendingUp, title: "Fresh content sells",   body: "Update offers daily without lifting a finger — keep customers curious.", tone: "lavender" },
+              { icon: Monitor,    title: "Use what you have",     body: "No new hardware. Run it on the screens already in your shop.", tone: "mint" },
             ].map((item, i) => {
               const Icon = item.icon;
               const tone = toneClasses[item.tone];
@@ -466,8 +499,8 @@ const Index = () => {
         <div className="container mx-auto max-w-6xl">
           <Reveal>
             <div className="text-center mb-16 max-w-3xl mx-auto">
-              <span className="chip mb-5">Loved by retail teams</span>
-              <h2 className="text-display-md font-semibold tracking-tight">
+              <span className="chip mb-5">Loved by shop owners</span>
+              <h2 className="text-3xl md:text-5xl font-semibold tracking-tight">
                 Real results, fast.
               </h2>
             </div>
@@ -475,9 +508,9 @@ const Index = () => {
 
           <div className="grid md:grid-cols-3 gap-5 md:gap-6">
             {[
-              { quote: "Our pastry sales doubled in the first week.", name: "Laura", role: "Bakery Manager", icon: Coffee, tone: "peach" },
-              { quote: "Customers stop staff to ask about offers — it works.", name: "Ben", role: "Retail Store Owner", icon: ShoppingBag, tone: "lavender" },
-              { quote: "The AI creator saved us hours. So easy.", name: "Jade", role: "Café Owner", icon: Coffee, tone: "yellow" },
+              { quote: "We used the TV behind the counter — pastry sales doubled in a week.", name: "Laura", role: "Bakery Owner", icon: Coffee, tone: "peach" },
+              { quote: "An old tablet by the till is now our best salesperson.", name: "Ben", role: "Retail Store Owner", icon: ShoppingBag, tone: "lavender" },
+              { quote: "I update offers from my phone in seconds. So easy.", name: "Jade", role: "Café Owner", icon: Coffee, tone: "yellow" },
             ].map((t, i) => {
               const Icon = t.icon;
               const tone = toneClasses[t.tone];
@@ -512,18 +545,17 @@ const Index = () => {
         <div className="container mx-auto max-w-6xl">
           <Reveal>
             <div className="relative rounded-3xl overflow-hidden bg-foreground text-background p-10 md:p-16 lg:p-20">
-              {/* decorative pastel orbs */}
+              {/* static decorative pastel orbs (no animation) */}
               <div className="absolute -top-20 -right-20 w-80 h-80 orb bg-yellow-bright opacity-40" />
               <div className="absolute -bottom-20 -left-20 w-80 h-80 orb bg-lavender-deep opacity-40" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] orb bg-peach-deep opacity-25" />
 
               <div className="relative grid md:grid-cols-2 gap-12 items-center">
                 <div>
                   <span className="chip bg-background/10 text-background border border-background/20 mb-5">
                     Get in touch
                   </span>
-                  <h2 className="text-display-md font-semibold tracking-tight">
-                    Ready to <span className="text-yellow-bright">light up</span> your shop floor?
+                  <h2 className="text-3xl md:text-5xl font-semibold tracking-tight">
+                    Ready to <span className="text-yellow-bright">light up</span> your shop?
                   </h2>
                   <p className="mt-5 text-lg text-background/75 leading-relaxed max-w-md">
                     Drop us a line and we'll show you exactly how Cyberyard fits your business.
@@ -531,7 +563,7 @@ const Index = () => {
                   </p>
 
                   <div className="mt-8 space-y-3">
-                    {["Free consultation & demo", "No setup fees", "Cancel anytime"].map((b) => (
+                    {["Free consultation & demo", "Works on any screen", "No setup fees"].map((b) => (
                       <div key={b} className="flex items-center gap-3">
                         <div className="w-5 h-5 rounded-full bg-yellow-bright flex items-center justify-center">
                           <Check className="h-3 w-3 text-foreground" strokeWidth={3} />
@@ -546,8 +578,8 @@ const Index = () => {
                   <form className="space-y-4">
                     <Input placeholder="Your name" className="h-12 rounded-xl bg-secondary border-0 focus-visible:ring-2 focus-visible:ring-foreground/10" />
                     <Input type="email" placeholder="Email address" className="h-12 rounded-xl bg-secondary border-0 focus-visible:ring-2 focus-visible:ring-foreground/10" />
-                    <Input placeholder="Company name" className="h-12 rounded-xl bg-secondary border-0 focus-visible:ring-2 focus-visible:ring-foreground/10" />
-                    <Textarea placeholder="Tell us about your business" className="min-h-[100px] rounded-xl bg-secondary border-0 focus-visible:ring-2 focus-visible:ring-foreground/10 resize-none" />
+                    <Input placeholder="Business name" className="h-12 rounded-xl bg-secondary border-0 focus-visible:ring-2 focus-visible:ring-foreground/10" />
+                    <Textarea placeholder="Tell us about your shop" className="min-h-[100px] rounded-xl bg-secondary border-0 focus-visible:ring-2 focus-visible:ring-foreground/10 resize-none" />
                     <Button className="w-full h-12 rounded-xl bg-foreground text-background hover:bg-foreground/90 font-semibold text-base group">
                       Send message
                       <ArrowRight className="ml-1.5 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -561,45 +593,45 @@ const Index = () => {
       </section>
 
       {/* FOOTER */}
-      <footer className="py-16 px-6 border-t border-border bg-background">
+      <footer className="py-16 px-6 border-t border-border bg-foreground text-background">
         <div className="container mx-auto max-w-6xl">
           <div className="grid md:grid-cols-12 gap-10 mb-12">
             <div className="md:col-span-4">
-              <img src={logo} alt="Cyberyard" className="h-14 mb-4" />
-              <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
-                Wearable digital signage for modern retail.
-                Promotions that walk the floor with your team.
+              <img src={logo} alt="Cyberyard" className="h-14 mb-4 brightness-0 invert" />
+              <p className="text-sm text-background/70 max-w-xs leading-relaxed">
+                In-store advertising for any shop, on any screen.
+                TVs, tablets, phones, laptops — all from one dashboard.
               </p>
             </div>
             <div className="md:col-span-2 md:col-start-7">
-              <p className="text-xs uppercase tracking-[0.15em] font-semibold text-foreground mb-4">Product</p>
+              <p className="text-xs uppercase tracking-[0.15em] font-semibold text-background mb-4">Product</p>
               <div className="space-y-2.5">
-                <a href="#features" className="block text-sm text-muted-foreground hover:text-foreground link-underline">Features</a>
-                <a href="#how-it-works" className="block text-sm text-muted-foreground hover:text-foreground link-underline">How it works</a>
-                <a href="#use-cases" className="block text-sm text-muted-foreground hover:text-foreground link-underline">Use cases</a>
+                <a href="#features" className="block text-sm text-background/70 hover:text-background link-underline">Features</a>
+                <a href="#how-it-works" className="block text-sm text-background/70 hover:text-background link-underline">How it works</a>
+                <a href="#use-cases" className="block text-sm text-background/70 hover:text-background link-underline">Use cases</a>
               </div>
             </div>
             <div className="md:col-span-2">
-              <p className="text-xs uppercase tracking-[0.15em] font-semibold text-foreground mb-4">Legal</p>
+              <p className="text-xs uppercase tracking-[0.15em] font-semibold text-background mb-4">Legal</p>
               <div className="space-y-2.5">
-                <Link to="/privacy-policy" className="block text-sm text-muted-foreground hover:text-foreground link-underline">Privacy Policy</Link>
-                <Link to="/terms-of-service" className="block text-sm text-muted-foreground hover:text-foreground link-underline">Terms of Service</Link>
-                <Link to="/cookies-policy" className="block text-sm text-muted-foreground hover:text-foreground link-underline">Cookies</Link>
-                <Link to="/refund-policy" className="block text-sm text-muted-foreground hover:text-foreground link-underline">Refund Policy</Link>
+                <Link to="/privacy-policy" className="block text-sm text-background/70 hover:text-background link-underline">Privacy Policy</Link>
+                <Link to="/terms-of-service" className="block text-sm text-background/70 hover:text-background link-underline">Terms of Service</Link>
+                <Link to="/cookies-policy" className="block text-sm text-background/70 hover:text-background link-underline">Cookies</Link>
+                <Link to="/refund-policy" className="block text-sm text-background/70 hover:text-background link-underline">Refund Policy</Link>
               </div>
             </div>
             <div className="md:col-span-2">
-              <p className="text-xs uppercase tracking-[0.15em] font-semibold text-foreground mb-4">Resources</p>
+              <p className="text-xs uppercase tracking-[0.15em] font-semibold text-background mb-4">Resources</p>
               <div className="space-y-2.5">
-                <Link to="/data-processing-addendum" className="block text-sm text-muted-foreground hover:text-foreground link-underline">Data Processing</Link>
-                <Link to="/acceptable-use-policy" className="block text-sm text-muted-foreground hover:text-foreground link-underline">Acceptable Use</Link>
-                <Link to="/auth" className="block text-sm text-muted-foreground hover:text-foreground link-underline">Login</Link>
+                <Link to="/data-processing-addendum" className="block text-sm text-background/70 hover:text-background link-underline">Data Processing</Link>
+                <Link to="/acceptable-use-policy" className="block text-sm text-background/70 hover:text-background link-underline">Acceptable Use</Link>
+                <Link to="/auth" className="block text-sm text-background/70 hover:text-background link-underline">Login</Link>
               </div>
             </div>
           </div>
-          <div className="border-t border-border pt-6 flex flex-col md:flex-row justify-between gap-4 text-xs text-muted-foreground">
+          <div className="border-t border-background/15 pt-6 flex flex-col md:flex-row justify-between gap-4 text-xs text-background/60">
             <p>© 2025 Cyberyard Limited. Registered in England & Wales.</p>
-            <p>Built for retail.</p>
+            <p>Built for modern shops.</p>
           </div>
         </div>
       </footer>
