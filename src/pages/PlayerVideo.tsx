@@ -54,6 +54,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const [isPullingToRefresh, setIsPullingToRefresh] = useState(false);
   const [pullStartY, setPullStartY] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const isNative = Capacitor.isNativePlatform();
@@ -533,6 +534,79 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [_currentForImage?.id, _isImageItemEffect, playlistRevision]);
+
+  // Native Android WebView has repeatedly failed to paint normal <img>/CSS
+  // image layers on some devices. For native image items, render the image and
+  // sparkles into a single canvas so the player does not depend on DOM image
+  // compositing or CSS animation support.
+  useEffect(() => {
+    if (!isNative || !_currentForImage || !_isImageItemEffect) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d', { alpha: false });
+    if (!ctx) return;
+
+    let frameId = 0;
+    let disposed = false;
+    let imageLoaded = false;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.decoding = 'async';
+
+    const sourceUrl = appendCacheBust(getPlayableUrl(_currentForImage), playlistRevision);
+
+    const resizeCanvas = () => {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const width = Math.max(1, Math.floor(rect.width * dpr));
+      const height = Math.max(1, Math.floor(rect.height * dpr));
+
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { width: rect.width, height: rect.height };
+    };
+
+    const draw = (time: number) => {
+      if (disposed) return;
+
+      const { width, height } = resizeCanvas();
+      ctx.fillStyle = 'hsl(0 0% 0%)';
+      ctx.fillRect(0, 0, width, height);
+
+      if (imageLoaded) {
+        drawContainedImage(ctx, img, width, height);
+      }
+
+      drawCanvasSparkles(ctx, width, height, time);
+      frameId = requestAnimationFrame(draw);
+    };
+
+    img.onload = () => {
+      imageLoaded = true;
+      console.log('[NativeCanvasImage] Loaded successfully:', sourceUrl);
+    };
+    img.onerror = () => {
+      console.error('[NativeCanvasImage] Load error:', sourceUrl);
+      if (videosRef.current.length > 1) handleVideoEnd();
+    };
+    img.src = sourceUrl;
+
+    window.addEventListener('resize', resizeCanvas);
+    frameId = requestAnimationFrame(draw);
+
+    return () => {
+      disposed = true;
+      cancelAnimationFrame(frameId);
+      window.removeEventListener('resize', resizeCanvas);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNative, _currentForImage?.id, _isImageItemEffect, playlistRevision]);
 
   const toggleFullscreen = async () => {
     try {
