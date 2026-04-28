@@ -126,7 +126,7 @@ serve(async (req) => {
     
     // CRITICAL safe-zone instruction shared by every prompt — text MUST stay
     // inside a generous inner margin so nothing gets clipped on the device.
-    const SAFE_ZONE = ` CRITICAL TEXT RULES: All text MUST be fully contained inside the central safe area, with at least 18% padding from EVERY edge of the canvas (top, bottom, left, right). Never let any letter touch or extend past the edges. The complete text "${mainText}"${subtext ? ` and "${subtext}"` : ''} must be 100% visible — no cropping, no clipping, no letters cut in half. AGGRESSIVELY reduce the text size or wrap onto multiple lines if needed to keep every letter well within the safe zone. The first and last letters of every word must have clear breathing room from the canvas edge. Spell every word exactly as written, no extra characters. The image will also be zoomed slightly during playback, so keep text even further from edges.`;
+    const SAFE_ZONE = ` CRITICAL TEXT RULES: All text MUST be fully contained inside the central safe area, with at least 22% padding from EVERY edge of the canvas (top, bottom, left, right). Never let any letter touch or extend past the edges. The complete text "${mainText}"${subtext ? ` and "${subtext}"` : ''} must be 100% visible — no cropping, no clipping, no letters cut in half. AGGRESSIVELY reduce the text size or wrap onto multiple lines if needed to keep every letter well within the safe zone. The first and last letters of every word must have clear breathing room from the canvas edge. Spell every word exactly as written, no extra characters. The final video must be a LOCKED-OFF STATIC SHOT: no camera movement, no zoom, no pan, no slide, no scrolling text, no transitions inside the video. Keep all text fixed in place for the full duration. Only add small environmental effects around the food/product, such as steam rising from hot food, subtle sparkle glints, soft flashes, or tiny burst accents that do not move or obscure the text.`;
 
     const stylePrompts: Record<string, string> = {
       boom: `Take this product image and transform it into an eye-catching promotional poster in 1080x1920 portrait format. Add bold, explosive text "${mainText}" with vibrant red and pink gradients, dramatic shadows, and energy burst effects. Make it look like a dramatic product advertisement with WOW factor.${subtext ? ` Include smaller text "${subtext}" below the main text.` : ''}`,
@@ -269,7 +269,7 @@ serve(async (req) => {
     // Create Shotstack edits for both formats
     const videoDuration = parseFloat(duration);
 
-    // Simple portrait edit - just the image with gentle zoom
+    // Simple portrait edit - static image only; motion/effects are baked into the AI image prompt.
     const portraitEdit = {
       timeline: {
         background: "#000000",
@@ -278,8 +278,7 @@ serve(async (req) => {
             clips: [{
               asset: { type: "image", src: portraitImageUrl },
               start: 0,
-              length: videoDuration,
-              effect: "zoomIn"
+              length: videoDuration
             }]
           }
         ]
@@ -291,7 +290,7 @@ serve(async (req) => {
       }
     };
 
-    // Simple landscape edit
+    // Simple landscape edit - static image only; no slide/zoom/camera movement.
     const landscapeEdit = landscapeImageUrl ? {
       timeline: {
         background: "#000000",
@@ -300,8 +299,7 @@ serve(async (req) => {
             clips: [{
               asset: { type: "image", src: landscapeImageUrl },
               start: 0,
-              length: videoDuration,
-              effect: "zoomIn"
+              length: videoDuration
             }]
           }
         ]
