@@ -63,6 +63,8 @@ const ResearchLeadDetail = () => {
 
   const answers = response?.answers || {};
   const visible = SURVEY_QUESTIONS.filter((q) => !q.showIf || q.showIf(answers));
+  const ptAnswers = postTrial?.answers || {};
+  const ptVisible = POST_TRIAL_QUESTIONS.filter((q) => !q.showIf || q.showIf(ptAnswers));
 
   return (
     <PortalLayout variant="admin">
@@ -108,6 +110,25 @@ const ResearchLeadDetail = () => {
           </Card>
         )}
 
+        {lead.is_trial_lead && (
+          <Card className="border-sky-500/40 bg-sky-500/5 shadow-sm">
+            <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+              <div>
+                <p className="font-semibold">Post-trial survey {postTrial ? "completed" : "(after 2-week trial)"}</p>
+                <p className="text-sm text-muted-foreground">
+                  {postTrial
+                    ? `Submitted ${format(new Date(postTrial.created_at), "d MMM yyyy")}.`
+                    : "Capture feedback once the trial has ended — usage, ease, NPS, pricing intent."}
+                </p>
+              </div>
+              <Button variant={postTrial ? "outline" : "default"} onClick={() => navigate(`/admin/research/${lead.id}/post-trial`)}>
+                <ClipboardCheck className="mr-2 h-4 w-4" />
+                {postTrial ? "Add another response" : "Start post-trial survey"}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         <Card className="border-border/60 shadow-sm">
           <CardHeader><CardTitle className="text-lg">Profile & status</CardTitle></CardHeader>
           <CardContent className="space-y-3 text-sm">
@@ -130,7 +151,7 @@ const ResearchLeadDetail = () => {
         </Card>
 
         <Card className="border-border/60 shadow-sm">
-          <CardHeader><CardTitle className="text-lg">Survey responses</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-lg">Initial survey responses</CardTitle></CardHeader>
           <CardContent>
             {!response ? (
               <p className="text-sm text-muted-foreground">No survey submitted.</p>
@@ -152,6 +173,28 @@ const ResearchLeadDetail = () => {
             )}
           </CardContent>
         </Card>
+
+        {postTrial && (
+          <Card className="border-border/60 shadow-sm">
+            <CardHeader><CardTitle className="text-lg">Post-trial survey responses</CardTitle></CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {ptVisible.map((q, idx) => {
+                  const v = ptAnswers[q.id];
+                  const display = v == null || v === "" ? <span className="text-muted-foreground italic">No answer</span>
+                    : q.type === "single" ? <span className="font-medium">{getOptionLabel(q.id, v)}</span>
+                    : <span className="font-medium whitespace-pre-wrap">{v}</span>;
+                  return (
+                    <div key={q.id} className="border-b last:border-0 pb-3 last:pb-0">
+                      <p className="text-xs text-muted-foreground">Q{idx + 1}. {q.label}</p>
+                      <p className="mt-1">{display}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </PortalLayout>
   );
