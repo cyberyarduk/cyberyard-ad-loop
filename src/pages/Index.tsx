@@ -404,7 +404,7 @@ const Index = () => {
           <div className="grid md:grid-cols-3 gap-5 md:gap-6">
             {[
               { n: "01", title: "Open on any screen", body: "Sign in on a TV, tablet, phone or laptop. No app needed.", tone: "peach" },
-              { n: "02", title: "Create or upload", body: "Upload your videos or generate AI offer videos in seconds.", tone: "lavender" },
+              { n: "02", title: "Create or upload", body: "Upload your videos or generate polished offer videos in seconds.", tone: "lavender" },
               { n: "03", title: "Push live", body: "Assign a playlist and watch promos update across every screen instantly.", tone: "yellow" },
             ].map((step, i) => {
               const tone = toneClasses[step.tone];
