@@ -747,7 +747,16 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
         </div>
       )}
       
-      {currentVideo && isImageItem && (
+      {currentVideo && isImageItem && isNative && (
+        <canvas
+          ref={canvasRef}
+          key={`${currentVideo.id}-${safeIndex}-native-canvas`}
+          className="player-media-fade absolute inset-0 z-10 h-full w-full bg-black"
+          aria-label={currentVideo.title}
+        />
+      )}
+
+      {currentVideo && isImageItem && !isNative && (
         <div
           key={`${currentVideo.id}-${safeIndex}`}
           className="player-media-fade absolute inset-0 z-10 bg-black"
@@ -837,7 +846,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
 
       {/* Eye-catching sparkle overlay — pure CSS, sits on top of media,
           ignores pointer events so taps still register on the underlying layer. */}
-      <SparkleOverlay />
+      {!(isNative && isImageItem) && <SparkleOverlay />}
 
       {/* Invisible tap zone indicator (only visible during development) */}
       <div
