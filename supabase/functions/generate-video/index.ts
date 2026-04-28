@@ -236,45 +236,68 @@ CRITICAL RULES:
       }
     }
 
-    const buildTracks = (imageSrc: string, isPortrait: boolean) => {
+    const buildTracks = (bgSrc: string, heroSrc: string, isPortrait: boolean) => {
       const W = isPortrait ? 1080 : 1920;
       const H = isPortrait ? 1920 : 1080;
 
-      const titleY = isPortrait ? 0.32 : 0.30;
-      const priceY = isPortrait ? -0.08 : -0.05;
-      const badgeY = isPortrait ? -0.34 : -0.32;
+      const titleY = isPortrait ? 0.34 : 0.32;
+      const priceY = isPortrait ? -0.06 : -0.04;
+      const badgeY = isPortrait ? -0.36 : -0.34;
 
-      const titleFontSize = isPortrait ? 92 : 78;
       const priceFontSize = isPortrait ? 180 : 150;
       const badgeFontSize = isPortrait ? 56 : 48;
 
+      // IMPORTANT: in Shotstack, the FIRST track in the array renders ON TOP.
+      // Order: badge -> price -> title -> hero (product) -> dim -> background.
       const tracks: Record<string, unknown>[] = [];
 
-      // BG image with slow Ken Burns
-      tracks.push({
-        clips: [{
-          asset: { type: "image", src: imageSrc },
-          start: 0,
-          length: videoDuration,
-          fit: "cover",
-          effect: "zoomIn",
-          transition: { in: "fade", out: "fade" }
-        }]
-      });
+      // ===== TEXT LAYERS (front) =====
 
-      // Dim gradient overlay so text reads on any background
-      const dimHtml = `<div class="dim"></div>`;
-      const dimCss = `.dim{width:100%;height:100%;background:linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 45%, rgba(0,0,0,0.65) 100%);}`;
-      tracks.push({
-        clips: [{
-          asset: { type: "html", html: dimHtml, css: dimCss, width: W, height: H },
-          start: 0,
-          length: videoDuration,
-          position: "center",
-        }]
-      });
+      // BADGE — pulsing "LIMITED" (front-most)
+      if (showBadge && finalBadgeText) {
+        const badgeHtml = `<p class="b">${escapeHtml(finalBadgeText)}</p>`;
+        const badgeCss = `.b{font-family:'Open Sans',Arial,sans-serif;font-weight:900;font-size:${badgeFontSize}px;color:#FFFFFF;background:#DC2626;letter-spacing:0.1em;padding:18px 40px;border-radius:9999px;display:inline-block;text-align:center;text-transform:uppercase;margin:0;line-height:1;border:4px solid #FFFFFF;box-shadow:0 8px 24px rgba(220,38,38,0.5);}`;
+        const badgeW = 800;
+        const badgeH = 180;
+        const pulseLen = 0.8;
+        let t = badgeStart;
+        let toggle = true;
+        while (t + pulseLen <= videoDuration) {
+          const clip: Record<string, unknown> = {
+            asset: { type: "html", html: badgeHtml, css: badgeCss, width: badgeW, height: badgeH, background: "transparent" },
+            start: t,
+            length: pulseLen,
+            position: "center",
+            offset: { x: 0, y: badgeY },
+            effect: toggle ? "zoomIn" : "zoomOut",
+          };
+          if (t === badgeStart) clip.transition = { in: "zoom" };
+          tracks.push({ clips: [clip] });
+          t += pulseLen;
+          toggle = !toggle;
+        }
+      }
 
-      // TITLE — native title asset (guaranteed to render)
+      // PRICE — big yellow pop badge
+      if (resolvedPrice) {
+        const priceHtml = `<p class="p">${escapeHtml(resolvedPrice)}</p>`;
+        const priceCss = `.p{font-family:'Open Sans',Arial,sans-serif;font-weight:900;font-size:${priceFontSize}px;color:${accentInk};background:${accentColor};letter-spacing:-0.02em;padding:24px 60px;border-radius:24px;display:inline-block;text-align:center;text-transform:uppercase;margin:0;line-height:1;box-shadow:0 12px 40px rgba(0,0,0,0.4);}`;
+        const priceW = isPortrait ? 1000 : 1400;
+        const priceH = isPortrait ? 360 : 320;
+        tracks.push({
+          clips: [{
+            asset: { type: "html", html: priceHtml, css: priceCss, width: priceW, height: priceH, background: "transparent" },
+            start: priceStart,
+            length: Math.max(2, videoDuration - priceStart),
+            position: "center",
+            offset: { x: 0, y: priceY },
+            transition: { in: "zoom", out: "fade" },
+            effect: "zoomInSlow",
+          }]
+        });
+      }
+
+      // TITLE
       if (resolvedTitle) {
         tracks.push({
           clips: [{
@@ -296,49 +319,48 @@ CRITICAL RULES:
         });
       }
 
-      // PRICE — big yellow pop badge using HTML (with css field)
-      if (resolvedPrice) {
-        const priceHtml = `<p class="p">${escapeHtml(resolvedPrice)}</p>`;
-        const priceCss = `.p{font-family:'Open Sans',Arial,sans-serif;font-weight:900;font-size:${priceFontSize}px;color:${accentInk};background:${accentColor};letter-spacing:-0.02em;padding:24px 60px;border-radius:24px;display:inline-block;text-align:center;text-transform:uppercase;margin:0;line-height:1;}`;
-        const priceW = isPortrait ? 1000 : 1400;
-        const priceH = isPortrait ? 360 : 320;
-        tracks.push({
-          clips: [{
-            asset: { type: "html", html: priceHtml, css: priceCss, width: priceW, height: priceH, background: "transparent" },
-            start: priceStart,
-            length: Math.max(2, videoDuration - priceStart),
-            position: "center",
-            offset: { x: 0, y: priceY },
-            transition: { in: "zoom", out: "fade" },
-            effect: "zoomInSlow",
-          }]
-        });
-      }
+      // ===== HERO PRODUCT LAYER (mid) =====
+      // The user's product (cutout if available, else original upload).
+      // Animated separately from the BG for a 2.5D parallax feel.
+      const heroOffsetY = isPortrait ? -0.05 : -0.02;
+      tracks.push({
+        clips: [{
+          asset: { type: "image", src: heroSrc },
+          start: 0,
+          length: videoDuration,
+          fit: "contain",
+          scale: isPortrait ? 0.78 : 0.62,
+          offset: { x: 0, y: heroOffsetY },
+          effect: "zoomInSlow",
+          transition: { in: "slideUp", out: "fade" },
+        }]
+      });
 
-      // BADGE — pulsing "TODAY ONLY"
-      if (showBadge && finalBadgeText) {
-        const badgeHtml = `<p class="b">${escapeHtml(finalBadgeText)}</p>`;
-        const badgeCss = `.b{font-family:'Open Sans',Arial,sans-serif;font-weight:900;font-size:${badgeFontSize}px;color:#FFFFFF;background:#DC2626;letter-spacing:0.1em;padding:18px 40px;border-radius:9999px;display:inline-block;text-align:center;text-transform:uppercase;margin:0;line-height:1;border:4px solid #FFFFFF;}`;
-        const badgeW = isPortrait ? 800 : 800;
-        const badgeH = 180;
-        const pulseLen = 0.8;
-        let t = badgeStart;
-        let toggle = true;
-        while (t + pulseLen <= videoDuration) {
-          const clip: Record<string, unknown> = {
-            asset: { type: "html", html: badgeHtml, css: badgeCss, width: badgeW, height: badgeH, background: "transparent" },
-            start: t,
-            length: pulseLen,
-            position: "center",
-            offset: { x: 0, y: badgeY },
-            effect: toggle ? "zoomIn" : "zoomOut",
-          };
-          if (t === badgeStart) clip.transition = { in: "zoom" };
-          tracks.push({ clips: [clip] });
-          t += pulseLen;
-          toggle = !toggle;
-        }
-      }
+      // ===== BACKGROUND LAYERS (back) =====
+
+      // Dim gradient overlay sits between bg and hero so product stays vivid
+      const dimHtml = `<div class="dim"></div>`;
+      const dimCss = `.dim{width:100%;height:100%;background:linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.10) 45%, rgba(0,0,0,0.55) 100%);}`;
+      tracks.push({
+        clips: [{
+          asset: { type: "html", html: dimHtml, css: dimCss, width: W, height: H },
+          start: 0,
+          length: videoDuration,
+          position: "center",
+        }]
+      });
+
+      // BG — slow Ken Burns at a DIFFERENT pace to the hero (parallax)
+      tracks.push({
+        clips: [{
+          asset: { type: "image", src: bgSrc },
+          start: 0,
+          length: videoDuration,
+          fit: "cover",
+          effect: "zoomOutSlow",
+          transition: { in: "fade", out: "fade" }
+        }]
+      });
 
       return tracks;
     };
