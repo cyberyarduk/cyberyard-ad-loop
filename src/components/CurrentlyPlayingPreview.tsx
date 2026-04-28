@@ -286,7 +286,13 @@ export function CurrentlyPlayingPreview() {
                 </div>
 
                 <div className="aspect-[9/16] bg-muted rounded-lg overflow-hidden flex items-center justify-center">
-                  {device.video_url ? (
+                  {device.media_type === 'image' && device.image_url ? (
+                    <img
+                      src={device.image_url}
+                      alt={device.video_title ?? 'Currently playing image'}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : device.video_url ? (
                     <video
                       src={device.video_url}
                       muted
