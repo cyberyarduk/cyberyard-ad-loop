@@ -30,7 +30,7 @@ serve(async (req) => {
     // Find device by auth token - accept both active and suspended
     const { data: device, error: deviceError } = await supabase
       .from('devices')
-      .select('id, company_id, playlist_id, name, status')
+      .select('id, company_id, playlist_id, name, status, aspect_ratio')
       .eq('auth_token', authToken)
       .in('status', ['active', 'suspended'])
       .single();
@@ -63,7 +63,7 @@ serve(async (req) => {
     const screenHeight = screenHeightHeader ? parseInt(screenHeightHeader, 10) : null;
 
     // Calculate aspect ratio
-    let aspectRatio: string | null = null;
+    let aspectRatio: string | null = device.aspect_ratio ?? null;
     if (screenWidth && screenHeight && screenWidth > 0 && screenHeight > 0) {
       const ratio = screenWidth / screenHeight;
       if (ratio > 1.3) {
@@ -157,7 +157,9 @@ serve(async (req) => {
       .filter(pv => pv.videos && pv.videos.company_id === device.company_id)
       .map(pv => {
         const v = pv.videos;
-        const isImage = v.media_type === 'image';
+        const hasImageVariant = !!(v.image_url || v.image_url_landscape);
+        const looksLikeImageUrl = (url?: string | null) => !!url && /\.(jpe?g|png|gif|webp|avif)(\?|$)/i.test(url);
+        const isImage = v.media_type === 'image' || hasImageVariant || looksLikeImageUrl(v.video_url) || looksLikeImageUrl(v.video_url_landscape);
         const isLandscape = aspectRatio === 'landscape';
 
         // Robust fallback: prefer the orientation-matched URL but fall back to
@@ -174,7 +176,7 @@ serve(async (req) => {
         return {
           id: v.id,
           title: v.title,
-          media_type: v.media_type ?? 'video',
+          media_type: isImage ? 'image' : 'video',
           video_url: mediaUrl,
           image_url: isImage ? mediaUrl : null,
           display_duration: v.display_duration ?? null,
