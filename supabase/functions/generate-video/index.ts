@@ -321,15 +321,16 @@ serve(async (req) => {
       const pulseLen = 1.2;
       let toggle = true;
       while (t + pulseLen <= videoDuration) {
-        ctaClips.push({
+        const clip: Record<string, unknown> = {
           asset: { type: "html", html: ctaHtml, width: ctaWidth, height: ctaHeight },
           start: t,
           length: pulseLen,
           position: "center",
           offset: { x: 0, y: ctaY },
           effect: toggle ? "zoomIn" : "zoomOut",
-          transition: t === 0.4 ? { in: "zoom" } : undefined,
-        });
+        };
+        if (t === 0.4) clip.transition = { in: "zoom" };
+        ctaClips.push(clip);
         t += pulseLen;
         toggle = !toggle;
       }
