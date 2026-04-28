@@ -552,10 +552,13 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
     let disposed = false;
     let imageLoaded = false;
     const img = new Image();
-    img.crossOrigin = 'anonymous';
     img.decoding = 'async';
 
-    const sourceUrl = appendCacheBust(getPlayableUrl(_currentForImage), playlistRevision);
+    const directUrl = appendCacheBust(getPlayableUrl(_currentForImage), playlistRevision);
+    const sourceUrl = imageRenderUrl || directUrl;
+    if (!sourceUrl.startsWith('blob:')) {
+      img.crossOrigin = 'anonymous';
+    }
 
     const resizeCanvas = () => {
       const rect = canvas.getBoundingClientRect();
@@ -606,7 +609,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       window.removeEventListener('resize', resizeCanvas);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isNative, _currentForImage?.id, _isImageItemEffect, playlistRevision]);
+  }, [isNative, _currentForImage?.id, _isImageItemEffect, imageRenderUrl, playlistRevision]);
 
   const toggleFullscreen = async () => {
     try {
