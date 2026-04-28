@@ -12,6 +12,9 @@ interface Video {
   title: string;
   video_url: string;
   order_index: number;
+  media_type?: 'video' | 'image';
+  image_url?: string | null;
+  display_duration?: number | null;
 }
 
 interface PlayerVideoProps {
