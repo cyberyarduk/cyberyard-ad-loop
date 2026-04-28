@@ -559,14 +559,22 @@ const Videos = () => {
             </DialogHeader>
             {previewVideo && (
               <div className="aspect-[9/16] bg-muted">
-                <video
-                  src={previewVideo.video_url}
-                  controls
-                  autoPlay
-                  loop
-                  playsInline
-                  className="w-full h-full object-contain bg-background"
-                />
+                {previewVideo.media_type === 'image' ? (
+                  <img
+                    src={previewVideo.image_url || previewVideo.video_url}
+                    alt={previewVideo.title}
+                    className="w-full h-full object-contain bg-background"
+                  />
+                ) : (
+                  <video
+                    src={previewVideo.video_url}
+                    controls
+                    autoPlay
+                    loop
+                    playsInline
+                    className="w-full h-full object-contain bg-background"
+                  />
+                )}
               </div>
             )}
           </DialogContent>
