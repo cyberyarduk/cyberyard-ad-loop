@@ -544,7 +544,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const safeIndex = currentIndex < videos.length ? currentIndex : 0;
   const currentVideo = videos[safeIndex];
   const isImageItem = isImageMedia(currentVideo);
-  const currentMediaUrl = getPlayableUrl(currentVideo);
+  const currentMediaUrl = appendCacheBust(getPlayableUrl(currentVideo), playlistRevision);
 
 
   return (
@@ -581,20 +581,30 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       )}
       
       {currentVideo && isImageItem && (
-        <img
+        <div
           key={`${currentVideo.id}-${safeIndex}`}
-          src={currentMediaUrl}
-          alt={currentVideo.title}
-          className="absolute inset-0 z-10 w-full h-full object-contain bg-black animate-fade-in"
+          className="absolute inset-0 z-10 bg-black animate-fade-in"
           style={{ animationDuration: '450ms' }}
-          onLoad={() => {
-            console.log('[Image] Loaded successfully:', currentMediaUrl);
-          }}
-          onError={() => {
-            console.error('[Image] Load error for URL:', currentMediaUrl);
-            if (videos.length > 1) handleVideoEnd();
-          }}
-        />
+        >
+          <div
+            className="absolute inset-0 bg-center bg-contain bg-no-repeat"
+            style={{ backgroundImage: `url("${currentMediaUrl.replace(/"/g, '%22')}")` }}
+            aria-hidden="true"
+          />
+          <img
+            src={currentMediaUrl}
+            alt={currentVideo.title}
+            className="absolute inset-0 h-full w-full object-contain opacity-0"
+            decoding="async"
+            onLoad={() => {
+              console.log('[Image] Loaded successfully:', currentMediaUrl);
+            }}
+            onError={() => {
+              console.error('[Image] Load error for URL:', currentMediaUrl);
+              if (videos.length > 1) handleVideoEnd();
+            }}
+          />
+        </div>
       )}
 
       {currentVideo && !isImageItem && (
@@ -659,7 +669,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
         />
       )}
 
-      {/* Eye-catching sparkle / flash overlay — pure CSS, sits on top of media,
+      {/* Eye-catching sparkle overlay — pure CSS, sits on top of media,
           ignores pointer events so taps still register on the underlying layer. */}
       <SparkleOverlay />
 
