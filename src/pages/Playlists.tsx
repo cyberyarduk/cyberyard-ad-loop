@@ -72,8 +72,9 @@ const Playlists = () => {
   const [imageDuration, setImageDuration] = useState("10");
   const [uploadingImage, setUploadingImage] = useState(false);
   // Optional animated overlays for uploaded images
-  const [imageAnimatedOverlays, setImageAnimatedOverlays] = useState(false);
-  const [imageOverlayStyle, setImageOverlayStyle] = useState<"boom" | "sparkle" | "stars" | "minimal">("sparkle");
+  // Player-side overlay choice for uploaded images — rendered live by the
+  // player on top of the static image (no Shotstack render, no extra cost).
+  const [imagePlayerOverlay, setImagePlayerOverlay] = useState<"none" | "stars" | "sparkles" | "shimmer">("none");
   const [imageLimitedOffer, setImageLimitedOffer] = useState(false);
   const [imageBadgeText, setImageBadgeText] = useState("TODAY ONLY");
 
