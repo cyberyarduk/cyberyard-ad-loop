@@ -68,12 +68,17 @@ const POSITION_OPTIONS = [
   { value: "behind", label: "Behind", description: "Behind the subject" },
 ];
 
+interface PlaylistOption {
+  id: string;
+  name: string;
+}
+
 const CreateAIVideo = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const presetPlaylistId = searchParams.get("playlistId") || "";
   const [isGenerating, setIsGenerating] = useState(false);
-  const [playlists, setPlaylists] = useState<any[]>([]);
+  const [playlists, setPlaylists] = useState<PlaylistOption[]>([]);
   const [selectedPlaylistIds, setSelectedPlaylistIds] = useState<string[]>(presetPlaylistId ? [presetPlaylistId] : []);
   const [mainText, setMainText] = useState("");
   const [subtext, setSubtext] = useState("");
@@ -441,7 +446,7 @@ const CreateAIVideo = () => {
                         >
                           <span
                             className="text-2xl leading-none"
-                            style={{ fontFamily: f.css, fontWeight: f.weight as any }}
+                            style={{ fontFamily: f.css, fontWeight: f.weight }}
                           >
                             {mainText.trim().slice(0, 12) || "Aa Bb 99p"}
                           </span>
