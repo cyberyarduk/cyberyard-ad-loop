@@ -82,196 +82,197 @@ serve(async (req) => {
     }
 
     // ============================================================
-    // SIMPLE, RELIABLE APPROACH
-    // The user's uploaded image IS the advert background.
-    // No AI cutout (was producing white-box rectangles).
-    // No AI background replacement (was replacing the actual product).
-    // Shotstack adds: slow Ken Burns motion + dim overlay + animated text.
+    // STEP 1 — Build a Gemini prompt that bakes the entire promo
+    // poster (image + headline + price + design) into ONE image.
+    // This is the look the user loves (e.g. "Blueberry Muffins 50% off").
+    // We then animate that finished poster in Shotstack with motion.
     // ============================================================
-    console.log('Using uploaded image directly as advert background.');
-
-    const portraitImageUrl = finalImageUrl;
-    const landscapeImageUrl = finalImageUrl;
-
-    // ============================================================
-    // SHOTSTACK MULTI-SCENE PROMO
-    // Scene 1 (full duration): Ken Burns background + dim overlay
-    // Scene 2 (~20% in): Title slides up + fades in, holds
-    // Scene 3 (~45% in): Price pops in (zoom) with accent badge, holds
-    // Scene 4 (~70% in, OPTIONAL): Pulsing "TODAY ONLY" badge
-    // ============================================================
-    const videoDuration = Math.max(6, Math.min(30, parseFloat(duration) || 10));
-
-    // Slower, more deliberate timing — text appears earlier and HOLDS longer.
-    const titleStart = 0.6;
-    const priceStart = videoDuration * 0.30;
-    const badgeStart = videoDuration * 0.55;
-
-    // ---- Resolve user customization ----
-    const FONT_MAP: Record<string, { stack: string; weight: number }> = {
-      'bold-sans':       { stack: "'Impact','Arial Black',system-ui,sans-serif", weight: 900 },
-      'elegant-serif':   { stack: "'Playfair Display','Didot',Georgia,serif",     weight: 700 },
-      'handwritten':     { stack: "'Brush Script MT','Lucida Handwriting',cursive", weight: 400 },
-      'modern-display':  { stack: "'Futura','Century Gothic','Trebuchet MS',sans-serif", weight: 700 },
-      'rounded':         { stack: "'Quicksand','Nunito','Comic Sans MS',sans-serif", weight: 700 },
-      'condensed':       { stack: "'Oswald','Bebas Neue','Arial Narrow',sans-serif", weight: 800 },
+    const fontDescriptions: Record<string, string> = {
+      'bold-sans': 'a bold heavy sans-serif font (like Impact or Bebas Neue)',
+      'elegant-serif': 'an elegant serif font (like Playfair Display or Didot)',
+      'handwritten': 'a handwritten brush-script font with personality',
+      'modern-display': 'a modern geometric display font (like Futura or Eurostile)',
+      'rounded': 'a rounded soft friendly font (like Quicksand or Nunito)',
+      'condensed': 'a tall condensed block font for maximum impact',
     };
-    const TEXT_COLOR_MAP: Record<string, string> = {
-      white: '#FFFFFF', black: '#000000', yellow: '#FFD60A', red: '#FF3B30',
-      pink: '#FF2D87', blue: '#0A84FF', green: '#30D158', orange: '#FF9500',
+    const colorDescriptions: Record<string, string> = {
+      white: 'pure white', black: 'deep black', yellow: 'vibrant yellow',
+      red: 'bold red', pink: 'hot pink', blue: 'electric blue',
+      green: 'lime green', orange: 'bright orange',
     };
-    const userFont = FONT_MAP[customization?.fontFamily as string] || FONT_MAP['bold-sans'];
-    const userTextColor = TEXT_COLOR_MAP[customization?.textColor as string] || '#FFFFFF';
+    const overlayDescriptions: Record<string, string> = {
+      'none': 'no background behind the text — let it sit directly on the image',
+      'solid-band': 'a solid coloured horizontal band/box behind the text',
+      'semi-dark': 'a semi-transparent dark tinted layer behind the text for readability',
+      'semi-light': 'a semi-transparent light tinted layer behind the text for readability',
+      'gradient-bottom': 'a soft gradient that fades from the bottom of the image to make the text pop',
+      'gradient-top': 'a soft gradient that fades from the top of the image to make the text pop',
+    };
+    const positionDescriptions: Record<string, string> = {
+      top: 'at the TOP of the composition',
+      middle: 'in the CENTER of the composition',
+      bottom: 'at the BOTTOM of the composition',
+      infront: 'overlapping the front of the subject',
+      behind: 'integrated behind the subject for depth',
+    };
+    const c = customization || {};
+    const fontDesc = fontDescriptions[c.fontFamily as string] || fontDescriptions['bold-sans'];
+    const textColorDesc = colorDescriptions[c.textColor as string] || 'pure white';
+    const positionDesc = positionDescriptions[c.textPosition as string] || positionDescriptions.middle;
+    const overlayDesc = overlayDescriptions[c.overlayStyle as string] || overlayDescriptions.none;
+    const overlayColorDesc = c.overlayStyle && c.overlayStyle !== 'none'
+      ? `Use ${colorDescriptions[c.overlayColor as string] || 'black'} for the overlay/background colour. `
+      : '';
+    const themeDesc = c.themePrompt && String(c.themePrompt).trim().length > 0
+      ? `Additional vibe/theme to incorporate: "${String(c.themePrompt).slice(0, 200)}". `
+      : '';
+    const customizationFragment = ` Render the headline text in ${fontDesc}, coloured ${textColorDesc}, positioned ${positionDesc}. ${overlayDesc ? `Use ${overlayDesc}. ` : ''}${overlayColorDesc}${themeDesc}`;
 
-    const accentColor = '#FACC15';
-    const accentInk = '#111111';
+    const headline = titleText;
+    const priceLine = priceText ? ` Include a large, bold price callout "${priceText}" in a contrasting accent colour.` : '';
+    const badgeLine = (showBadge && finalBadgeText)
+      ? ` Add a small "${finalBadgeText}" badge/sticker in a corner.`
+      : '';
 
-    const escapeHtml = (s: string) => s
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+    const stylePrompts: Record<string, (orientation: string) => string> = {
+      boom: (o) => `Take this product image and transform it into an eye-catching promotional poster in ${o} format. Add bold explosive text "${headline}" in huge letters with vibrant red and pink gradients, dramatic shadows, and energy-burst effects. Make it look like a dramatic product advertisement with WOW factor.${priceLine}${badgeLine}`,
+      sparkle: (o) => `Take this product image and transform it into a magical promotional poster in ${o} format. Add elegant text "${headline}" with purple-to-blue gradients, sparkles, and dreamy glowing effects. Make it enchanting and eye-catching.${priceLine}${badgeLine}`,
+      stars: (o) => `Take this product image and transform it into a glamorous promotional poster in ${o} format. Add stylish text "${headline}" with hot pink colours, star decorations, and dazzling celebrity-style effects. Make it fabulous and attention-grabbing.${priceLine}${badgeLine}`,
+      minimal: (o) => `Take this product image and transform it into a clean modern promotional poster in ${o} format. Add modern text "${headline}" in bold sans-serif font with simple, professional styling. Keep it minimal but impactful.${priceLine}${badgeLine}`,
+    };
+    const stylefn = stylePrompts[style] || stylePrompts.boom;
+    const portraitPrompt = stylefn('1080x1920 portrait') + customizationFragment;
+    const landscapePrompt = stylefn('1920x1080 landscape') + customizationFragment;
 
-    // Try to split "Bacon Sandwich Only £4.99" -> title="Bacon Sandwich Only", price="£4.99"
-    let resolvedTitle = titleText;
-    let resolvedPrice = priceText;
-    if (!resolvedPrice && resolvedTitle) {
-      const m = resolvedTitle.match(/(.+?)\s+((?:£|\$|€)\s?\d[\d.,]*|\d+\s?p\b|\d+%\s?off)\s*$/i);
-      if (m) {
-        resolvedTitle = m[1].trim();
-        resolvedPrice = m[2].trim();
-      }
+    const callGemini = (prompt: string) => fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'google/gemini-3-pro-image-preview',
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            { type: 'image_url', image_url: { url: finalImageUrl } }
+          ]
+        }],
+        modalities: ['image', 'text']
+      })
+    });
+
+    console.log('Generating portrait + landscape promo posters with Gemini...');
+    const [portraitRes, landscapeRes] = await Promise.all([callGemini(portraitPrompt), callGemini(landscapePrompt)]);
+
+    const extractB64 = async (res: Response, label: string): Promise<string | null> => {
+      if (!res.ok) { console.error(`${label} AI error:`, await res.text().catch(() => '')); return null; }
+      try {
+        const json = await res.json();
+        return json.choices?.[0]?.message?.images?.[0]?.image_url?.url ?? null;
+      } catch { return null; }
+    };
+
+    const [portraitB64, landscapeB64] = await Promise.all([
+      extractB64(portraitRes, 'portrait poster'),
+      extractB64(landscapeRes, 'landscape poster'),
+    ]);
+
+    if (!portraitB64) {
+      throw new Error('Failed to generate portrait promotional poster');
     }
 
-    // Auto-shrink title font if the text is long so it always fits.
-    const titleLen = resolvedTitle.length;
-    const titleFontSize = (isPortrait: boolean) => {
-      const base = isPortrait ? 130 : 110;
-      if (titleLen > 32) return Math.round(base * 0.65);
-      if (titleLen > 22) return Math.round(base * 0.78);
-      if (titleLen > 14) return Math.round(base * 0.9);
-      return base;
+    const ts = Date.now();
+    const uploadPng = async (b64: string, path: string) => {
+      const data = b64.split(',')[1];
+      const bin = Uint8Array.from(atob(data), ch => ch.charCodeAt(0));
+      const { error } = await supabase.storage.from('videos').upload(path, bin, {
+        contentType: 'image/png', upsert: false, cacheControl: '31536000',
+      });
+      if (error) throw new Error(`Upload failed (${path}): ${error.message}`);
+      return supabase.storage.from('videos').getPublicUrl(path).data.publicUrl;
     };
 
-    const buildTracks = (bgSrc: string, isPortrait: boolean) => {
+    const portraitImageUrl = await uploadPng(portraitB64, `promo-images/${ts}-portrait.png`);
+    const landscapeImageUrl = landscapeB64 ? await uploadPng(landscapeB64, `promo-images/${ts}-landscape.png`) : null;
+    console.log('AI posters uploaded:', { portraitImageUrl, landscapeImageUrl });
+
+    // ============================================================
+    // STEP 2 — Animate the finished AI poster in Shotstack.
+    // The poster is the hero. We add: slow Ken Burns + a coloured
+    // accent bar that swipes across the screen + optional pulsing
+    // limited-offer badge overlay.
+    // ============================================================
+    const videoDuration = Math.max(6, Math.min(30, parseFloat(duration) || 8));
+
+    const ACCENT_BY_STYLE: Record<string, string> = {
+      boom: '#FF3B30', sparkle: '#A855F7', stars: '#FF2D87', minimal: '#0A84FF',
+    };
+    const accent = ACCENT_BY_STYLE[style] || '#FACC15';
+
+    const escapeHtml = (s: string) => s
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+    const buildTracks = (posterUrl: string, isPortrait: boolean) => {
       const W = isPortrait ? 1080 : 1920;
       const H = isPortrait ? 1920 : 1080;
-
-      // Layout
-      const titleY = isPortrait ? 0.36 : 0.34;
-      const priceY = isPortrait ? -0.30 : -0.30;
-      const badgeY = isPortrait ? 0.46 : 0.44;
-
-      const tFontSize = titleFontSize(isPortrait);
-      const priceFontSize = isPortrait ? 150 : 130;
-      const badgeFontSize = isPortrait ? 44 : 40;
-
-      // Text shadow that works for both light + dark text colours
-      const isLightText = ['#FFFFFF', '#FFD60A', '#FF9500', '#30D158'].includes(userTextColor);
-      const titleShadow = isLightText
-        ? '0 4px 24px rgba(0,0,0,0.85), 0 2px 6px rgba(0,0,0,0.9)'
-        : '0 2px 8px rgba(255,255,255,0.6)';
-
-      // IMPORTANT: in Shotstack, the FIRST track in the array renders ON TOP.
-      // Order: badge -> price -> title -> dim overlay -> hero image -> blurred bg.
       const tracks: Record<string, unknown>[] = [];
 
-      // BADGE — pulsing limited offer pill
+      // Optional pulsing "LIMITED OFFER" badge overlay (front-most)
       if (showBadge && finalBadgeText) {
+        const badgeFontSize = isPortrait ? 48 : 42;
         const badgeHtml = `<p class="b">${escapeHtml(finalBadgeText)}</p>`;
-        const badgeCss = `.b{font-family:${userFont.stack};font-weight:900;font-size:${badgeFontSize}px;color:#FFFFFF;background:#DC2626;letter-spacing:0.08em;padding:14px 32px;border-radius:9999px;display:inline-block;text-align:center;text-transform:uppercase;margin:0;line-height:1;border:3px solid #FFFFFF;box-shadow:0 6px 20px rgba(220,38,38,0.5);}`;
-        const badgeW = 700;
-        const badgeH = 140;
-        const pulseLen = 0.9;
+        const badgeCss = `.b{font-family:'Open Sans',Arial,sans-serif;font-weight:900;font-size:${badgeFontSize}px;color:#FFFFFF;background:#DC2626;letter-spacing:0.08em;padding:14px 32px;border-radius:9999px;display:inline-block;text-align:center;text-transform:uppercase;margin:0;line-height:1;border:3px solid #FFFFFF;box-shadow:0 6px 20px rgba(0,0,0,0.45);}`;
+        const badgeStart = videoDuration * 0.35;
+        const pulseLen = 0.85;
         let t = badgeStart;
         let toggle = true;
         while (t + pulseLen <= videoDuration) {
           const clip: Record<string, unknown> = {
-            asset: { type: "html", html: badgeHtml, css: badgeCss, width: badgeW, height: badgeH, background: "transparent" },
+            asset: { type: 'html', html: badgeHtml, css: badgeCss, width: 700, height: 140, background: 'transparent' },
             start: t,
             length: pulseLen,
-            position: "center",
-            offset: { x: 0, y: badgeY },
-            effect: toggle ? "zoomIn" : "zoomOut",
+            position: 'top',
+            offset: { x: isPortrait ? 0.30 : 0.36, y: -0.04 },
+            effect: toggle ? 'zoomIn' : 'zoomOut',
           };
-          if (t === badgeStart) clip.transition = { in: "zoom" };
+          if (t === badgeStart) clip.transition = { in: 'zoom' };
           tracks.push({ clips: [clip] });
           t += pulseLen;
           toggle = !toggle;
         }
       }
 
-      // PRICE — yellow pop badge
-      if (resolvedPrice) {
-        const priceHtml = `<p class="p">${escapeHtml(resolvedPrice)}</p>`;
-        const priceCss = `.p{font-family:${userFont.stack};font-weight:${userFont.weight};font-size:${priceFontSize}px;color:${accentInk};background:${accentColor};letter-spacing:-0.02em;padding:20px 48px;border-radius:20px;display:inline-block;text-align:center;margin:0;line-height:1;box-shadow:0 12px 32px rgba(0,0,0,0.45);white-space:nowrap;}`;
-        const priceW = isPortrait ? 900 : 1200;
-        const priceH = isPortrait ? 280 : 240;
+      // Swiping accent bar — a coloured stripe that slides across at intervals
+      const barHtml = `<div class="bar"></div>`;
+      const barH = isPortrait ? 24 : 20;
+      const barCss = `.bar{width:100%;height:${barH}px;background:${accent};box-shadow:0 0 30px ${accent};}`;
+      const swipes = [
+        { start: 0.4, dir: 'slideRight' as const, y: -0.18 },
+        { start: videoDuration * 0.55, dir: 'slideLeft' as const, y: 0.22 },
+      ];
+      for (const s of swipes) {
+        if (s.start + 1.4 > videoDuration) continue;
         tracks.push({
           clips: [{
-            asset: { type: "html", html: priceHtml, css: priceCss, width: priceW, height: priceH, background: "transparent" },
-            start: priceStart,
-            length: Math.max(2, videoDuration - priceStart),
-            position: "center",
-            offset: { x: 0, y: priceY },
-            transition: { in: "zoom", out: "fade" },
-            effect: "zoomInSlow",
+            asset: { type: 'html', html: barHtml, css: barCss, width: W, height: barH, background: 'transparent' },
+            start: s.start,
+            length: 1.4,
+            position: 'center',
+            offset: { x: 0, y: s.y },
+            transition: { in: s.dir, out: 'fade' },
           }]
         });
       }
 
-      // TITLE — uses USER-SELECTED FONT & COLOUR
-      if (resolvedTitle) {
-        const titleHtml = `<p class="t">${escapeHtml(resolvedTitle)}</p>`;
-        const titleCss = `.t{font-family:${userFont.stack};font-weight:${userFont.weight};font-size:${tFontSize}px;color:${userTextColor};letter-spacing:-0.01em;text-align:center;margin:0;line-height:1.05;text-shadow:${titleShadow};text-transform:uppercase;}`;
-        const titleW = isPortrait ? 1000 : 1700;
-        const titleH = isPortrait ? 480 : 360;
-        tracks.push({
-          clips: [{
-            asset: { type: "html", html: titleHtml, css: titleCss, width: titleW, height: titleH, background: "transparent" },
-            start: titleStart,
-            length: Math.max(2, videoDuration - titleStart),
-            position: "center",
-            offset: { x: 0, y: titleY },
-            transition: { in: "slideUp", out: "fade" },
-          }]
-        });
-      }
-
-      // Dim gradient overlay — stronger at top + bottom so text always reads.
-      const dimHtml = `<div class="dim"></div>`;
-      const dimCss = `.dim{width:100%;height:100%;background:linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.05) 35%, rgba(0,0,0,0.05) 65%, rgba(0,0,0,0.65) 100%);}`;
+      // HERO POSTER — the AI-generated promo image with slow Ken Burns
       tracks.push({
         clips: [{
-          asset: { type: "html", html: dimHtml, css: dimCss, width: W, height: H },
+          asset: { type: 'image', src: posterUrl },
           start: 0,
           length: videoDuration,
-          position: "center",
-        }]
-      });
-
-      // HERO IMAGE — contained (not cropped), gentle zoom, sits above blurred bg
-      tracks.push({
-        clips: [{
-          asset: { type: "image", src: bgSrc },
-          start: 0,
-          length: videoDuration,
-          fit: "contain",
-          scale: 0.85,
-          effect: "zoomInSlow",
-          transition: { in: "fade", out: "fade" }
-        }]
-      });
-
-      // BLURRED BACKDROP — same image, cover-fit, blurred via opacity dim
-      tracks.push({
-        clips: [{
-          asset: { type: "image", src: bgSrc },
-          start: 0,
-          length: videoDuration,
-          fit: "cover",
-          opacity: 0.55,
-          effect: "zoomOutSlow",
+          fit: 'cover',
+          effect: 'zoomInSlow',
+          transition: { in: 'fade', out: 'fade' },
         }]
       });
 
@@ -279,29 +280,13 @@ serve(async (req) => {
     };
 
     const portraitEdit = {
-      timeline: {
-        background: "#000000",
-        tracks: buildTracks(portraitImageUrl, true)
-      },
-      output: {
-        format: "mp4",
-        aspectRatio: "9:16",
-        size: { width: 1080, height: 1920 },
-        fps: 30
-      }
+      timeline: { background: '#000000', tracks: buildTracks(portraitImageUrl, true) },
+      output: { format: 'mp4', aspectRatio: '9:16', size: { width: 1080, height: 1920 }, fps: 30 }
     };
 
     const landscapeEdit = landscapeImageUrl ? {
-      timeline: {
-        background: "#000000",
-        tracks: buildTracks(landscapeImageUrl, false)
-      },
-      output: {
-        format: "mp4",
-        aspectRatio: "16:9",
-        size: { width: 1920, height: 1080 },
-        fps: 30
-      }
+      timeline: { background: '#000000', tracks: buildTracks(landscapeImageUrl, false) },
+      output: { format: 'mp4', aspectRatio: '16:9', size: { width: 1920, height: 1080 }, fps: 30 }
     } : null;
 
     console.log('Submitting render requests to Shotstack API');
