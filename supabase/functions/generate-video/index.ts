@@ -276,9 +276,10 @@ serve(async (req) => {
         tracks: [
           {
             clips: [{
-              asset: { type: "image", src: portraitImageUrl, fit: "contain" },
+              asset: { type: "image", src: portraitImageUrl },
               start: 0,
-              length: videoDuration
+              length: videoDuration,
+              fit: "contain"
             }]
           }
         ]
