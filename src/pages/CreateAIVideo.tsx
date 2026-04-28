@@ -456,7 +456,7 @@ const CreateAIVideo = () => {
                     setOverlayStyle(pick(OVERLAY_OPTIONS).value);
                     setOverlayColor(pick(OVERLAY_COLOR_OPTIONS).value);
                     setStyle(pick(STYLE_PRESETS).value);
-                    toast.success("AI picked a style for you ✨");
+                    toast.success("Cyberyard picked a style for you ✨");
                     setShowAdvanced(true);
                   }}
                 >
