@@ -46,8 +46,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     <>
       <div className="mb-6">
         <Link to="/dashboard" className="block">
-          <div className="rounded-2xl bg-foreground/95 px-4 py-4 flex items-center justify-center">
-            <img alt="Cyberyard" src={logo} className="h-12 w-auto object-contain brightness-0 invert" />
+          <div className="rounded-2xl bg-foreground/95 px-4 py-6 flex items-center justify-center">
+            <img alt="Cyberyard" src={logo} className="h-20 w-auto object-contain brightness-0 invert" />
           </div>
         </Link>
         {!isSuperAdmin && company && (
