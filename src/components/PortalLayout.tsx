@@ -58,7 +58,9 @@ const PortalLayout = ({ children, variant }: PortalLayoutProps) => {
     <>
       <div className="mb-6">
         <Link to={variant === "sales" ? "/sales" : "/admin"} className="block">
-          <img alt="Cyberyard" src={logo} className="h-14 w-auto object-contain" />
+          <div className="rounded-2xl bg-foreground/95 px-4 py-6 flex items-center justify-center">
+            <img alt="Cyberyard" src={logo} className="h-20 w-auto object-contain brightness-0 invert" />
+          </div>
         </Link>
         <div className="chip mt-3 bg-yellow-soft text-foreground/80">
           {portalLabel}
