@@ -112,7 +112,12 @@ const PortalLayout = ({ children, variant }: PortalLayoutProps) => {
             {sidebarContent}
           </SheetContent>
         </Sheet>
-        <img alt="Cyberyard" src={logo} className="h-9 w-auto object-contain ml-3" />
+        <Link to={variant === "sales" ? "/sales" : "/admin"} className="ml-3 flex items-center gap-3 min-w-0">
+          <div className="rounded-xl bg-foreground/95 px-3 py-1.5 flex items-center justify-center shrink-0">
+            <img alt="Cyberyard" src={logo} className="h-7 w-auto object-contain brightness-0 invert" />
+          </div>
+          <span className="text-sm font-semibold text-foreground truncate">{portalLabel}</span>
+        </Link>
       </header>
 
       <aside className="hidden lg:flex fixed left-4 top-4 bottom-4 w-60 glass-card rounded-2xl p-5 flex-col z-40">
