@@ -857,9 +857,9 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
         />
       )}
 
-      {/* Eye-catching sparkle overlay — pure CSS, sits on top of media,
-          ignores pointer events so taps still register on the underlying layer. */}
-      {!(isNative && isImageItem) && <SparkleOverlay />}
+      {/* Per-item overlay is handled inside each media branch via <PlayerOverlay />.
+          The previous always-on SparkleOverlay was removed so users can opt in
+          per playlist item (none / stars / sparkles / shimmer). */}
 
       {/* Invisible tap zone indicator (only visible during development) */}
       <div
