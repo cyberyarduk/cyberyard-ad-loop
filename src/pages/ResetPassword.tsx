@@ -16,8 +16,13 @@ const ResetPassword = () => {
   const [loading, setLoading] = useState(false);
   const [canReset, setCanReset] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [firstLogin, setFirstLogin] = useState(false);
 
   useEffect(() => {
+    const url = new URL(window.location.href);
+    const isFirstLogin = url.searchParams.get("first_login") === "1";
+    setFirstLogin(isFirstLogin);
+
     // Listen for the PASSWORD_RECOVERY event Supabase fires when a recovery link is opened
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session)) {
@@ -28,7 +33,6 @@ const ResetPassword = () => {
 
     // Also handle the ?code= parameter (PKCE flow used in some recovery links)
     const init = async () => {
-      const url = new URL(window.location.href);
       const code = url.searchParams.get("code");
 
       if (code) {
@@ -43,7 +47,7 @@ const ResetPassword = () => {
         return;
       }
 
-      // Fallback: if there's already a session (hash tokens auto-processed), allow reset
+      // Fallback: if there's already a session (hash tokens auto-processed, or first-login), allow reset
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         setCanReset(true);
@@ -69,12 +73,38 @@ const ResetPassword = () => {
       return;
     }
 
+    if (firstLogin && password === "password123") {
+      toast.error("Please choose a different password from the temporary one.");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const { error } = await supabase.auth.updateUser({ password });
-
       if (error) throw error;
+
+      // Clear the must_change_password flag and route to the correct portal
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await supabase
+          .from("profiles")
+          .update({ must_change_password: false })
+          .eq("id", session.user.id);
+
+        if (firstLogin) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", session.user.id)
+            .single();
+          toast.success("Password updated. Welcome!");
+          if (profile?.role === "super_admin") navigate("/admin");
+          else if (profile?.role === "salesperson") navigate("/sales");
+          else navigate("/dashboard");
+          return;
+        }
+      }
 
       toast.success("Password updated. Please sign in again.");
       await supabase.auth.signOut();
