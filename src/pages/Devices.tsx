@@ -28,11 +28,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Monitor, Copy, Edit, Trash2, QrCode, KeyRound, PlayCircle } from "lucide-react";
+import { Plus, Monitor, Copy, Edit, Trash2, QrCode, KeyRound, PlayCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import QRCode from "qrcode";
+import DeviceScheduleDialog from "@/components/DeviceScheduleDialog";
 
 
 const Devices = () => {
