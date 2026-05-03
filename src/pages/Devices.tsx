@@ -415,11 +415,21 @@ const Devices = () => {
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>
-                      <CardTitle className="flex items-center gap-2">
+                      <CardTitle className="flex items-center gap-2 flex-wrap">
                         {device.name}
                         <Badge variant={getStatusBadgeVariant(device.status || 'unpaired')}>
                           {device.status || 'unpaired'}
                         </Badge>
+                        {(() => {
+                          if (!device.last_seen_at || device.status !== 'active') return null;
+                          const offline = (Date.now() - new Date(device.last_seen_at).getTime()) > 2 * 60 * 1000;
+                          return offline ? (
+                            <Badge variant="destructive" className="gap-1">
+                              <span className="inline-block w-1.5 h-1.5 rounded-full bg-white" />
+                              Offline
+                            </Badge>
+                          ) : null;
+                        })()}
                       </CardTitle>
                       <CardDescription>
                         Last seen: {device.last_seen_at ? new Date(device.last_seen_at).toLocaleString() : 'Never'}
