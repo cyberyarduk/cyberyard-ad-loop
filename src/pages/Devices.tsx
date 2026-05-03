@@ -33,7 +33,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import QRCode from "qrcode";
-import EmergencyAlertButton from "@/components/EmergencyAlertButton";
+
 
 const Devices = () => {
   const navigate = useNavigate();
@@ -347,7 +347,6 @@ const Devices = () => {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <EmergencyAlertButton />
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
                 <Button disabled={deviceLimit !== null && devices.length >= deviceLimit}>

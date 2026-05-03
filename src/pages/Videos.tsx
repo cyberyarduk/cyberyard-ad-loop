@@ -35,8 +35,6 @@ const Videos = () => {
   const [previewVideo, setPreviewVideo] = useState<any | null>(null);
   const [durationEdit, setDurationEdit] = useState<{ id: string; value: string } | null>(null);
   const [savingDuration, setSavingDuration] = useState(false);
-  const [expiryEdit, setExpiryEdit] = useState<{ id: string; value: string } | null>(null);
-  const [savingExpiry, setSavingExpiry] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(true);
@@ -370,32 +368,6 @@ const Videos = () => {
     }
   };
 
-  const saveExpiry = async () => {
-    if (!expiryEdit) return;
-    setSavingExpiry(true);
-    try {
-      const trimmed = expiryEdit.value.trim();
-      const iso = trimmed === "" ? null : new Date(trimmed).toISOString();
-      if (trimmed !== "" && (!iso || isNaN(new Date(trimmed).getTime()))) {
-        toast.error("Pick a valid date");
-        return;
-      }
-      const { error } = await supabase
-        .from("videos")
-        .update({ expires_at: iso } as any)
-        .eq("id", expiryEdit.id);
-      if (error) throw error;
-      toast.success(iso ? "Expiry set" : "Expiry removed");
-      setExpiryEdit(null);
-      fetchVideos();
-    } catch (e: any) {
-      console.error(e);
-      toast.error(e.message || "Failed to save expiry");
-    } finally {
-      setSavingExpiry(false);
-    }
-  };
-
   const saveDuration = async () => {
     if (!durationEdit) return;
     setSavingDuration(true);
@@ -706,20 +678,6 @@ const Videos = () => {
 
                   <button
                     type="button"
-                    onClick={() => setExpiryEdit({ id: video.id, value: video.expires_at ? new Date(video.expires_at).toISOString().slice(0,16) : "" })}
-                    className="w-full flex items-center gap-2 text-xs text-muted-foreground border border-border rounded-md px-3 py-2 hover:bg-accent hover:text-foreground transition-colors"
-                  >
-                    <CalendarClock className="h-3.5 w-3.5" />
-                    <span className="flex-1 text-left">
-                      {video.expires_at
-                        ? `Expires ${new Date(video.expires_at).toLocaleDateString()}`
-                        : 'No expiry'}
-                    </span>
-                    <span className="text-primary font-medium">Edit</span>
-                  </button>
-
-                  <button
-                    type="button"
                     onClick={() => setDurationEdit({ id: video.id, value: video.display_duration?.toString() ?? "" })}
                     className="w-full flex items-center gap-2 text-xs text-muted-foreground border border-border rounded-md px-3 py-2 hover:bg-accent hover:text-foreground transition-colors"
                   >
@@ -802,38 +760,6 @@ const Videos = () => {
                 )}
               </div>
             )}
-          </DialogContent>
-        </Dialog>
-
-        {/* Expiry Dialog */}
-        <Dialog open={!!expiryEdit} onOpenChange={(o) => !o && setExpiryEdit(null)}>
-          <DialogContent className="max-w-sm">
-            <DialogHeader>
-              <DialogTitle>Set expiry date</DialogTitle>
-              <DialogDescription>
-                After this date and time, the item is automatically removed from
-                playback. Leave blank for no expiry.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-2 py-2">
-              <Label htmlFor="expiry">Expires at</Label>
-              <Input
-                id="expiry"
-                type="datetime-local"
-                value={expiryEdit?.value ?? ""}
-                onChange={(e) =>
-                  setExpiryEdit((prev) => (prev ? { ...prev, value: e.target.value } : prev))
-                }
-              />
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setExpiryEdit({ id: expiryEdit!.id, value: "" })} disabled={savingExpiry}>
-                Clear
-              </Button>
-              <Button onClick={saveExpiry} disabled={savingExpiry}>
-                {savingExpiry ? "Saving…" : "Save"}
-              </Button>
-            </DialogFooter>
           </DialogContent>
         </Dialog>
 

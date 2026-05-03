@@ -89,7 +89,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const [isOffline, setIsOffline] = useState(false);
   const [isSuspended, setIsSuspended] = useState(false);
   const [isOffHours, setIsOffHours] = useState(false);
-  const [emergency, setEmergency] = useState<{ active: boolean; message?: string } | null>(null);
+  
   const [cachedVideos, setCachedVideos] = useState<Video[]>([]);
   const [imageRenderUrl, setImageRenderUrl] = useState<string>("");
   const [isPullingToRefresh, setIsPullingToRefresh] = useState(false);
@@ -194,7 +194,6 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
       // Device is active - clear suspended state if it was set
       setIsSuspended(false);
       setIsOffHours(!!data.off_hours);
-      setEmergency(data.emergency?.active ? { active: true, message: data.emergency.message } : { active: false });
       activePlaylistIdRef.current = data.playlist_id ?? null;
       
       console.log('Fetched videos:', data.videos, 'playlist_id:', data.playlist_id);
@@ -708,23 +707,6 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           <div className="text-muted-foreground text-sm mt-4">
             The device will automatically resume when reactivated.
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Emergency takeover overlay — wins over everything else.
-  if (emergency?.active) {
-    return (
-      <div
-        className="min-h-screen flex flex-col items-center justify-center text-center px-8 animate-pulse"
-        style={{ background: 'hsl(0 84% 45%)' }}
-        onTouchStart={handleTripleTap}
-        onClick={handleTripleTap}
-      >
-        <div className="text-white">
-          <div className="text-5xl font-bold mb-4 tracking-wide">⚠ EMERGENCY</div>
-          <div className="text-2xl">{emergency.message || 'Please follow staff instructions'}</div>
         </div>
       </div>
     );
