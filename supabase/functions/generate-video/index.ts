@@ -1,11 +1,60 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Per-caller rate limiter (10 / hour). Keyed by Authorization header or device token.
+const rlAttempts = new Map<string, number[]>();
+const RL_WINDOW = 60 * 60 * 1000;
+const RL_MAX = 10;
+function rateLimited(key: string): boolean {
+  const now = Date.now();
+  const list = (rlAttempts.get(key) || []).filter((t) => now - t < RL_WINDOW);
+  if (list.length >= RL_MAX) { rlAttempts.set(key, list); return true; }
+  list.push(now); rlAttempts.set(key, list); return false;
+}
+
+const isHttpsTrustedUrl = (u: string): boolean => {
+  try {
+    const url = new URL(u);
+    if (url.protocol !== 'https:') return false;
+    // Allow Supabase Storage and lovable-uploads hosts; otherwise reject to prevent SSRF.
+    const allowed = [
+      '.supabase.co',
+      '.supabase.in',
+      'lovable-uploads.s3.amazonaws.com',
+      'cdn.shotstack.io',
+    ];
+    return allowed.some((d) => url.hostname.endsWith(d) || url.hostname === d.replace(/^\./, ''));
+  } catch { return false; }
+};
+
+const InputSchema = z.object({
+  imageUrl: z.string().url().max(2048).optional().refine((u) => !u || isHttpsTrustedUrl(u), {
+    message: 'imageUrl must be HTTPS from a trusted host',
+  }),
+  imageUrlLandscape: z.string().url().max(2048).optional().refine((u) => !u || isHttpsTrustedUrl(u), {
+    message: 'imageUrlLandscape must be HTTPS from a trusted host',
+  }),
+  imageData: z.string().max(10_000_000).optional(), // ~7.5MB raw after base64 decode
+  mainText: z.string().max(120).optional(),
+  subtext: z.string().max(120).optional(),
+  price: z.string().max(40).optional(),
+  duration: z.union([z.number(), z.string()]).optional(),
+  style: z.enum(['boom', 'sparkle', 'stars', 'minimal']).optional(),
+  playlistId: z.string().uuid().optional(),
+  deviceToken: z.string().min(16).max(256).optional(),
+  customization: z.record(z.any()).optional(),
+  limitedOffer: z.boolean().optional(),
+  badgeText: z.string().max(40).optional(),
+  animatedOverlays: z.boolean().optional(),
+  useImageAsIs: z.boolean().optional(),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -13,7 +62,23 @@ serve(async (req) => {
   }
 
   try {
-    const { imageUrl, imageUrlLandscape, imageData, mainText, subtext, duration, style = 'boom', playlistId, deviceToken, customization, price, limitedOffer, badgeText, animatedOverlays = true, useImageAsIs = false } = await req.json();
+    const rlKey = req.headers.get('authorization') || req.headers.get('x-device-token') || 'anon';
+    if (rateLimited(rlKey)) {
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded. Please wait before generating more videos.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const raw = await req.json().catch(() => ({}));
+    const parsedInput = InputSchema.safeParse(raw);
+    if (!parsedInput.success) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: parsedInput.error.flatten() }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    const { imageUrl, imageUrlLandscape, imageData, mainText, subtext, duration, style = 'boom', playlistId, deviceToken, customization, price, limitedOffer, badgeText, animatedOverlays = true, useImageAsIs = false } = parsedInput.data;
     console.log('Generating video with params:', { hasImageUrl: !!imageUrl, hasImageUrlLandscape: !!imageUrlLandscape, hasImageData: !!imageData, mainText, subtext, duration, style, playlistId, deviceToken: !!deviceToken, customization, price, limitedOffer, badgeText, animatedOverlays, useImageAsIs });
 
     // Resolve title/price: prefer explicit `price`, fall back to subtext for backward compat.

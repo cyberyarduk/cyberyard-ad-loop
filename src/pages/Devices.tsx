@@ -474,8 +474,8 @@ const Devices = () => {
                     </div>
                     <div>
                       <p className="text-sm font-medium mb-1">Admin PIN</p>
-                      <code className="text-lg font-mono bg-muted px-3 py-1 rounded">
-                        {device.admin_pin || '****'}
+                      <code className="text-lg font-mono bg-muted px-3 py-1 rounded" title="PIN is securely hashed">
+                        ••••
                       </code>
                     </div>
                   </div>
