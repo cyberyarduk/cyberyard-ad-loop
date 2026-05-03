@@ -370,6 +370,32 @@ const Videos = () => {
     }
   };
 
+  const saveExpiry = async () => {
+    if (!expiryEdit) return;
+    setSavingExpiry(true);
+    try {
+      const trimmed = expiryEdit.value.trim();
+      const iso = trimmed === "" ? null : new Date(trimmed).toISOString();
+      if (trimmed !== "" && (!iso || isNaN(new Date(trimmed).getTime()))) {
+        toast.error("Pick a valid date");
+        return;
+      }
+      const { error } = await supabase
+        .from("videos")
+        .update({ expires_at: iso } as any)
+        .eq("id", expiryEdit.id);
+      if (error) throw error;
+      toast.success(iso ? "Expiry set" : "Expiry removed");
+      setExpiryEdit(null);
+      fetchVideos();
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e.message || "Failed to save expiry");
+    } finally {
+      setSavingExpiry(false);
+    }
+  };
+
   const saveDuration = async () => {
     if (!durationEdit) return;
     setSavingDuration(true);
