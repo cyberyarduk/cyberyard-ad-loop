@@ -2,11 +2,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { QrCode, Keyboard } from "lucide-react";
+import { QrCode, Keyboard, Tv, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { BarcodeScanner } from '@capacitor-mlkit/barcode-scanning';
 import { Capacitor } from '@capacitor/core';
+import logo from "@/assets/logo.png";
 
 interface PlayerPairingProps {
   onPaired: (authToken: string, deviceInfo: any) => void;
@@ -132,47 +132,76 @@ const PlayerPairing = ({ onPaired }: PlayerPairingProps) => {
 
   if (mode === 'choose') {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Pair Your Device</CardTitle>
-            <CardDescription>
-              Choose how you'd like to pair this device with Cyberyard
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Button
-              onClick={handleQRScan}
-              className="w-full h-24 text-lg"
-              variant="outline"
-            >
-              <QrCode className="mr-3 h-8 w-8" />
-              Scan QR Code
-            </Button>
-            <Button
-              onClick={() => setMode('manual')}
-              className="w-full h-24 text-lg"
-              variant="outline"
-            >
-              <Keyboard className="mr-3 h-8 w-8" />
-              Enter Device Code
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-wash-warm opacity-70" />
+        <div className="w-full max-w-md">
+          <div className="premium-card card-highlight rounded-3xl p-8 sm:p-10 space-y-8">
+            <div className="text-center space-y-3">
+              <img src={logo} alt="Cyberyard" className="h-16 mx-auto" />
+              <div className="chip bg-mint text-foreground/80">
+                <Tv className="h-3.5 w-3.5" />
+                Device Setup
+              </div>
+              <h1 className="text-2xl font-semibold tracking-tight">Pair your device</h1>
+              <p className="text-sm text-muted-foreground">
+                Connect this screen to your Cyberyard account to start playing your content.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={handleQRScan}
+                className="group w-full rounded-2xl border border-border/60 bg-background hover:bg-yellow-soft hover:border-foreground/20 transition-all p-5 flex items-center gap-4 text-left"
+              >
+                <div className="h-12 w-12 rounded-xl bg-lavender flex items-center justify-center shrink-0">
+                  <QrCode className="h-6 w-6 text-foreground" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium">Scan QR code</p>
+                  <p className="text-xs text-muted-foreground">Fastest — point your camera at the code</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => setMode('manual')}
+                className="group w-full rounded-2xl border border-border/60 bg-background hover:bg-mint hover:border-foreground/20 transition-all p-5 flex items-center gap-4 text-left"
+              >
+                <div className="h-12 w-12 rounded-xl bg-yellow-soft flex items-center justify-center shrink-0">
+                  <Keyboard className="h-6 w-6 text-foreground" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium">Enter device code</p>
+                  <p className="text-xs text-muted-foreground">Type the 6-character code from your dashboard</p>
+                </div>
+              </button>
+            </div>
+
+            <p className="text-xs text-center text-muted-foreground">
+              Need a code? Generate one from your admin dashboard under <span className="font-medium text-foreground/80">Devices</span>.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Enter Device Code</CardTitle>
-          <CardDescription>
-            Enter the 6-character code from your admin dashboard
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-wash-warm opacity-70" />
+      <div className="w-full max-w-md">
+        <div className="premium-card card-highlight rounded-3xl p-8 sm:p-10 space-y-6">
+          <div className="text-center space-y-3">
+            <img src={logo} alt="Cyberyard" className="h-14 mx-auto" />
+            <div className="chip bg-lavender text-foreground/80">
+              <Keyboard className="h-3.5 w-3.5" />
+              Manual Pairing
+            </div>
+            <h1 className="text-2xl font-semibold tracking-tight">Enter device code</h1>
+            <p className="text-sm text-muted-foreground">
+              Enter the 6-character code from your admin dashboard.
+            </p>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="device-code">Device Code</Label>
             <Input
@@ -181,26 +210,29 @@ const PlayerPairing = ({ onPaired }: PlayerPairingProps) => {
               value={deviceCode}
               onChange={(e) => setDeviceCode(e.target.value.toUpperCase())}
               maxLength={6}
-              className="text-center text-2xl font-mono tracking-widest"
+              className="text-center text-2xl font-mono tracking-widest h-14"
               autoComplete="off"
             />
           </div>
+
           <Button
             onClick={handlePairing}
             disabled={loading || deviceCode.length < 6}
-            className="w-full"
+            className="w-full h-11"
           >
-            {loading ? 'Pairing...' : 'Pair Device'}
+            {loading ? 'Pairing…' : 'Pair Device'}
           </Button>
+
           <Button
             onClick={() => setMode('choose')}
             variant="ghost"
             className="w-full"
           >
+            <ArrowLeft className="mr-2 h-4 w-4" />
             Back
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
