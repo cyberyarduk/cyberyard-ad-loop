@@ -1250,6 +1250,87 @@ const Playlists = () => {
             </form>
           </DialogContent>
         </Dialog>
+
+        <ScheduleDialog
+          open={!!scheduleEdit}
+          onOpenChange={(o) => !o && setScheduleEdit(null)}
+          playlistVideoId={scheduleEdit?.id ?? null}
+          initial={scheduleEdit?.data ?? null}
+          onSaved={fetchPlaylists}
+        />
+
+        <Dialog open={!!activeWindowEdit} onOpenChange={(o) => !o && setActiveWindowEdit(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Playlist active window</DialogTitle>
+              <DialogDescription>
+                Outside this window the playlist won't play on any device. Leave blank for always-on.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Start date</Label>
+                  <Input
+                    type="date"
+                    value={activeWindowEdit?.start ?? ""}
+                    onChange={(e) =>
+                      setActiveWindowEdit((p) => (p ? { ...p, start: e.target.value } : p))
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">End date</Label>
+                  <Input
+                    type="date"
+                    value={activeWindowEdit?.end ?? ""}
+                    onChange={(e) =>
+                      setActiveWindowEdit((p) => (p ? { ...p, end: e.target.value } : p))
+                    }
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  variant="ghost"
+                  onClick={async () => {
+                    if (!activeWindowEdit) return;
+                    await supabase
+                      .from("playlists")
+                      .update({ active_start_date: null, active_end_date: null } as any)
+                      .eq("id", activeWindowEdit.id);
+                    toast.success("Active window cleared");
+                    setActiveWindowEdit(null);
+                    fetchPlaylists();
+                  }}
+                >
+                  Clear
+                </Button>
+                <Button
+                  onClick={async () => {
+                    if (!activeWindowEdit) return;
+                    const { error } = await supabase
+                      .from("playlists")
+                      .update({
+                        active_start_date: activeWindowEdit.start || null,
+                        active_end_date: activeWindowEdit.end || null,
+                      } as any)
+                      .eq("id", activeWindowEdit.id);
+                    if (error) {
+                      toast.error("Failed to save");
+                      return;
+                    }
+                    toast.success("Saved");
+                    setActiveWindowEdit(null);
+                    fetchPlaylists();
+                  }}
+                >
+                  Save
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
