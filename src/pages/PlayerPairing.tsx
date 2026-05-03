@@ -2,11 +2,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { QrCode, Keyboard } from "lucide-react";
+import { QrCode, Keyboard, Tv, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { BarcodeScanner } from '@capacitor-mlkit/barcode-scanning';
 import { Capacitor } from '@capacitor/core';
+import logo from "@/assets/logo.png";
 
 interface PlayerPairingProps {
   onPaired: (authToken: string, deviceInfo: any) => void;
