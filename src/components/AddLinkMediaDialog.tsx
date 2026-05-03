@@ -126,7 +126,7 @@ const AddLinkMediaDialog = ({ kind, trigger, onComplete }: Props) => {
         cleanUrl = `https://www.youtube.com/watch?v=${id}`;
         const check = await checkYouTubeEmbeddable(cleanUrl);
         if (!check.ok) {
-          toast.error(check.reason);
+          toast.error((check as { ok: false; reason: string }).reason);
           setSubmitting(false);
           return;
         }
