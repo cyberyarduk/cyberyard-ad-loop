@@ -12,6 +12,7 @@ import {
 import { Search, Loader2, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { generateOrientedVariants } from "@/lib/imageOrient";
 
 interface Props {
   trigger?: React.ReactNode;
@@ -75,16 +76,39 @@ export default function UnsplashSearchDialog({ trigger, onComplete }: Props) {
         body: { action: "track_download", downloadLocation: photo.downloadLocation },
       }).catch(() => {});
 
-      // Hotlink the Unsplash URL directly per their guidelines.
+      // Re-render the Unsplash photo into proper portrait (1080x1920) and
+      // landscape (1920x1080) variants so it looks right on phones AND TVs.
+      toast.info("Optimising photo for every screen…");
+      const { portraitBlob, landscapeBlob } = await generateOrientedVariants(photo.regularUrl);
+
+      const stamp = Date.now();
+      const portraitPath = `${user.id}/${stamp}-unsplash-portrait.jpg`;
+      const landscapePath = `${user.id}/${stamp}-unsplash-landscape.jpg`;
+      const [pUp, lUp] = await Promise.all([
+        supabase.storage.from("images").upload(portraitPath, portraitBlob, {
+          contentType: "image/jpeg",
+          cacheControl: "31536000",
+        }),
+        supabase.storage.from("images").upload(landscapePath, landscapeBlob, {
+          contentType: "image/jpeg",
+          cacheControl: "31536000",
+        }),
+      ]);
+      if (pUp.error) throw pUp.error;
+      if (lUp.error) throw lUp.error;
+
+      const portraitUrl = supabase.storage.from("images").getPublicUrl(portraitPath).data.publicUrl;
+      const landscapeUrl = supabase.storage.from("images").getPublicUrl(landscapePath).data.publicUrl;
+
       const title = `${query} — by ${photo.photographer}`;
       const { error: insErr } = await supabase.from("videos").insert({
         title,
         user_id: user.id,
         company_id: profile.company_id,
         media_type: "image",
-        image_url: photo.regularUrl,
-        image_url_landscape: photo.regularUrl,
-        video_url: photo.regularUrl,
+        image_url: portraitUrl,
+        image_url_landscape: landscapeUrl,
+        video_url: portraitUrl,
         display_duration: 10,
         source: "unsplash",
         player_overlay: "none",
