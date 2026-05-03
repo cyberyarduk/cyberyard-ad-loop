@@ -713,6 +713,34 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
     );
   }
 
+  // Emergency takeover overlay — wins over everything else.
+  if (emergency?.active) {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center text-center px-8 animate-pulse"
+        style={{ background: 'hsl(0 84% 45%)' }}
+        onTouchStart={handleTripleTap}
+        onClick={handleTripleTap}
+      >
+        <div className="text-white">
+          <div className="text-5xl font-bold mb-4 tracking-wide">⚠ EMERGENCY</div>
+          <div className="text-2xl">{emergency.message || 'Please follow staff instructions'}</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Off-hours holding screen
+  if (isOffHours) {
+    return (
+      <div
+        className="min-h-screen bg-black flex flex-col items-center justify-center"
+        onTouchStart={handleTripleTap}
+        onClick={handleTripleTap}
+      />
+    );
+  }
+
   if (videos.length === 0) {
     return (
       <div 
