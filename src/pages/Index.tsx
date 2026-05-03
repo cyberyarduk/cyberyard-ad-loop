@@ -31,7 +31,7 @@ import logo from "@/assets/logo.png";
 import Reveal from "@/components/premium/Reveal";
 
 const stats = [
-  { value: "100%", label: "Browser-based — no apps to install" },
+  { value: "3-in-1", label: "Web, App Store & Google Play" },
   { value: "3×", label: "More attention than static signage" },
   { value: "<2s", label: "To push promos to every screen" },
   { value: "Any", label: "Screen — TV, tablet, phone or laptop" },
@@ -403,7 +403,7 @@ const Index = () => {
 
           <div className="grid md:grid-cols-3 gap-5 md:gap-6">
             {[
-              { n: "01", title: "Open on any screen", body: "Sign in on a TV, tablet, phone or laptop. No app needed.", tone: "peach" },
+              { n: "01", title: "Open on any screen", body: "Sign in on a TV, tablet, phone or laptop — via the web, App Store or Google Play.", tone: "peach" },
               { n: "02", title: "Create or upload", body: "Upload your videos or generate polished offer videos in seconds.", tone: "lavender" },
               { n: "03", title: "Push live", body: "Assign a playlist and watch promos update across every screen instantly.", tone: "yellow" },
             ].map((step, i) => {
