@@ -159,8 +159,17 @@ serve(async (req) => {
       .map(pv => {
         const v = pv.videos;
         const hasImageVariant = !!(v.image_url || v.image_url_landscape);
+        const hasVideoVariant = !!(v.video_url || v.video_url_landscape);
         const looksLikeImageUrl = (url?: string | null) => !!url && /\.(jpe?g|png|gif|webp|avif)(\?|$)/i.test(url);
-        const isImage = v.media_type === 'image' || hasImageVariant || looksLikeImageUrl(v.video_url) || looksLikeImageUrl(v.video_url_landscape);
+        const looksLikeVideoUrl = (url?: string | null) => !!url && /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url);
+        // Explicit media_type wins. Video items keep their MP4 even if a poster image_url is set.
+        const isImage = v.media_type === 'image'
+          ? true
+          : v.media_type === 'video'
+            ? false
+            : (hasVideoVariant && (looksLikeVideoUrl(v.video_url) || looksLikeVideoUrl(v.video_url_landscape)))
+              ? false
+              : (hasImageVariant || looksLikeImageUrl(v.video_url) || looksLikeImageUrl(v.video_url_landscape));
         const isLandscape = aspectRatio === 'landscape';
 
         // Robust fallback: prefer the orientation-matched URL but fall back to
