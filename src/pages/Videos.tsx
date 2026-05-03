@@ -362,25 +362,41 @@ const Videos = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
             <h1 className="text-3xl font-bold">Media</h1>
             <p className="text-muted-foreground mt-1">
               Manage your videos and images in one library
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 lg:justify-end">
             <Link to="/videos/create-ai">
-              <Button variant="outline">
+              <Button variant="outline" size="sm">
                 <Sparkles className="mr-2 h-4 w-4" />
                 Create Offer Video
               </Button>
             </Link>
-            <UploadDocumentDialog onComplete={fetchVideos} />
-            <UnsplashSearchDialog onComplete={fetchVideos} />
+            <UploadDocumentDialog
+              trigger={
+                <Button variant="outline" size="sm">
+                  <ImageIcon className="mr-2 h-4 w-4" />
+                  Upload PDF / PPT
+                </Button>
+              }
+              onComplete={fetchVideos}
+            />
+            <UnsplashSearchDialog
+              trigger={
+                <Button variant="outline" size="sm">
+                  <ImageIcon className="mr-2 h-4 w-4" />
+                  Stock photos
+                </Button>
+              }
+              onComplete={fetchVideos}
+            />
             <Dialog open={imageOpen} onOpenChange={setImageOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline">
+                <Button variant="outline" size="sm">
                   <ImageIcon className="mr-2 h-4 w-4" />
                   Upload Image
                 </Button>
