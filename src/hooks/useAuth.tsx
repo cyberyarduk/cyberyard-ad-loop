@@ -13,6 +13,7 @@ interface Profile {
   is_active: boolean;
   email: string | null;
   full_name: string | null;
+  must_change_password: boolean;
 }
 
 interface Company {
