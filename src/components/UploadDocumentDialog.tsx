@@ -63,33 +63,32 @@ export default function UploadDocumentDialog({ trigger, onComplete }: Props) {
       if (upErr) throw upErr;
       const fileUrl = supabase.storage.from("images").getPublicUrl(path).data.publicUrl;
 
-      // 2. Convert to PNG pages.
-      setProgress("Converting to slides… (this can take 30–60s)");
+      // 2. Render a single looping video (portrait + landscape) of all pages.
+      setProgress("Building your slide video… (this can take 30–90s)");
       const { data, error } = await supabase.functions.invoke("convert-document", {
-        body: { fileUrl, fileName: file.name, companyId: profile.company_id },
+        body: { fileUrl, fileName: file.name, companyId: profile.company_id, secondsPerPage: dur },
       });
       if (error) throw error;
-      if (!data?.pages?.length) throw new Error("No pages returned");
+      if (!data?.videoUrl) throw new Error("No video returned");
 
-      // 3. Insert each page as a video row of media_type=image, source=document_upload.
-      setProgress(`Saving ${data.pages.length} slide(s)…`);
+      // 3. Insert ONE video row covering the whole document.
+      setProgress("Saving to your library…");
       const base = titleBase || file.name.replace(/\.[^.]+$/, "");
-      const rows = data.pages.map((p: any) => ({
-        title: data.pages.length > 1 ? `${base} — page ${p.pageIndex + 1}` : base,
+      const { error: insErr } = await supabase.from("videos").insert({
+        title: data.totalPages > 1 ? `${base} (${data.totalPages} pages)` : base,
         user_id: user.id,
         company_id: profile.company_id,
-        media_type: "image",
-        image_url: p.url,
-        image_url_landscape: p.url,
-        video_url: p.url,
-        display_duration: dur,
+        media_type: "video",
+        video_url: data.videoUrl,
+        video_url_landscape: data.videoUrlLandscape || null,
+        image_url: data.posterUrl || null,
+        image_url_landscape: data.posterUrl || null,
         source: "document_upload",
         player_overlay: "none",
-      }));
-      const { error: insErr } = await supabase.from("videos").insert(rows);
+      });
       if (insErr) throw insErr;
 
-      toast.success(`Imported ${data.pages.length} slide(s) from ${file.name}`);
+      toast.success(`Imported ${file.name} (${data.totalPages} page${data.totalPages > 1 ? "s" : ""})`);
       setOpen(false);
       reset();
       onComplete?.();
