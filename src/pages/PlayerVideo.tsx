@@ -820,7 +820,9 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const currentVideo = videos[safeIndex];
   const isImageItem = isImageMedia(currentVideo);
   const isIframeItem = isIframeMedia(currentVideo);
-  const currentMediaUrl = appendCacheBust(getPlayableUrl(currentVideo), playlistRevision);
+  const currentMediaUrl = (isOffline && offlineVideoBlobUrl)
+    ? offlineVideoBlobUrl
+    : appendCacheBust(getPlayableUrl(currentVideo), playlistRevision);
   const currentImageUrl = isImageItem ? (imageRenderUrl || currentMediaUrl) : currentMediaUrl;
   const iframeSrc = isIframeItem
     ? (currentVideo?.media_type === 'youtube'
