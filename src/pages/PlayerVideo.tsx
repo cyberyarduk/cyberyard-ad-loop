@@ -96,6 +96,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const [imageRenderUrl, setImageRenderUrl] = useState<string>("");
   const [isPullingToRefresh, setIsPullingToRefresh] = useState(false);
   const [pullStartY, setPullStartY] = useState(0);
+  const [offlineVideoBlobUrl, setOfflineVideoBlobUrl] = useState<string>("");
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
