@@ -90,6 +90,7 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const [isOffline, setIsOffline] = useState(false);
   const [isSuspended, setIsSuspended] = useState(false);
   const [isOffHours, setIsOffHours] = useState(false);
+  const [offlineFallback, setOfflineFallback] = useState<{ image_url: string | null; company_name: string | null } | null>(null);
   
   const [cachedVideos, setCachedVideos] = useState<Video[]>([]);
   const [imageRenderUrl, setImageRenderUrl] = useState<string>("");
