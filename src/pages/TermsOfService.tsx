@@ -30,10 +30,10 @@ const TermsOfService = () => {
 
         <div className="prose prose-lg max-w-none space-y-8">
           <p>
-            These Terms govern the use of the Cyberyard web dashboard, mobile app, device software, and all related services ("Service").
+            These Terms of Service ("Terms") form a legal agreement between you and <strong>Cyberyard Limited</strong>, a company registered in England &amp; Wales under company number <strong>15430744</strong> ("Cyberyard", "we", "us"). They govern your use of the Cyberyard web dashboard, mobile apps (iOS &amp; Android), device player software, and all related services ("Service").
           </p>
           <p className="font-semibold">
-            By using Cyberyard, you agree to these Terms.
+            By accessing or using Cyberyard, you confirm you have authority to bind your business and you agree to these Terms.
           </p>
 
           <section>
@@ -106,9 +106,24 @@ const TermsOfService = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">8. Support</h2>
+            <h2 className="text-2xl font-semibold mb-4">8. Mobile App Stores</h2>
             <p>
-              We provide email support via <a href="mailto:support@cyberyard.co.uk" className="text-primary hover:underline">support@cyberyard.co.uk</a>
+              The Cyberyard apps may be distributed via the Apple App Store and Google Play. Your use of the apps is also subject to the applicable store's terms (Apple Media Services / Google Play Terms). Apple and Google are not responsible for the apps or any support, claims or warranties relating to them.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">9. Governing Law</h2>
+            <p>
+              These Terms are governed by the laws of England &amp; Wales. The courts of England &amp; Wales have exclusive jurisdiction over any dispute arising from these Terms or your use of the Service.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">10. Support &amp; Contact</h2>
+            <p>
+              <strong>Cyberyard Limited</strong> — Company No. 15430744, registered in England &amp; Wales.<br />
+              Email support: <a href="mailto:support@cyberyard.co.uk" className="text-primary hover:underline">support@cyberyard.co.uk</a>
             </p>
           </section>
         </div>

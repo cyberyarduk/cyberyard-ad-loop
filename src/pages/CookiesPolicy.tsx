@@ -30,38 +30,49 @@ const CookiesPolicy = () => {
 
         <div className="prose prose-lg max-w-none space-y-8">
           <p>
-            Cyberyard Limited uses cookies to improve your experience on our platform and ensure the proper functioning of our services.
+            <strong>Cyberyard Limited</strong> (Company No. <strong>15430744</strong>, registered in England &amp; Wales) uses cookies and similar technologies to operate, secure and improve our platform, in line with the UK GDPR and the Privacy and Electronic Communications Regulations (PECR).
           </p>
 
           <section>
             <h2 className="text-2xl font-semibold mb-4">What Are Cookies?</h2>
             <p>
-              Cookies are small text files stored on your device when you visit our website. They help us recognize you, remember your preferences, and improve our services.
+              Cookies are small text files stored on your device when you visit our website. Similar technologies include local storage and pixels. They help us recognise your browser, remember your preferences, and measure performance.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">How We Use Cookies</h2>
-            <p className="mb-4">Cyberyard uses cookies to:</p>
+            <h2 className="text-2xl font-semibold mb-4">Categories of Cookies We Use</h2>
             <ul className="list-disc pl-6 space-y-2">
-              <li>Keep you logged in</li>
-              <li>Improve dashboard performance</li>
-              <li>Track error logs</li>
-              <li>Analyse system usage</li>
+              <li><strong>Strictly necessary</strong> — required to sign you in, keep your session secure, and remember your cookie choice. These are always on.</li>
+              <li><strong>Functional</strong> — remember preferences such as your selected dashboard view.</li>
+              <li><strong>Analytics</strong> — help us understand how the platform is used so we can improve it. These are only set with your consent.</li>
             </ul>
+            <p className="mt-4">
+              We do not use advertising or cross-site tracking cookies.
+            </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">Managing Cookies</h2>
+            <h2 className="text-2xl font-semibold mb-4">Your Choices</h2>
             <p>
-              You may disable cookies in your browser settings. However, please note that some features of the Cyberyard platform may not function correctly if cookies are disabled.
+              On your first visit you'll see a cookie banner where you can <strong>Accept all</strong> or choose <strong>Essential only</strong>. You can change your choice at any time by clearing the <code>cyberyard_cookie_consent_v1</code> entry in your browser's site data, or by emailing us.
+            </p>
+            <p>
+              You can also block or delete cookies via your browser settings. Note that disabling essential cookies may stop the platform from working.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">Mobile App</h2>
+            <p>
+              Inside our native iOS and Android apps we don't use browser cookies, but we use equivalent local storage to keep you signed in and remember preferences. The same consent principles apply.
             </p>
           </section>
 
           <section>
             <h2 className="text-2xl font-semibold mb-4">Contact</h2>
             <p>
-              If you have questions about our use of cookies, please contact us at <a href="mailto:privacy@cyberyard.co.uk" className="text-primary hover:underline">privacy@cyberyard.co.uk</a>
+              Questions about cookies? Email <a href="mailto:privacy@cyberyard.co.uk" className="text-primary hover:underline">privacy@cyberyard.co.uk</a>.
             </p>
           </section>
         </div>

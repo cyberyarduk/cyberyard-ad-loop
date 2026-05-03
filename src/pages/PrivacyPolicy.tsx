@@ -30,10 +30,10 @@ const PrivacyPolicy = () => {
 
         <div className="prose prose-lg max-w-none space-y-8">
           <p>
-            Cyberyard Limited ("Cyberyard", "we", "us", or "our") provides a digital advertising software platform and mobile player application used by businesses to display promotional content on wearable devices.
+            Cyberyard Limited ("Cyberyard", "we", "us", or "our") — a company registered in England &amp; Wales under company number <strong>15430744</strong> — provides a digital advertising software platform and player application used by businesses to display promotional content on TVs, tablets, phones, laptops and other connected screens.
           </p>
           <p>
-            We are committed to protecting your privacy and complying with the UK General Data Protection Regulation (GDPR).
+            We are committed to protecting your privacy and complying with the UK General Data Protection Regulation (UK GDPR), the Data Protection Act 2018, and the Privacy and Electronic Communications Regulations (PECR).
           </p>
 
           <section>
@@ -167,10 +167,31 @@ const PrivacyPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">8. Contact</h2>
+            <h2 className="text-2xl font-semibold mb-4">8. Cookies &amp; Tracking</h2>
+            <p>
+              Our website uses cookies. Essential cookies keep you signed in and the platform functional; optional analytics cookies help us improve the product. We ask for your consent before setting non-essential cookies. You can review and change your preferences any time via our <a href="/cookies-policy" className="text-primary hover:underline">Cookies Policy</a>.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">9. International Transfers</h2>
+            <p>
+              Where data is transferred outside the UK or EEA, we rely on UK-approved safeguards such as the UK International Data Transfer Agreement (IDTA) or the EU Standard Contractual Clauses with the UK Addendum.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">10. Complaints</h2>
+            <p>
+              You have the right to lodge a complaint with the UK Information Commissioner's Office (ICO) at <a href="https://ico.org.uk" target="_blank" rel="noreferrer" className="text-primary hover:underline">ico.org.uk</a>. We'd appreciate the chance to address concerns first — email <a href="mailto:privacy@cyberyard.co.uk" className="text-primary hover:underline">privacy@cyberyard.co.uk</a>.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">11. Contact</h2>
             <p>
               <strong>Cyberyard Limited</strong><br />
-              Registered in England and Wales<br />
+              Company No. 15430744 — Registered in England &amp; Wales<br />
               Email: <a href="mailto:privacy@cyberyard.co.uk" className="text-primary hover:underline">privacy@cyberyard.co.uk</a>
             </p>
           </section>

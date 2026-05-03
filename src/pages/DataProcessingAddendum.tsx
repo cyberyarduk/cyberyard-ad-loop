@@ -30,7 +30,7 @@ const DataProcessingAddendum = () => {
 
         <div className="prose prose-lg max-w-none space-y-8">
           <p>
-            This Data Processing Addendum (DPA) is for business clients who require it under GDPR requirements.
+            This Data Processing Addendum ("DPA") supplements the Terms of Service between the customer ("Controller") and <strong>Cyberyard Limited</strong> ("Processor", Company No. <strong>15430744</strong>, registered in England &amp; Wales) and applies to processing of personal data subject to the UK GDPR and EU GDPR.
           </p>
 
           <section>

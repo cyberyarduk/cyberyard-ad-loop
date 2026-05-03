@@ -29,6 +29,9 @@ const RefundPolicy = () => {
         <p className="text-muted-foreground mb-8">Last updated: {today}</p>
 
         <div className="prose prose-lg max-w-none space-y-8">
+          <p className="text-muted-foreground">
+            Cyberyard Limited (Company No. 15430744, registered in England &amp; Wales).
+          </p>
           <section>
             <h2 className="text-2xl font-semibold mb-4">Subscription Fees</h2>
             <p>
