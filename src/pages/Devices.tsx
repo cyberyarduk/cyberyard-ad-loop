@@ -699,6 +699,13 @@ const Devices = () => {
             )}
           </DialogContent>
         </Dialog>
+
+        <DeviceScheduleDialog
+          open={scheduleOpen}
+          onOpenChange={setScheduleOpen}
+          device={scheduleDevice}
+          playlists={playlists}
+        />
       </div>
     </DashboardLayout>
   );
