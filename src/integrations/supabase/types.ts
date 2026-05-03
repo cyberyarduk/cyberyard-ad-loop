@@ -223,6 +223,54 @@ export type Database = {
           },
         ]
       }
+      device_playlist_schedules: {
+        Row: {
+          created_at: string
+          days_of_week: number[] | null
+          device_id: string
+          end_time: string
+          id: string
+          label: string | null
+          playlist_id: string
+          start_time: string
+        }
+        Insert: {
+          created_at?: string
+          days_of_week?: number[] | null
+          device_id: string
+          end_time: string
+          id?: string
+          label?: string | null
+          playlist_id: string
+          start_time: string
+        }
+        Update: {
+          created_at?: string
+          days_of_week?: number[] | null
+          device_id?: string
+          end_time?: string
+          id?: string
+          label?: string | null
+          playlist_id?: string
+          start_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_playlist_schedules_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_playlist_schedules_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       devices: {
         Row: {
           admin_pin: string | null
