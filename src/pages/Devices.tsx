@@ -545,6 +545,15 @@ const Devices = () => {
                         Open player (enter code)
                       </Button>
                     )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => { setScheduleDevice(device); setScheduleOpen(true); }}
+                      title="Auto-switch playlists by time of day"
+                    >
+                      <Clock className="mr-2 h-4 w-4" />
+                      Schedule playlists
+                    </Button>
                     {device.status === 'active' && (
                       <>
                         <Button
