@@ -395,6 +395,7 @@ const Devices = () => {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         {devices.length === 0 ? (
