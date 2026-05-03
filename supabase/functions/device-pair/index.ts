@@ -53,13 +53,39 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    let query = supabase.from('devices').select('*').eq('status', 'unpaired');
+    let query = supabase.from('devices').select('*');
     if (device_code) query = query.eq('device_code', device_code.toUpperCase());
     else query = query.eq('pairing_qr_token', pairing_qr_token!);
 
     const { data: device, error: findError } = await query.single();
     if (findError || !device) {
-      throw new Error('Invalid pairing code or device already paired');
+      throw new Error('Invalid pairing code');
+    }
+
+    // If the physical player crashed/refreshed and lost localStorage, allow it
+    // to recover the existing token instead of being locked out as "already paired".
+    if ((device.status === 'active' || device.status === 'suspended') && device.auth_token) {
+      await supabase
+        .from('devices')
+        .update({ last_seen_at: new Date().toISOString() })
+        .eq('id', device.id);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          recovered: true,
+          auth_token: device.auth_token,
+          device_id: device.id,
+          company_id: device.company_id,
+          playlist_id: device.playlist_id,
+          device_name: device.name,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (device.status !== 'unpaired') {
+      throw new Error('Device cannot be paired in its current state');
     }
 
     const auth_token = crypto.randomUUID() + crypto.randomUUID();
