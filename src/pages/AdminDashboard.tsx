@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Users, Building2, PoundSterling, TrendingUp, Plus, UserPlus,
-  Monitor, Video as VideoIcon, Image as ImageIcon, Eye,
+  Monitor, Sparkles, Upload, Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -22,8 +22,8 @@ const AdminDashboard = () => {
     thisMonth: 0,
     totalDevices: 0,
     onlineDevices: 0,
-    totalVideos: 0,
-    totalImages: 0,
+    aiVideosCreated: 0,
+    uploadedMedia: 0,
   });
   const [topSales, setTopSales] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,7 +39,7 @@ const AdminDashboard = () => {
         supabase.from("companies").select("id, status, monthly_price_pence, signed_up_by_salesperson_id, created_at"),
         supabase.from("salespeople").select("id, full_name, employee_number, area, monthly_target, active"),
         supabase.from("devices").select("id, status, last_seen_at"),
-        supabase.from("videos").select("id, media_type"),
+        supabase.from("videos").select("id, media_type, source"),
       ]);
 
       const now = new Date();
@@ -57,8 +57,9 @@ const AdminDashboard = () => {
         (d) => d.last_seen_at && new Date(d.last_seen_at).getTime() >= fiveMinAgo
       ).length;
 
-      const totalVideos = (media || []).filter((m) => (m.media_type || "video") === "video").length;
-      const totalImages = (media || []).filter((m) => m.media_type === "image").length;
+      // AI created vs uploaded (anything not AI-generated counts as uploaded by the customer)
+      const aiVideosCreated = (media || []).filter((m) => m.source === "ai_generated").length;
+      const uploadedMedia = (media || []).filter((m) => m.source !== "ai_generated").length;
 
       setStats({
         totalClients,
@@ -68,8 +69,8 @@ const AdminDashboard = () => {
         thisMonth,
         totalDevices,
         onlineDevices,
-        totalVideos,
-        totalImages,
+        aiVideosCreated,
+        uploadedMedia,
       });
 
       const ranked = (sps || []).map((sp) => {
@@ -139,15 +140,15 @@ const AdminDashboard = () => {
               tone="bg-yellow-soft"
             />
             <StatCard
-              icon={VideoIcon}
-              label="Videos created"
-              value={stats.totalVideos.toString()}
+              icon={Sparkles}
+              label="AI videos created"
+              value={stats.aiVideosCreated.toString()}
               tone="bg-mint"
             />
             <StatCard
-              icon={ImageIcon}
-              label="Images uploaded"
-              value={stats.totalImages.toString()}
+              icon={Upload}
+              label="Images & videos uploaded"
+              value={stats.uploadedMedia.toString()}
               tone="bg-peach"
             />
           </div>
