@@ -1,0 +1,1 @@
+ALTER TABLE public.companies ADD COLUMN IF NOT EXISTS offline_fallback_image_url text;

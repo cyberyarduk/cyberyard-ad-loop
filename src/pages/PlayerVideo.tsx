@@ -7,6 +7,7 @@ import { Capacitor } from '@capacitor/core';
 import { Device } from '@capacitor/device';
 import { Network } from '@capacitor/network';
 import { Loader2, WifiOff, Maximize, Minimize } from "lucide-react";
+import { precacheUrls, getCachedBlobUrl } from "@/lib/mediaCache";
 
 interface Video {
   id: string;
@@ -89,11 +90,13 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const [isOffline, setIsOffline] = useState(false);
   const [isSuspended, setIsSuspended] = useState(false);
   const [isOffHours, setIsOffHours] = useState(false);
+  const [offlineFallback, setOfflineFallback] = useState<{ image_url: string | null; company_name: string | null } | null>(null);
   
   const [cachedVideos, setCachedVideos] = useState<Video[]>([]);
   const [imageRenderUrl, setImageRenderUrl] = useState<string>("");
   const [isPullingToRefresh, setIsPullingToRefresh] = useState(false);
   const [pullStartY, setPullStartY] = useState(0);
+  const [offlineVideoBlobUrl, setOfflineVideoBlobUrl] = useState<string>("");
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -120,13 +123,17 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
         const networkStatus = await Network.getStatus();
         if (!networkStatus.connected) {
           setIsOffline(true);
-          // Load cached videos if available
+          // Load cached videos + fallback if available
           const cached = localStorage.getItem('cached_videos');
+          const cachedFallback = localStorage.getItem('cached_offline_fallback');
+          if (cachedFallback) {
+            try { setOfflineFallback(JSON.parse(cachedFallback)); } catch { /* noop */ }
+          }
           if (cached) {
             const parsedVideos = JSON.parse(cached);
             setVideos(parsedVideos);
             setCachedVideos(parsedVideos);
-            toast.info("Playing cached videos (offline mode)");
+            toast.info("Playing cached content (offline mode)");
           }
           setLoading(false);
           return;
@@ -221,10 +228,23 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
         setVideos(newVideos);
       }
       setCachedVideos(newVideos);
-      
-      // Cache videos for offline mode
+
+      // Persist offline fallback metadata
+      if (data.offline_fallback) {
+        setOfflineFallback(data.offline_fallback);
+        localStorage.setItem('cached_offline_fallback', JSON.stringify(data.offline_fallback));
+      }
+
+      // Cache videos manifest for offline mode
       localStorage.setItem('cached_videos', JSON.stringify(newVideos));
       localStorage.setItem('last_playlist_sync', new Date().toISOString());
+
+      // Pre-cache the actual media bytes (videos + images + fallback image)
+      const urlsToCache = newVideos
+        .map((v: Video) => getPlayableUrl(v))
+        .filter((u: string) => !!u && !/youtube|youtu\.be/i.test(u));
+      if (data.offline_fallback?.image_url) urlsToCache.push(data.offline_fallback.image_url);
+      precacheUrls(urlsToCache).catch((e) => console.warn('Precache failed:', e));
       
       setLoading(false);
     } catch (error) {
@@ -551,7 +571,29 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
     return () => document.removeEventListener('fullscreenchange', handler);
   }, []);
 
-  // Android WebView can be flaky with cross-origin storage images. Fetch the
+  // When offline, swap the active video item's src to a cached blob URL
+  // so playback continues from local storage instead of failing.
+  useEffect(() => {
+    let revoked = "";
+    const safeIdx = currentIndex < videos.length ? currentIndex : 0;
+    const item = videos[safeIdx];
+    if (!isOffline || !item || isImageMedia(item) || isIframeMedia(item)) {
+      setOfflineVideoBlobUrl("");
+      return;
+    }
+    const url = getPlayableUrl(item);
+    getCachedBlobUrl(url).then((blobUrl) => {
+      if (blobUrl) {
+        setOfflineVideoBlobUrl(blobUrl);
+        revoked = blobUrl;
+      } else {
+        setOfflineVideoBlobUrl("");
+      }
+    });
+    return () => {
+      if (revoked) URL.revokeObjectURL(revoked);
+    };
+  }, [isOffline, currentIndex, videos]);
   // active image as a blob and render a local object URL, with direct URL fallback.
   useEffect(() => {
     if (!_currentForImage || !_isImageItemEffect) {
@@ -724,19 +766,49 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   }
 
   if (videos.length === 0) {
+    // Offline + no cached content → show branded fallback (custom image if uploaded,
+    // otherwise a clean branded screen with the company name).
+    if (isOffline && offlineFallback?.image_url) {
+      return (
+        <div
+          className="fixed inset-0 bg-black flex items-center justify-center"
+          onTouchStart={handleTripleTap}
+          onClick={handleTripleTap}
+        >
+          <img
+            src={offlineFallback.image_url}
+            alt="Offline"
+            className="absolute inset-0 h-full w-full object-contain"
+          />
+          <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center gap-2 z-50">
+            <WifiOff className="h-3 w-3" /> Offline
+          </div>
+        </div>
+      );
+    }
+
     return (
-      <div 
+      <div
         className="min-h-screen bg-black flex flex-col items-center justify-center"
         onTouchStart={handleTripleTap}
         onClick={handleTripleTap}
       >
         {isOffline && <WifiOff className="h-16 w-16 text-white mb-4" />}
         <div className="text-white text-center p-8">
-          <div className="text-2xl mb-4">{isOffline ? 'Offline - No cached videos' : 'No videos in playlist'}</div>
-          {!isOffline && (
-            <div className="text-muted-foreground">
-              Add videos to your playlist from the admin dashboard
-            </div>
+          {isOffline ? (
+            <>
+              <div className="text-3xl mb-2 font-semibold">
+                {offlineFallback?.company_name || 'Back shortly'}
+              </div>
+              <div className="text-muted-foreground">We'll be right back online.</div>
+            </>
+          ) : (
+            <>
+              <div className="text-2xl mb-4">No videos in playlist</div>
+              <div className="text-muted-foreground">
+                Add videos to your playlist from the admin dashboard
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -748,7 +820,9 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const currentVideo = videos[safeIndex];
   const isImageItem = isImageMedia(currentVideo);
   const isIframeItem = isIframeMedia(currentVideo);
-  const currentMediaUrl = appendCacheBust(getPlayableUrl(currentVideo), playlistRevision);
+  const currentMediaUrl = (isOffline && offlineVideoBlobUrl)
+    ? offlineVideoBlobUrl
+    : appendCacheBust(getPlayableUrl(currentVideo), playlistRevision);
   const currentImageUrl = isImageItem ? (imageRenderUrl || currentMediaUrl) : currentMediaUrl;
   const iframeSrc = isIframeItem
     ? (currentVideo?.media_type === 'youtube'

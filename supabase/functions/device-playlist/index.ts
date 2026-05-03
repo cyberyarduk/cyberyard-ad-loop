@@ -78,7 +78,7 @@ serve(async (req) => {
     if (device.status === 'suspended') {
       return new Response(
         JSON.stringify({
-          success: true, suspended: true,
+          success: true, suspended: true, offline_fallback: offlineFallback,
           device_id: device.id, device_name: device.name, company_id: device.company_id, videos: []
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -110,13 +110,18 @@ serve(async (req) => {
 
     const { data: company } = await supabase
       .from('companies')
-      .select('emergency_active, emergency_message, emergency_started_at')
+      .select('emergency_active, emergency_message, emergency_started_at, offline_fallback_image_url, name')
       .eq('id', device.company_id)
       .single();
 
     const emergency = company?.emergency_active
       ? { active: true, message: company.emergency_message ?? 'Emergency', started_at: company.emergency_started_at }
       : { active: false };
+
+    const offlineFallback = {
+      image_url: company?.offline_fallback_image_url ?? null,
+      company_name: company?.name ?? null,
+    };
 
     // Working hours check
     const whStart = toMinutes(device.working_hours_start);
@@ -126,7 +131,7 @@ serve(async (req) => {
     if (offHours && !emergency.active) {
       return new Response(
         JSON.stringify({
-          success: true, suspended: false, off_hours: true, emergency,
+          success: true, suspended: false, off_hours: true, emergency, offline_fallback: offlineFallback,
           device_id: device.id, device_name: device.name, company_id: device.company_id, videos: []
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -170,7 +175,7 @@ serve(async (req) => {
     if (!playlistId) {
       return new Response(
         JSON.stringify({
-          success: true, emergency,
+          success: true, emergency, offline_fallback: offlineFallback,
           device_id: device.id, device_name: device.name, company_id: device.company_id, playlist: null, videos: []
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -191,7 +196,7 @@ serve(async (req) => {
     if (!playlistActive && !emergency.active) {
       return new Response(
         JSON.stringify({
-          success: true, off_hours: false, playlist_inactive: true, emergency,
+          success: true, off_hours: false, playlist_inactive: true, emergency, offline_fallback: offlineFallback,
           device_id: device.id, device_name: device.name, company_id: device.company_id, playlist_id: playlistId, videos: []
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -287,7 +292,7 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        success: true, suspended: false, off_hours: false, emergency,
+        success: true, suspended: false, off_hours: false, emergency, offline_fallback: offlineFallback,
         device_id: device.id, device_name: device.name, company_id: device.company_id,
         playlist_id: playlistId, videos
       }),

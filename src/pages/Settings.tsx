@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,12 +14,67 @@ import { DashboardAnalytics } from "@/components/DashboardAnalytics";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { Upload, X, WifiOff } from "lucide-react";
 
 const Settings = () => {
   const { profile } = useAuth();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [fallbackUrl, setFallbackUrl] = useState<string>("");
+  const [fallbackUploading, setFallbackUploading] = useState(false);
+
+  useEffect(() => {
+    const loadFallback = async () => {
+      if (!profile?.company_id) return;
+      const { data } = await supabase
+        .from('companies')
+        .select('offline_fallback_image_url')
+        .eq('id', profile.company_id)
+        .maybeSingle();
+      setFallbackUrl(data?.offline_fallback_image_url || "");
+    };
+    loadFallback();
+  }, [profile?.company_id]);
+
+  const handleFallbackUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !profile?.company_id) return;
+    setFallbackUploading(true);
+    try {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `offline-fallback/${profile.company_id}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('images').upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from('images').getPublicUrl(path);
+      const url = pub.publicUrl;
+      const { error: updErr } = await supabase
+        .from('companies')
+        .update({ offline_fallback_image_url: url })
+        .eq('id', profile.company_id);
+      if (updErr) throw updErr;
+      setFallbackUrl(url);
+      toast.success('Offline fallback image updated');
+    } catch (err: any) {
+      toast.error(err.message || 'Upload failed');
+    } finally {
+      setFallbackUploading(false);
+    }
+  };
+
+  const handleFallbackRemove = async () => {
+    if (!profile?.company_id) return;
+    const { error } = await supabase
+      .from('companies')
+      .update({ offline_fallback_image_url: null })
+      .eq('id', profile.company_id);
+    if (error) {
+      toast.error('Failed to remove');
+      return;
+    }
+    setFallbackUrl("");
+    toast.success('Fallback image removed');
+  };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,6 +146,48 @@ const Settings = () => {
                 className="capitalize"
               />
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <WifiOff className="h-5 w-5" /> Offline Fallback Image
+            </CardTitle>
+            <CardDescription>
+              Shown on screens if they lose internet and have no cached content. Recommended: a branded image or "Back shortly" message (16:9 or 9:16, JPG/PNG).
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {fallbackUrl ? (
+              <div className="space-y-3">
+                <div className="rounded-lg overflow-hidden border bg-muted/30 max-w-sm">
+                  <img src={fallbackUrl} alt="Offline fallback" className="w-full h-auto object-contain" />
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={handleFallbackRemove}>
+                    <X className="h-4 w-4 mr-2" /> Remove
+                  </Button>
+                  <Button asChild variant="outline" size="sm">
+                    <label className="cursor-pointer">
+                      <Upload className="h-4 w-4 mr-2" /> Replace
+                      <input type="file" accept="image/*" className="hidden" onChange={handleFallbackUpload} />
+                    </label>
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button asChild disabled={fallbackUploading}>
+                <label className="cursor-pointer">
+                  <Upload className="h-4 w-4 mr-2" />
+                  {fallbackUploading ? 'Uploading...' : 'Upload fallback image'}
+                  <input type="file" accept="image/*" className="hidden" onChange={handleFallbackUpload} />
+                </label>
+              </Button>
+            )}
+            <p className="text-xs text-muted-foreground">
+              If no image is uploaded, screens will show your company name on a clean black background while offline.
+            </p>
           </CardContent>
         </Card>
 
