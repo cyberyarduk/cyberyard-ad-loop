@@ -368,22 +368,6 @@ const Devices = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="venue">Venue (Optional)</Label>
-                  <Select value={venueId} onValueChange={setVenueId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a venue" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No venue</SelectItem>
-                      {venues.map((venue) => (
-                        <SelectItem key={venue.id} value={venue.id}>
-                          {venue.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
                   <Label htmlFor="playlist">Playlist (Optional)</Label>
                   <Select value={playlistId} onValueChange={setPlaylistId}>
                     <SelectTrigger>
