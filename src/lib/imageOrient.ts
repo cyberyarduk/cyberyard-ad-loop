@@ -31,10 +31,74 @@ function loadImage(source: File | Blob | string): Promise<HTMLImageElement> {
   });
 }
 
+export interface OverlayOptions {
+  text?: string;
+  subtext?: string;
+  position?: "top" | "middle" | "bottom";
+  color?: string; // text color
+  background?: "none" | "dark" | "light" | "accent";
+}
+
+function drawOverlay(
+  ctx: CanvasRenderingContext2D,
+  W: number,
+  H: number,
+  opts: OverlayOptions,
+) {
+  const text = (opts.text || "").trim();
+  const subtext = (opts.subtext || "").trim();
+  if (!text && !subtext) return;
+
+  const position = opts.position || "bottom";
+  const color = opts.color || "#ffffff";
+  const bg = opts.background || "dark";
+
+  const titleSize = Math.round(W * 0.075);
+  const subSize = Math.round(W * 0.04);
+  const padX = Math.round(W * 0.06);
+  const gap = Math.round(titleSize * 0.25);
+  const blockH =
+    (text ? titleSize : 0) + (text && subtext ? gap : 0) + (subtext ? subSize : 0);
+  const bandPad = Math.round(titleSize * 0.6);
+  const bandH = blockH + bandPad * 2;
+
+  let bandY: number;
+  if (position === "top") bandY = Math.round(H * 0.06);
+  else if (position === "middle") bandY = Math.round((H - bandH) / 2);
+  else bandY = H - bandH - Math.round(H * 0.06);
+
+  // Background band
+  if (bg !== "none") {
+    if (bg === "dark") ctx.fillStyle = "rgba(0,0,0,0.55)";
+    else if (bg === "light") ctx.fillStyle = "rgba(255,255,255,0.78)";
+    else ctx.fillStyle = "rgba(220,38,38,0.85)"; // accent red
+    ctx.fillRect(0, bandY, W, bandH);
+  }
+
+  ctx.fillStyle = color;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  ctx.shadowColor = bg === "none" ? "rgba(0,0,0,0.7)" : "transparent";
+  ctx.shadowBlur = bg === "none" ? 12 : 0;
+
+  let y = bandY + bandPad;
+  if (text) {
+    ctx.font = `800 ${titleSize}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
+    ctx.fillText(text, W / 2, y, W - padX * 2);
+    y += titleSize + gap;
+  }
+  if (subtext) {
+    ctx.font = `500 ${subSize}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
+    ctx.fillText(subtext, W / 2, y, W - padX * 2);
+  }
+  ctx.shadowBlur = 0;
+}
+
 function renderVariant(
   img: HTMLImageElement,
   targetW: number,
   targetH: number,
+  overlay?: OverlayOptions,
 ): Promise<Blob> {
   const canvas = document.createElement("canvas");
   canvas.width = targetW;
@@ -61,6 +125,9 @@ function renderVariant(
   const containY = (targetH - containH) / 2;
   ctx.drawImage(img, containX, containY, containW, containH);
 
+  // 3. Optional text overlay
+  if (overlay) drawOverlay(ctx, targetW, targetH, overlay);
+
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => (blob ? resolve(blob) : reject(new Error("toBlob failed"))),
@@ -72,11 +139,12 @@ function renderVariant(
 
 export async function generateOrientedVariants(
   source: File | Blob | string,
+  overlay?: OverlayOptions,
 ): Promise<OrientedVariants> {
   const img = await loadImage(source);
   const [portraitBlob, landscapeBlob] = await Promise.all([
-    renderVariant(img, PORTRAIT_W, PORTRAIT_H),
-    renderVariant(img, LANDSCAPE_W, LANDSCAPE_H),
+    renderVariant(img, PORTRAIT_W, PORTRAIT_H, overlay),
+    renderVariant(img, LANDSCAPE_W, LANDSCAPE_H, overlay),
   ]);
   return { portraitBlob, landscapeBlob };
 }
