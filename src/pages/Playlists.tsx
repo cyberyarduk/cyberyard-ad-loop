@@ -26,7 +26,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, List, Edit, Trash2, ArrowUp, ArrowDown, Send, Upload, ChevronDown, Clock, Play, Image as ImageIcon } from "lucide-react";
+import { Plus, List, Edit, Trash2, ArrowUp, ArrowDown, Send, Upload, ChevronDown, Clock, Play, Image as ImageIcon, CalendarClock } from "lucide-react";
+import ScheduleDialog, { ItemSchedule } from "@/components/ScheduleDialog";
 import { generateOrientedVariants } from "@/lib/imageOrient";
 import {
   HoverCard,
