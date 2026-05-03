@@ -66,6 +66,10 @@ export default function UnsplashSearchDialog({ trigger, onComplete }: Props) {
       const { data: profile } = await supabase
         .from("profiles").select("company_id").eq("id", user.id).single();
 
+      if (!profile?.company_id) {
+        throw new Error("No company linked to your account — can't save photo.");
+      }
+
       // Trigger Unsplash download tracking (required for Production approval).
       supabase.functions.invoke("unsplash-search", {
         body: { action: "track_download", downloadLocation: photo.downloadLocation },
@@ -76,7 +80,7 @@ export default function UnsplashSearchDialog({ trigger, onComplete }: Props) {
       const { error: insErr } = await supabase.from("videos").insert({
         title,
         user_id: user.id,
-        company_id: profile?.company_id,
+        company_id: profile.company_id,
         media_type: "image",
         image_url: photo.regularUrl,
         image_url_landscape: photo.regularUrl,
