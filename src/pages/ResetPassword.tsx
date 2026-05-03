@@ -129,8 +129,12 @@ const ResetPassword = () => {
         <Card className="w-full">
           <CardHeader className="text-center">
             <img src={logo} alt="Cyberyard" className="h-32 md:h-40 mx-auto mb-4" />
-            <CardTitle>Reset your password</CardTitle>
-            <CardDescription>Choose a new password for your Cyberyard account</CardDescription>
+            <CardTitle>{firstLogin ? "Set your new password" : "Reset your password"}</CardTitle>
+            <CardDescription>
+              {firstLogin
+                ? "This is your first sign in. Please choose a new password to continue."
+                : "Choose a new password for your Cyberyard account"}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {checking && (
