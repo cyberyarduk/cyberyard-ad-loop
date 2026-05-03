@@ -506,17 +506,17 @@ const Devices = () => {
                   )}
 
                   <div className="flex gap-2 flex-wrap">
-                    {device.device_code && device.status !== 'suspended' && (
+                    {device.status !== 'suspended' && (
                       <Button
                         variant="default"
                         size="sm"
                         onClick={() => {
-                          window.open(`/player?code=${device.device_code}`, '_blank', 'noopener');
+                          window.open(`/player`, '_blank', 'noopener');
                         }}
-                        title="Open the player on this browser using this device's code"
+                        title="Open the player pairing screen — enter the device code there"
                       >
                         <PlayCircle className="mr-2 h-4 w-4" />
-                        Use this device (open player)
+                        Open player (enter code)
                       </Button>
                     )}
                     {device.status === 'active' && (
