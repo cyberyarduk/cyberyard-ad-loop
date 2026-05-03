@@ -43,7 +43,7 @@ const PlayerPairing = ({ onPaired }: PlayerPairingProps) => {
         throw new Error(data.error || 'Pairing failed');
       }
 
-      toast.success("Device paired successfully!");
+      toast.success(data.recovered ? "Device reconnected successfully!" : "Device paired successfully!");
       onPaired(data.auth_token, {
         device_id: data.device_id,
         device_name: data.device_name,
@@ -104,7 +104,7 @@ const PlayerPairing = ({ onPaired }: PlayerPairingProps) => {
             throw new Error(data.error || 'Pairing failed');
           }
 
-          toast.success("Device paired successfully!");
+          toast.success(data.recovered ? "Device reconnected successfully!" : "Device paired successfully!");
           onPaired(data.auth_token, {
             device_id: data.device_id,
             device_name: data.device_name,
