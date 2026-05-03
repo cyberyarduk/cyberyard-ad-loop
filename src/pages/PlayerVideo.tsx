@@ -743,19 +743,49 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   }
 
   if (videos.length === 0) {
+    // Offline + no cached content → show branded fallback (custom image if uploaded,
+    // otherwise a clean branded screen with the company name).
+    if (isOffline && offlineFallback?.image_url) {
+      return (
+        <div
+          className="fixed inset-0 bg-black flex items-center justify-center"
+          onTouchStart={handleTripleTap}
+          onClick={handleTripleTap}
+        >
+          <img
+            src={offlineFallback.image_url}
+            alt="Offline"
+            className="absolute inset-0 h-full w-full object-contain"
+          />
+          <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center gap-2 z-50">
+            <WifiOff className="h-3 w-3" /> Offline
+          </div>
+        </div>
+      );
+    }
+
     return (
-      <div 
+      <div
         className="min-h-screen bg-black flex flex-col items-center justify-center"
         onTouchStart={handleTripleTap}
         onClick={handleTripleTap}
       >
         {isOffline && <WifiOff className="h-16 w-16 text-white mb-4" />}
         <div className="text-white text-center p-8">
-          <div className="text-2xl mb-4">{isOffline ? 'Offline - No cached videos' : 'No videos in playlist'}</div>
-          {!isOffline && (
-            <div className="text-muted-foreground">
-              Add videos to your playlist from the admin dashboard
-            </div>
+          {isOffline ? (
+            <>
+              <div className="text-3xl mb-2 font-semibold">
+                {offlineFallback?.company_name || 'Back shortly'}
+              </div>
+              <div className="text-muted-foreground">We'll be right back online.</div>
+            </>
+          ) : (
+            <>
+              <div className="text-2xl mb-4">No videos in playlist</div>
+              <div className="text-muted-foreground">
+                Add videos to your playlist from the admin dashboard
+              </div>
+            </>
           )}
         </div>
       </div>
