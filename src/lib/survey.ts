@@ -35,7 +35,7 @@ export const SURVEY_QUESTIONS: Question[] = [
   {
     id: "q1_has_screen",
     type: "single",
-    label: "Do you currently have a TV or screen in your shop?",
+    label: "Do you currently have a TV or other device (such as iPad) in your shop?",
     options: [
       { value: "yes", label: "Yes" },
       { value: "no", label: "No" },
@@ -43,8 +43,8 @@ export const SURVEY_QUESTIONS: Question[] = [
   },
   {
     id: "q1a_screen_use",
-    type: "single",
-    label: "What do you use it for?",
+    type: "multi",
+    label: "What do you use it for? (select all that apply)",
     showIf: (a) => a.q1_has_screen === "yes",
     options: [
       { value: "promotions", label: "Promotions" },
@@ -74,8 +74,8 @@ export const SURVEY_QUESTIONS: Question[] = [
   },
   {
     id: "q2a_promo_method",
-    type: "single",
-    label: "How do you promote them?",
+    type: "multi",
+    label: "How do you promote them? (select all that apply)",
     showIf: (a) => a.q2_promotes === "yes",
     options: [
       { value: "posters", label: "Posters" },
@@ -84,6 +84,13 @@ export const SURVEY_QUESTIONS: Question[] = [
       { value: "word_of_mouth", label: "Word of mouth" },
       { value: "other", label: "Other" },
     ],
+  },
+  {
+    id: "q2a_promo_method_other",
+    type: "text",
+    label: "Please describe the other method you use",
+    placeholder: "Type here…",
+    showIf: (a) => Array.isArray(a.q2a_promo_method) && a.q2a_promo_method.includes("other"),
   },
   {
     id: "q3_update_ease",
@@ -139,6 +146,15 @@ export const SURVEY_QUESTIONS: Question[] = [
     ],
   },
   {
+    id: "q8_ai_video",
+    type: "single",
+    label: "Would it be useful to create a video by taking a photo + adding text?",
+    options: [
+      { value: "yes", label: "Yes" },
+      { value: "no", label: "No" },
+    ],
+  },
+  {
     id: "q7_update_freq",
     type: "single",
     label: "How often do you update promotions?",
@@ -147,15 +163,6 @@ export const SURVEY_QUESTIONS: Question[] = [
       { value: "weekly", label: "Weekly" },
       { value: "monthly", label: "Monthly" },
       { value: "rarely", label: "Rarely" },
-    ],
-  },
-  {
-    id: "q8_ai_video",
-    type: "single",
-    label: "Would it be useful to create a video by taking a photo + adding text (AI-generated promotion)?",
-    options: [
-      { value: "yes", label: "Yes" },
-      { value: "no", label: "No" },
     ],
   },
   {
