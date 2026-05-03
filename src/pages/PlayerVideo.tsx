@@ -515,24 +515,25 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
     }
   }, [currentIndex, videos.length]);
 
-  // Image item auto-advance timer (must be before conditional returns).
-  // For image items, advance after `display_duration` seconds (default 10s).
+  // Image / iframe item auto-advance timer (must be before conditional returns).
+  // For image, youtube and webpage items, advance after `display_duration` seconds.
+  // Default duration: 10s (image), 30s (youtube/webpage).
   const _safeIdxForImage = currentIndex < videos.length ? currentIndex : 0;
   const _currentForImage = videos[_safeIdxForImage];
   const _isImageItemEffect = isImageMedia(_currentForImage);
+  const _isIframeItemEffect = isIframeMedia(_currentForImage);
   useEffect(() => {
-    if (!_currentForImage || !_isImageItemEffect) return;
-    // If this is the only item in the playlist, leave the image on screen
-    // permanently (e.g. a static menu). Only auto-advance when there are
-    // multiple items to rotate between.
+    if (!_currentForImage) return;
+    if (!_isImageItemEffect && !_isIframeItemEffect) return;
     if (videos.length <= 1) return;
-    const seconds = Math.max(1, Math.min(600, _currentForImage.display_duration ?? 10));
+    const defaultSecs = _isIframeItemEffect ? 30 : 10;
+    const seconds = Math.max(1, Math.min(3600, _currentForImage.display_duration ?? defaultSecs));
     const t = setTimeout(() => {
       handleVideoEnd();
     }, seconds * 1000);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_currentForImage?.id, _safeIdxForImage, _isImageItemEffect, videos.length]);
+  }, [_currentForImage?.id, _safeIdxForImage, _isImageItemEffect, _isIframeItemEffect, videos.length]);
 
   // Track fullscreen state changes (Esc key, etc.) — must stay before any
   // conditional returns so React hook order is stable when media loads.
