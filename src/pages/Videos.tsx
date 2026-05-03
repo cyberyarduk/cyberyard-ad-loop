@@ -666,6 +666,19 @@ const Videos = () => {
                     <span className="text-primary font-medium">Edit</span>
                   </button>
 
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => {
+                      setPendingAction({ type: "add_existing", video });
+                      setPlaylistPickerOpen(true);
+                    }}
+                  >
+                    <ListPlus className="mr-2 h-4 w-4" />
+                    Add to playlist
+                  </Button>
+
                   <div className="flex items-center justify-between pt-1 border-t border-border">
                     <div className="flex gap-1">
                       {video.source === 'ai_generated' && video.ai_prompt && (
