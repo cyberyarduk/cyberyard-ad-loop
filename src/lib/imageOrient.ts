@@ -13,16 +13,18 @@ const PORTRAIT_H = 1920;
 const LANDSCAPE_W = 1920;
 const LANDSCAPE_H = 1080;
 
-function loadImage(file: File): Promise<HTMLImageElement> {
+function loadImage(source: File | Blob | string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
+    const isString = typeof source === "string";
+    const url = isString ? source : URL.createObjectURL(source);
     const img = new Image();
+    if (isString) img.crossOrigin = "anonymous";
     img.onload = () => {
-      URL.revokeObjectURL(url);
+      if (!isString) URL.revokeObjectURL(url);
       resolve(img);
     };
     img.onerror = (e) => {
-      URL.revokeObjectURL(url);
+      if (!isString) URL.revokeObjectURL(url);
       reject(e);
     };
     img.src = url;
@@ -69,9 +71,9 @@ function renderVariant(
 }
 
 export async function generateOrientedVariants(
-  file: File,
+  source: File | Blob | string,
 ): Promise<OrientedVariants> {
-  const img = await loadImage(file);
+  const img = await loadImage(source);
   const [portraitBlob, landscapeBlob] = await Promise.all([
     renderVariant(img, PORTRAIT_W, PORTRAIT_H),
     renderVariant(img, LANDSCAPE_W, LANDSCAPE_H),
