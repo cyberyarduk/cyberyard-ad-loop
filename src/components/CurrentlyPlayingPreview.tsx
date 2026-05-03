@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,22 +24,93 @@ import { Monitor, Video as VideoIcon, Send } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
+interface PlaylistItem {
+  title: string | null;
+  media_type: 'video' | 'image';
+  video_url: string | null;
+  image_url: string | null;
+  display_duration: number | null;
+}
+
 interface DeviceInfo {
   id: string;
   name: string;
   status: string | null;
   playlist_id: string | null;
   playlist_name: string | null;
-  video_url: string | null;
-  video_title: string | null;
-  total_videos: number;
-  media_type: 'video' | 'image' | null;
-  image_url: string | null;
+  items: PlaylistItem[];
 }
 
 interface PlaylistOption {
   id: string;
   name: string;
+}
+
+// Rotating preview tile that mirrors what the device is actually playing.
+function DevicePreviewTile({ items }: { items: PlaylistItem[] }) {
+  const [idx, setIdx] = useState(0);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  // Reset when playlist changes
+  useEffect(() => {
+    setIdx(0);
+  }, [items]);
+
+  // Auto-advance for images (videos advance via onEnded)
+  useEffect(() => {
+    if (items.length === 0) return;
+    const current = items[idx % items.length];
+    if (!current) return;
+    if (current.media_type !== 'image') return;
+    const seconds = Math.max(2, Math.min(120, current.display_duration ?? 8));
+    const t = setTimeout(() => {
+      setIdx((i) => (i + 1) % items.length);
+    }, seconds * 1000);
+    return () => clearTimeout(t);
+  }, [idx, items]);
+
+  if (items.length === 0) {
+    return (
+      <div className="aspect-[9/16] bg-muted rounded-lg overflow-hidden flex items-center justify-center">
+        <VideoIcon className="h-8 w-8 text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const current = items[idx % items.length];
+  const advance = () => setIdx((i) => (i + 1) % items.length);
+
+  return (
+    <div className="aspect-[9/16] bg-muted rounded-lg overflow-hidden flex items-center justify-center relative">
+      {current.media_type === 'image' && current.image_url ? (
+        <img
+          key={`${idx}-img`}
+          src={current.image_url}
+          alt={current.title ?? 'Currently playing'}
+          className="w-full h-full object-cover"
+        />
+      ) : current.video_url ? (
+        <video
+          key={`${idx}-vid`}
+          ref={videoRef}
+          src={current.video_url}
+          muted
+          autoPlay
+          playsInline
+          onEnded={advance}
+          onError={advance}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <VideoIcon className="h-8 w-8 text-muted-foreground" />
+      )}
+      {items.length > 1 && (
+        <div className="absolute bottom-1.5 right-1.5 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+          {(idx % items.length) + 1} / {items.length}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function CurrentlyPlayingPreview() {
@@ -82,7 +153,6 @@ export function CurrentlyPlayingPreview() {
       const { data: rawDevices } = await deviceQuery;
       const list = rawDevices ?? [];
 
-      // Load all playlists for the user (used in the dropdown)
       const { data: pls } = await supabase
         .from("playlists")
         .select("id, name")
@@ -93,11 +163,7 @@ export function CurrentlyPlayingPreview() {
       const enriched: DeviceInfo[] = await Promise.all(
         list.map(async (d) => {
           let playlistName: string | null = null;
-          let videoUrl: string | null = null;
-          let videoTitle: string | null = null;
-          let mediaType: 'video' | 'image' | null = null;
-          let imageUrl: string | null = null;
-          let total = 0;
+          let items: PlaylistItem[] = [];
 
           if (d.playlist_id) {
             const { data: pl } = await supabase
@@ -107,31 +173,39 @@ export function CurrentlyPlayingPreview() {
               .single();
             playlistName = pl?.name ?? null;
 
-            const { data: items } = await supabase
+            const { data: rows } = await supabase
               .from("playlist_videos")
-              .select("video_id, order_index, videos(title, video_url, media_type, image_url, image_url_landscape, video_url_landscape)")
+              .select(
+                "order_index, videos(title, video_url, video_url_landscape, media_type, image_url, image_url_landscape, display_duration)",
+              )
               .eq("playlist_id", d.playlist_id)
               .order("order_index", { ascending: true });
 
-            total = items?.length ?? 0;
-            const first = items?.[0]?.videos as
-              | {
-                  title?: string;
-                  video_url?: string | null;
-                  media_type?: 'video' | 'image' | null;
-                  image_url?: string | null;
-                  image_url_landscape?: string | null;
-                  video_url_landscape?: string | null;
+            items = (rows ?? [])
+              .map((r: any) => {
+                const v = r.videos;
+                if (!v) return null;
+                const mediaType = (v.media_type ?? 'video') as 'video' | 'image';
+                if (mediaType === 'image') {
+                  return {
+                    title: v.title ?? null,
+                    media_type: 'image' as const,
+                    video_url: null,
+                    image_url: v.image_url ?? v.image_url_landscape ?? null,
+                    display_duration: v.display_duration ?? null,
+                  };
                 }
-              | null;
-            videoTitle = first?.title ?? null;
-            mediaType = (first?.media_type ?? 'video') as 'video' | 'image';
-            if (mediaType === 'image') {
-              imageUrl = first?.image_url ?? first?.image_url_landscape ?? null;
-              videoUrl = null;
-            } else {
-              videoUrl = first?.video_url ?? first?.video_url_landscape ?? null;
-            }
+                return {
+                  title: v.title ?? null,
+                  media_type: 'video' as const,
+                  video_url: v.video_url ?? v.video_url_landscape ?? null,
+                  image_url: null,
+                  display_duration: v.display_duration ?? null,
+                };
+              })
+              .filter((x: PlaylistItem | null): x is PlaylistItem =>
+                !!x && (!!x.video_url || !!x.image_url),
+              );
           }
 
           return {
@@ -140,11 +214,7 @@ export function CurrentlyPlayingPreview() {
             status: d.status,
             playlist_id: d.playlist_id,
             playlist_name: playlistName,
-            video_url: videoUrl,
-            video_title: videoTitle,
-            total_videos: total,
-            media_type: mediaType,
-            image_url: imageUrl,
+            items,
           };
         }),
       );
@@ -159,12 +229,12 @@ export function CurrentlyPlayingPreview() {
 
   useEffect(() => {
     load();
+    // Refresh playlist composition every 30s so newly added/removed videos appear
+    const t = setInterval(load, 30000);
+    return () => clearInterval(t);
   }, []);
 
-  const handlePlaylistSelect = (
-    device: DeviceInfo,
-    playlistId: string,
-  ) => {
+  const handlePlaylistSelect = (device: DeviceInfo, playlistId: string) => {
     const playlist = playlists.find((p) => p.id === playlistId);
     if (!playlist) return;
     setPendingPush({
@@ -185,11 +255,7 @@ export function CurrentlyPlayingPreview() {
       if (target === "device") {
         query = query.eq("id", pendingPush.deviceId);
       } else {
-        // Push to all devices in the same scope as the loaded list
-        query = query.in(
-          "id",
-          devices.map((d) => d.id),
-        );
+        query = query.in("id", devices.map((d) => d.id));
       }
       const { error } = await query;
       if (error) throw error;
@@ -231,10 +297,7 @@ export function CurrentlyPlayingPreview() {
               Add your first device to see a live preview here.
             </p>
           </div>
-          <Link
-            to="/devices"
-            className="text-sm font-medium text-primary hover:underline"
-          >
+          <Link to="/devices" className="text-sm font-medium text-primary hover:underline">
             Add device →
           </Link>
         </CardContent>
@@ -254,105 +317,75 @@ export function CurrentlyPlayingPreview() {
               Your devices ({devices.length})
             </h2>
           </div>
-          <Link
-            to="/devices"
-            className="text-sm font-medium text-primary hover:underline"
-          >
+          <Link to="/devices" className="text-sm font-medium text-primary hover:underline">
             Manage devices →
           </Link>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {devices.map((device) => (
-            <Card
-              key={device.id}
-              className="border border-border shadow-sm overflow-hidden"
-            >
-              <CardContent className="p-5 space-y-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <h3 className="font-semibold truncate">{device.name}</h3>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {device.playlist_name ?? "No playlist assigned"}
+          {devices.map((device) => {
+            const currentTitle = device.items[0]?.title ?? null;
+            return (
+              <Card key={device.id} className="border border-border shadow-sm overflow-hidden">
+                <CardContent className="p-5 space-y-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h3 className="font-semibold truncate">{device.name}</h3>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {device.playlist_name ?? "No playlist assigned"}
+                      </p>
+                    </div>
+                    <Badge variant={device.status === "active" ? "default" : "secondary"}>
+                      {device.status || "unpaired"}
+                    </Badge>
+                  </div>
+
+                  <DevicePreviewTile items={device.items} />
+
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">
+                      {device.items.length > 1
+                        ? `Looping ${device.items.length} items`
+                        : "Now showing"}
+                    </p>
+                    <p className="text-sm font-medium truncate">
+                      {currentTitle ||
+                        (device.playlist_id ? "No videos in playlist" : "No playlist")}
                     </p>
                   </div>
-                  <Badge
-                    variant={
-                      device.status === "active" ? "default" : "secondary"
-                    }
-                  >
-                    {device.status || "unpaired"}
-                  </Badge>
-                </div>
 
-                <div className="aspect-[9/16] bg-muted rounded-lg overflow-hidden flex items-center justify-center">
-                  {device.media_type === 'image' && device.image_url ? (
-                    <img
-                      src={device.image_url}
-                      alt={device.video_title ?? 'Currently playing image'}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : device.video_url ? (
-                    <video
-                      src={device.video_url}
-                      muted
-                      loop
-                      autoPlay
-                      playsInline
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <VideoIcon className="h-8 w-8 text-muted-foreground" />
-                  )}
-                </div>
-
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">Now showing</p>
-                  <p className="text-sm font-medium truncate">
-                    {device.video_title ||
-                      (device.playlist_id
-                        ? "No videos in playlist"
-                        : "No playlist")}
-                  </p>
-                </div>
-
-                <div className="space-y-2 pt-2 border-t border-border">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Send className="h-3 w-3" />
-                    Push a playlist to this device
-                  </div>
-                  <Select
-                    value=""
-                    onValueChange={(v) => handlePlaylistSelect(device, v)}
-                  >
-                    <SelectTrigger className="h-9">
-                      <SelectValue placeholder="Select playlist…" />
-                    </SelectTrigger>
-                    <SelectContent className="z-[100] bg-background">
-                      {playlists.length === 0 ? (
-                        <SelectItem value="none" disabled>
-                          No playlists yet
-                        </SelectItem>
-                      ) : (
-                        playlists.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.name}
+                  <div className="space-y-2 pt-2 border-t border-border">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Send className="h-3 w-3" />
+                      Push a playlist to this device
+                    </div>
+                    <Select value="" onValueChange={(v) => handlePlaylistSelect(device, v)}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="Select playlist…" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[100] bg-background">
+                        {playlists.length === 0 ? (
+                          <SelectItem value="none" disabled>
+                            No playlists yet
                           </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                        ) : (
+                          playlists.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.name}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </div>
 
-      <AlertDialog
-        open={!!pendingPush}
-        onOpenChange={(o) => !o && setPendingPush(null)}
-      >
+      <AlertDialog open={!!pendingPush} onOpenChange={(o) => !o && setPendingPush(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Push "{pendingPush?.playlistName}"?</AlertDialogTitle>
