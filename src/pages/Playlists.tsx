@@ -114,6 +114,11 @@ const Playlists = () => {
           .select(`
             id,
             order_index,
+            schedule_start_date,
+            schedule_end_date,
+            schedule_days_of_week,
+            schedule_start_time,
+            schedule_end_time,
             videos (
               id,
               title,
@@ -129,7 +134,15 @@ const Playlists = () => {
 
         return {
           ...playlist,
-          videos: playlistVideos?.map(pv => pv.videos) || [],
+          videos: (playlistVideos || []).map((pv: any) => ({
+            ...pv.videos,
+            playlist_video_id: pv.id,
+            schedule_start_date: pv.schedule_start_date,
+            schedule_end_date: pv.schedule_end_date,
+            schedule_days_of_week: pv.schedule_days_of_week,
+            schedule_start_time: pv.schedule_start_time,
+            schedule_end_time: pv.schedule_end_time,
+          })),
         };
       })
     );
