@@ -13,27 +13,53 @@ interface Video {
   title: string;
   video_url: string;
   order_index: number;
-  media_type?: 'video' | 'image';
+  media_type?: 'video' | 'image' | 'youtube' | 'webpage';
   image_url?: string | null;
   image_url_landscape?: string | null;
   video_url_landscape?: string | null;
+  source_url?: string | null;
   display_duration?: number | null;
   player_overlay?: string | null;
 }
 
 const getPlayableUrl = (item?: Video | null) => {
   if (!item) return "";
-  // Videos take priority — image_url on a video item is just the poster.
+  if (item.media_type === 'youtube' || item.media_type === 'webpage') {
+    return item.source_url || item.video_url || "";
+  }
   if (item.media_type === 'video') {
     return item.video_url || item.video_url_landscape || item.image_url || item.image_url_landscape || "";
   }
   return item.image_url || item.video_url || item.image_url_landscape || item.video_url_landscape || "";
 };
 const isImageMedia = (item?: Video | null) => {
-  if (item?.media_type === 'video') return false;
+  if (item?.media_type === 'video' || item?.media_type === 'youtube' || item?.media_type === 'webpage') return false;
   if (item?.media_type === 'image') return true;
   const url = getPlayableUrl(item);
   return /\.(jpe?g|png|gif|webp|avif)(\?|$)/i.test(url);
+};
+const isIframeMedia = (item?: Video | null) =>
+  item?.media_type === 'youtube' || item?.media_type === 'webpage';
+
+// Convert any YouTube URL to an embed URL with autoplay+mute+loop
+const toYouTubeEmbed = (url: string): string => {
+  try {
+    const u = new URL(url);
+    let id = '';
+    if (u.hostname.includes('youtu.be')) {
+      id = u.pathname.slice(1);
+    } else if (u.searchParams.get('v')) {
+      id = u.searchParams.get('v') || '';
+    } else if (u.pathname.startsWith('/embed/')) {
+      id = u.pathname.split('/embed/')[1];
+    } else if (u.pathname.startsWith('/shorts/')) {
+      id = u.pathname.split('/shorts/')[1];
+    }
+    if (!id) return url;
+    return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&modestbranding=1&playsinline=1&rel=0`;
+  } catch {
+    return url;
+  }
 };
 const appendCacheBust = (url: string, version: number) => {
   if (!url || !version) return url;
