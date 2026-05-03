@@ -50,6 +50,8 @@ const Devices = () => {
   const [editDevice, setEditDevice] = useState<any>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [deviceLimit, setDeviceLimit] = useState<number | null>(null);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [scheduleDevice, setScheduleDevice] = useState<any>(null);
 
   // Auth check
   useEffect(() => {
