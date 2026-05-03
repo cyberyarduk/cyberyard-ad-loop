@@ -141,7 +141,9 @@ serve(async (req) => {
           media_type,
           image_url,
           image_url_landscape,
-          player_overlay
+          player_overlay,
+          source_url,
+          expires_at
         )
       `)
       .eq('playlist_id', playlistId)
@@ -152,16 +154,37 @@ serve(async (req) => {
       throw new Error('Failed to fetch playlist');
     }
 
+    const nowIso = new Date().toISOString();
+
     // Filter videos to only include those from this company and format response
     // Select appropriate media URL based on device aspect ratio (landscape vs portrait)
     const videos = (playlistVideos || [])
       .filter(pv => pv.videos && pv.videos.company_id === device.company_id)
+      // Drop expired items
+      .filter(pv => !pv.videos.expires_at || pv.videos.expires_at > nowIso)
       .map(pv => {
         const v = pv.videos;
         const hasImageVariant = !!(v.image_url || v.image_url_landscape);
         const hasVideoVariant = !!(v.video_url || v.video_url_landscape);
         const looksLikeImageUrl = (url?: string | null) => !!url && /\.(jpe?g|png|gif|webp|avif)(\?|$)/i.test(url);
         const looksLikeVideoUrl = (url?: string | null) => !!url && /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url);
+
+        // YouTube + WebPage media types pass straight through.
+        if (v.media_type === 'youtube' || v.media_type === 'webpage') {
+          if (!v.source_url) return null;
+          return {
+            id: v.id,
+            title: v.title,
+            media_type: v.media_type,
+            video_url: v.source_url,
+            source_url: v.source_url,
+            image_url: v.image_url ?? null,
+            display_duration: v.display_duration ?? null,
+            player_overlay: v.player_overlay ?? null,
+            order_index: pv.order_index,
+          };
+        }
+
         // Explicit media_type wins. Video items keep their MP4 even if a poster image_url is set.
         const isImage = v.media_type === 'image'
           ? true
@@ -172,9 +195,6 @@ serve(async (req) => {
               : (hasImageVariant || looksLikeImageUrl(v.video_url) || looksLikeImageUrl(v.video_url_landscape));
         const isLandscape = aspectRatio === 'landscape';
 
-        // Robust fallback: prefer the orientation-matched URL but fall back to
-        // ANY available variant so a phone never gets a null URL when only the
-        // landscape was uploaded (or vice versa).
         const mediaUrl = isImage
           ? (isLandscape
               ? (v.image_url_landscape || v.image_url)
@@ -195,7 +215,7 @@ serve(async (req) => {
         };
       })
       // Drop any item that has no playable URL so the player doesn't get stuck.
-      .filter(v => !!v.video_url);
+      .filter(v => v && !!v.video_url);
 
     console.log(`Returning ${videos.length} videos for device ${device.id}`);
 
