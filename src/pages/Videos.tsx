@@ -22,6 +22,8 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PlaylistSelectorDialog } from "@/components/PlaylistSelectorDialog";
+import UploadDocumentDialog from "@/components/UploadDocumentDialog";
+import UnsplashSearchDialog from "@/components/UnsplashSearchDialog";
 
 const Videos = () => {
   const [open, setOpen] = useState(false);
@@ -374,6 +376,8 @@ const Videos = () => {
                 Create Offer Video
               </Button>
             </Link>
+            <UploadDocumentDialog onComplete={fetchVideos} />
+            <UnsplashSearchDialog onComplete={fetchVideos} />
             <Dialog open={imageOpen} onOpenChange={setImageOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline">
