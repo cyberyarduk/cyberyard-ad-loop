@@ -71,7 +71,7 @@ const Auth = () => {
       // Pull profile to validate they used the right portal
       const { data: profile } = await supabase
         .from("profiles")
-        .select("role")
+        .select("role, must_change_password")
         .eq("id", data.user!.id)
         .single();
 
@@ -100,6 +100,12 @@ const Auth = () => {
           toast.error("Your account has been suspended. Please contact your administrator.");
           return;
         }
+      }
+
+      if (profile?.must_change_password) {
+        toast.info("Please set a new password to continue.");
+        navigate("/reset-password?first_login=1");
+        return;
       }
 
       toast.success("Welcome back!");
