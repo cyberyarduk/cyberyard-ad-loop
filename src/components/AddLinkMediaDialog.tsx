@@ -112,6 +112,27 @@ const AddLinkMediaDialog = ({ kind, trigger, onComplete }: Props) => {
 
     setSubmitting(true);
     try {
+      // For YouTube, drop "Mix / Radio" list params (list=RD…) and similar —
+      // they reference auto-generated playlists that almost never embed cleanly.
+      let cleanUrl = normalizedUrl;
+      let resolvedTitle = title;
+      if (kind === "youtube") {
+        const id = extractYouTubeId(normalizedUrl);
+        if (!id) {
+          toast.error("We couldn't read a video ID from that YouTube link.");
+          setSubmitting(false);
+          return;
+        }
+        cleanUrl = `https://www.youtube.com/watch?v=${id}`;
+        const check = await checkYouTubeEmbeddable(cleanUrl);
+        if (!check.ok) {
+          toast.error(check.reason);
+          setSubmitting(false);
+          return;
+        }
+        if (!resolvedTitle && check.ok && check.title) resolvedTitle = check.title;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
@@ -124,12 +145,12 @@ const AddLinkMediaDialog = ({ kind, trigger, onComplete }: Props) => {
       const { data: inserted, error } = await supabase
         .from("videos")
         .insert({
-          title: title || (kind === "youtube" ? "YouTube video" : "Web page"),
+          title: resolvedTitle || (kind === "youtube" ? "YouTube video" : "Web page"),
           user_id: user.id,
           company_id: profile?.company_id,
           media_type: kind,
-          source_url: normalizedUrl,
-          video_url: normalizedUrl,
+          source_url: cleanUrl,
+          video_url: cleanUrl,
           display_duration: dur,
           source: kind,
         } as any)
