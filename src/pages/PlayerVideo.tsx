@@ -57,8 +57,11 @@ const toYouTubeEmbed = (url: string): string => {
       id = u.pathname.split('/shorts/')[1];
     }
     if (!id) return url;
-    const origin = typeof window !== 'undefined' ? encodeURIComponent(window.location.origin) : '';
-    return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1&rel=0&enablejsapi=1&origin=${origin}`;
+    // NOTE: Do NOT pass `origin` — when it doesn't match the embedding page
+    // (which happens inside the Lovable preview iframe and inside Capacitor's
+    // webview), YouTube returns "Error 153: Video player configuration error".
+    // Keep enablejsapi=1 so we can still listen for the natural end event.
+    return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1&rel=0&enablejsapi=1`;
   } catch {
     return url;
   }
