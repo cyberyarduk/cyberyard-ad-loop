@@ -7,6 +7,7 @@ import { Capacitor } from '@capacitor/core';
 import { Device } from '@capacitor/device';
 import { Network } from '@capacitor/network';
 import { Loader2, WifiOff, Maximize, Minimize } from "lucide-react";
+import { precacheUrls } from "@/lib/mediaCache";
 
 interface Video {
   id: string;
