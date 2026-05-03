@@ -4,7 +4,7 @@ import PortalLayout from "@/components/PortalLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Building2, MapPin, Calendar, PoundSterling, Ban, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Building2, MapPin, Calendar, PoundSterling, Ban, CheckCircle2, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -54,6 +54,22 @@ const SalespersonDetail = () => {
     toast.success(next ? "Salesperson reactivated" : "Salesperson suspended");
   };
 
+  const remove = async () => {
+    if (!sp) return;
+    const signupCount = companies.length;
+    const msg = signupCount > 0
+      ? `Permanently delete ${sp.full_name}?\n\nThey have ${signupCount} client signup${signupCount === 1 ? "" : "s"} attributed to them. The companies will be kept, but will no longer be linked to this salesperson.\n\nThis cannot be undone. Consider suspending instead.`
+      : `Permanently delete ${sp.full_name}? This cannot be undone.`;
+    if (!confirm(msg)) return;
+    // unlink companies first
+    if (signupCount > 0) {
+      await supabase.from("companies").update({ signed_up_by_salesperson_id: null }).eq("signed_up_by_salesperson_id", sp.id);
+    }
+    const { error } = await supabase.from("salespeople").delete().eq("id", sp.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Salesperson deleted");
+    navigate("/admin/salespeople");
+  };
   return (
     <PortalLayout variant="admin">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -73,13 +89,18 @@ const SalespersonDetail = () => {
             )}
           </div>
           {sp && (
-            <Button
-              variant={sp.active ? "outline" : "default"}
-              onClick={toggleActive}
-              className={sp.active ? "text-destructive hover:text-destructive" : ""}
-            >
-              {sp.active ? <><Ban className="mr-2 h-4 w-4" /> Suspend</> : <><CheckCircle2 className="mr-2 h-4 w-4" /> Reactivate</>}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={sp.active ? "outline" : "default"}
+                onClick={toggleActive}
+                className={sp.active ? "text-destructive hover:text-destructive" : ""}
+              >
+                {sp.active ? <><Ban className="mr-2 h-4 w-4" /> Suspend</> : <><CheckCircle2 className="mr-2 h-4 w-4" /> Reactivate</>}
+              </Button>
+              <Button variant="ghost" size="icon" onClick={remove} title="Delete salesperson">
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
           )}
         </div>
 
