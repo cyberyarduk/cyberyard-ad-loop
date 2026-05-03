@@ -15,7 +15,7 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Video, Trash2, Sparkles, RefreshCw, Clock, Play, Image as ImageIcon, ListPlus } from "lucide-react";
+import { Plus, Video, Trash2, Sparkles, RefreshCw, Clock, Play, Image as ImageIcon, ListPlus, Youtube, Globe, CalendarClock } from "lucide-react";
 import { generateOrientedVariants } from "@/lib/imageOrient";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PlaylistSelectorDialog } from "@/components/PlaylistSelectorDialog";
 import UploadDocumentDialog from "@/components/UploadDocumentDialog";
 import UnsplashSearchDialog from "@/components/UnsplashSearchDialog";
+import AddLinkMediaDialog from "@/components/AddLinkMediaDialog";
 
 const Videos = () => {
   const [open, setOpen] = useState(false);
