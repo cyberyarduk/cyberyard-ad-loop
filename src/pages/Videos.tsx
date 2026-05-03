@@ -35,6 +35,8 @@ const Videos = () => {
   const [previewVideo, setPreviewVideo] = useState<any | null>(null);
   const [durationEdit, setDurationEdit] = useState<{ id: string; value: string } | null>(null);
   const [savingDuration, setSavingDuration] = useState(false);
+  const [expiryEdit, setExpiryEdit] = useState<{ id: string; value: string } | null>(null);
+  const [savingExpiry, setSavingExpiry] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(true);
