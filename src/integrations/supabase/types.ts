@@ -37,6 +37,7 @@ export type Database = {
           monthly_price_pence: number | null
           name: string
           notes: string | null
+          offline_fallback_image_url: string | null
           plan_type: Database["public"]["Enums"]["plan_type"]
           postcode: string
           price_per_device: number
@@ -73,6 +74,7 @@ export type Database = {
           monthly_price_pence?: number | null
           name: string
           notes?: string | null
+          offline_fallback_image_url?: string | null
           plan_type: Database["public"]["Enums"]["plan_type"]
           postcode: string
           price_per_device: number
@@ -109,6 +111,7 @@ export type Database = {
           monthly_price_pence?: number | null
           name?: string
           notes?: string | null
+          offline_fallback_image_url?: string | null
           plan_type?: Database["public"]["Enums"]["plan_type"]
           postcode?: string
           price_per_device?: number
