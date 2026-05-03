@@ -53,6 +53,7 @@ function ProtectedRoute({
   requireSalesperson?: boolean;
 }) {
   const { user, profile, company, loading, isSuperAdmin, isSalesperson, checkAccess, signOut } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
@@ -60,6 +61,10 @@ function ProtectedRoute({
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  if (profile?.must_change_password && location.pathname !== "/reset-password") {
+    return <Navigate to="/reset-password?first_login=1" replace />;
   }
 
   if (requireSuperAdmin && !isSuperAdmin) {
