@@ -29,6 +29,9 @@ export type Database = {
           created_at: string
           created_by_user_id: string
           device_limit: number | null
+          emergency_active: boolean
+          emergency_message: string | null
+          emergency_started_at: string | null
           end_date: string
           id: string
           monthly_price_pence: number | null
@@ -62,6 +65,9 @@ export type Database = {
           created_at?: string
           created_by_user_id: string
           device_limit?: number | null
+          emergency_active?: boolean
+          emergency_message?: string | null
+          emergency_started_at?: string | null
           end_date: string
           id?: string
           monthly_price_pence?: number | null
@@ -95,6 +101,9 @@ export type Database = {
           created_at?: string
           created_by_user_id?: string
           device_limit?: number | null
+          emergency_active?: boolean
+          emergency_message?: string | null
+          emergency_started_at?: string | null
           end_date?: string
           id?: string
           monthly_price_pence?: number | null
@@ -231,8 +240,12 @@ export type Database = {
           screen_height: number | null
           screen_width: number | null
           status: string | null
+          timezone: string
           user_id: string
           venue_id: string | null
+          working_hours_enabled: boolean
+          working_hours_end: string | null
+          working_hours_start: string | null
         }
         Insert: {
           admin_pin?: string | null
@@ -250,8 +263,12 @@ export type Database = {
           screen_height?: number | null
           screen_width?: number | null
           status?: string | null
+          timezone?: string
           user_id: string
           venue_id?: string | null
+          working_hours_enabled?: boolean
+          working_hours_end?: string | null
+          working_hours_start?: string | null
         }
         Update: {
           admin_pin?: string | null
@@ -269,8 +286,12 @@ export type Database = {
           screen_height?: number | null
           screen_width?: number | null
           status?: string | null
+          timezone?: string
           user_id?: string
           venue_id?: string | null
+          working_hours_enabled?: boolean
+          working_hours_end?: string | null
+          working_hours_start?: string | null
         }
         Relationships: [
           {
@@ -375,6 +396,11 @@ export type Database = {
           id: string
           order_index: number
           playlist_id: string
+          schedule_days_of_week: number[] | null
+          schedule_end_date: string | null
+          schedule_end_time: string | null
+          schedule_start_date: string | null
+          schedule_start_time: string | null
           video_id: string
         }
         Insert: {
@@ -382,6 +408,11 @@ export type Database = {
           id?: string
           order_index?: number
           playlist_id: string
+          schedule_days_of_week?: number[] | null
+          schedule_end_date?: string | null
+          schedule_end_time?: string | null
+          schedule_start_date?: string | null
+          schedule_start_time?: string | null
           video_id: string
         }
         Update: {
@@ -389,6 +420,11 @@ export type Database = {
           id?: string
           order_index?: number
           playlist_id?: string
+          schedule_days_of_week?: number[] | null
+          schedule_end_date?: string | null
+          schedule_end_time?: string | null
+          schedule_start_date?: string | null
+          schedule_start_time?: string | null
           video_id?: string
         }
         Relationships: [
@@ -410,6 +446,8 @@ export type Database = {
       }
       playlists: {
         Row: {
+          active_end_date: string | null
+          active_start_date: string | null
           company_id: string | null
           created_at: string
           id: string
@@ -417,6 +455,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          active_end_date?: string | null
+          active_start_date?: string | null
           company_id?: string | null
           created_at?: string
           id?: string
@@ -424,6 +464,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          active_end_date?: string | null
+          active_start_date?: string | null
           company_id?: string | null
           created_at?: string
           id?: string

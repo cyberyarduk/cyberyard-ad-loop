@@ -26,7 +26,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, List, Edit, Trash2, ArrowUp, ArrowDown, Send, Upload, ChevronDown, Clock, Play, Image as ImageIcon } from "lucide-react";
+import { Plus, List, Edit, Trash2, ArrowUp, ArrowDown, Send, Upload, ChevronDown, Clock, Play, Image as ImageIcon, CalendarClock } from "lucide-react";
+import ScheduleDialog, { ItemSchedule } from "@/components/ScheduleDialog";
 import { generateOrientedVariants } from "@/lib/imageOrient";
 import {
   HoverCard,
@@ -65,6 +66,8 @@ const Playlists = () => {
   const [savingDuration, setSavingDuration] = useState(false);
   const [renameTarget, setRenameTarget] = useState<{ id: string; name: string } | null>(null);
   const [savingRename, setSavingRename] = useState(false);
+  const [scheduleEdit, setScheduleEdit] = useState<{ id: string; data: ItemSchedule } | null>(null);
+  const [activeWindowEdit, setActiveWindowEdit] = useState<{ id: string; start: string; end: string } | null>(null);
 
   // Image upload (within Add Media dialog)
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -114,6 +117,11 @@ const Playlists = () => {
           .select(`
             id,
             order_index,
+            schedule_start_date,
+            schedule_end_date,
+            schedule_days_of_week,
+            schedule_start_time,
+            schedule_end_time,
             videos (
               id,
               title,
@@ -129,7 +137,15 @@ const Playlists = () => {
 
         return {
           ...playlist,
-          videos: playlistVideos?.map(pv => pv.videos) || [],
+          videos: (playlistVideos || []).map((pv: any) => ({
+            ...pv.videos,
+            playlist_video_id: pv.id,
+            schedule_start_date: pv.schedule_start_date,
+            schedule_end_date: pv.schedule_end_date,
+            schedule_days_of_week: pv.schedule_days_of_week,
+            schedule_start_time: pv.schedule_start_time,
+            schedule_end_time: pv.schedule_end_time,
+          })),
         };
       })
     );
@@ -692,6 +708,29 @@ const Playlists = () => {
                         <Send className="h-4 w-4 mr-2" />
                         Push to All
                       </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          setActiveWindowEdit({
+                            id: playlist.id,
+                            start: playlist.active_start_date ?? "",
+                            end: playlist.active_end_date ?? "",
+                          })
+                        }
+                        aria-label="Active window"
+                        title={
+                          playlist.active_start_date || playlist.active_end_date
+                            ? `Active ${playlist.active_start_date ?? "any"} → ${playlist.active_end_date ?? "any"}`
+                            : "Active always"
+                        }
+                      >
+                        <CalendarClock
+                          className={`h-4 w-4 ${
+                            playlist.active_start_date || playlist.active_end_date ? "text-primary" : ""
+                          }`}
+                        />
+                      </Button>
                       <Button 
                         variant="ghost" 
                         size="sm"
@@ -773,6 +812,36 @@ const Playlists = () => {
                               </button>
                             </TableCell>
                             <TableCell className="text-right space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  setScheduleEdit({
+                                    id: video.playlist_video_id,
+                                    data: {
+                                      schedule_start_date: video.schedule_start_date,
+                                      schedule_end_date: video.schedule_end_date,
+                                      schedule_days_of_week: video.schedule_days_of_week,
+                                      schedule_start_time: video.schedule_start_time,
+                                      schedule_end_time: video.schedule_end_time,
+                                    },
+                                  })
+                                }
+                                aria-label="Schedule"
+                                title={
+                                  video.schedule_start_date || video.schedule_end_date || video.schedule_days_of_week || video.schedule_start_time
+                                    ? "Scheduled"
+                                    : "Always plays"
+                                }
+                              >
+                                <CalendarClock
+                                  className={`h-4 w-4 ${
+                                    video.schedule_start_date || video.schedule_end_date || video.schedule_days_of_week || video.schedule_start_time
+                                      ? "text-primary"
+                                      : ""
+                                  }`}
+                                />
+                              </Button>
                               <Button 
                                 variant="ghost" 
                                 size="sm"
@@ -1179,6 +1248,87 @@ const Playlists = () => {
                 </Button>
               </div>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        <ScheduleDialog
+          open={!!scheduleEdit}
+          onOpenChange={(o) => !o && setScheduleEdit(null)}
+          playlistVideoId={scheduleEdit?.id ?? null}
+          initial={scheduleEdit?.data ?? null}
+          onSaved={fetchPlaylists}
+        />
+
+        <Dialog open={!!activeWindowEdit} onOpenChange={(o) => !o && setActiveWindowEdit(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Playlist active window</DialogTitle>
+              <DialogDescription>
+                Outside this window the playlist won't play on any device. Leave blank for always-on.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Start date</Label>
+                  <Input
+                    type="date"
+                    value={activeWindowEdit?.start ?? ""}
+                    onChange={(e) =>
+                      setActiveWindowEdit((p) => (p ? { ...p, start: e.target.value } : p))
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">End date</Label>
+                  <Input
+                    type="date"
+                    value={activeWindowEdit?.end ?? ""}
+                    onChange={(e) =>
+                      setActiveWindowEdit((p) => (p ? { ...p, end: e.target.value } : p))
+                    }
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  variant="ghost"
+                  onClick={async () => {
+                    if (!activeWindowEdit) return;
+                    await supabase
+                      .from("playlists")
+                      .update({ active_start_date: null, active_end_date: null } as any)
+                      .eq("id", activeWindowEdit.id);
+                    toast.success("Active window cleared");
+                    setActiveWindowEdit(null);
+                    fetchPlaylists();
+                  }}
+                >
+                  Clear
+                </Button>
+                <Button
+                  onClick={async () => {
+                    if (!activeWindowEdit) return;
+                    const { error } = await supabase
+                      .from("playlists")
+                      .update({
+                        active_start_date: activeWindowEdit.start || null,
+                        active_end_date: activeWindowEdit.end || null,
+                      } as any)
+                      .eq("id", activeWindowEdit.id);
+                    if (error) {
+                      toast.error("Failed to save");
+                      return;
+                    }
+                    toast.success("Saved");
+                    setActiveWindowEdit(null);
+                    fetchPlaylists();
+                  }}
+                >
+                  Save
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </div>

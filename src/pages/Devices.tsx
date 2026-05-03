@@ -33,6 +33,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import QRCode from "qrcode";
+import EmergencyAlertButton from "@/components/EmergencyAlertButton";
 
 const Devices = () => {
   const navigate = useNavigate();
@@ -303,7 +304,10 @@ const Devices = () => {
         name: editDevice.name,
         playlist_id: editDevice.playlist_id && editDevice.playlist_id !== 'none' ? editDevice.playlist_id : null,
         venue_id: editDevice.venue_id && editDevice.venue_id !== 'none' ? editDevice.venue_id : null,
-      })
+        working_hours_enabled: !!editDevice.working_hours_enabled,
+        working_hours_start: editDevice.working_hours_enabled ? (editDevice.working_hours_start || null) : null,
+        working_hours_end: editDevice.working_hours_enabled ? (editDevice.working_hours_end || null) : null,
+      } as any)
       .eq('id', editDevice.id);
 
     if (error) {
@@ -342,13 +346,15 @@ const Devices = () => {
               )}
             </p>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button disabled={deviceLimit !== null && devices.length >= deviceLimit}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Device
-              </Button>
-            </DialogTrigger>
+          <div className="flex items-center gap-2">
+            <EmergencyAlertButton />
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button disabled={deviceLimit !== null && devices.length >= deviceLimit}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Device
+                </Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Register New Device</DialogTitle>
@@ -389,6 +395,7 @@ const Devices = () => {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         {devices.length === 0 ? (
@@ -633,6 +640,47 @@ const Devices = () => {
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className="space-y-2 rounded-md border p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="edit-wh-toggle" className="text-sm font-medium">Working hours</Label>
+                      <p className="text-xs text-muted-foreground">Screen shows a black holding screen outside these hours.</p>
+                    </div>
+                    <input
+                      id="edit-wh-toggle"
+                      type="checkbox"
+                      className="h-4 w-4"
+                      checked={!!editDevice.working_hours_enabled}
+                      onChange={(e) => setEditDevice({ ...editDevice, working_hours_enabled: e.target.checked })}
+                    />
+                  </div>
+                  {editDevice.working_hours_enabled && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label htmlFor="edit-wh-start" className="text-xs">On at</Label>
+                        <Input
+                          id="edit-wh-start"
+                          type="time"
+                          value={editDevice.working_hours_start ? String(editDevice.working_hours_start).slice(0, 5) : ""}
+                          onChange={(e) => setEditDevice({ ...editDevice, working_hours_start: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="edit-wh-end" className="text-xs">Off at</Label>
+                        <Input
+                          id="edit-wh-end"
+                          type="time"
+                          value={editDevice.working_hours_end ? String(editDevice.working_hours_end).slice(0, 5) : ""}
+                          onChange={(e) => setEditDevice({ ...editDevice, working_hours_end: e.target.value })}
+                          required
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <Button type="submit" className="w-full">
                   Save Changes
                 </Button>
