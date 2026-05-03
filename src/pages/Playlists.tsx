@@ -66,6 +66,8 @@ const Playlists = () => {
   const [savingDuration, setSavingDuration] = useState(false);
   const [renameTarget, setRenameTarget] = useState<{ id: string; name: string } | null>(null);
   const [savingRename, setSavingRename] = useState(false);
+  const [scheduleEdit, setScheduleEdit] = useState<{ id: string; data: ItemSchedule } | null>(null);
+  const [activeWindowEdit, setActiveWindowEdit] = useState<{ id: string; start: string; end: string } | null>(null);
 
   // Image upload (within Add Media dialog)
   const [imageFile, setImageFile] = useState<File | null>(null);
