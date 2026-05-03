@@ -122,13 +122,17 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
         const networkStatus = await Network.getStatus();
         if (!networkStatus.connected) {
           setIsOffline(true);
-          // Load cached videos if available
+          // Load cached videos + fallback if available
           const cached = localStorage.getItem('cached_videos');
+          const cachedFallback = localStorage.getItem('cached_offline_fallback');
+          if (cachedFallback) {
+            try { setOfflineFallback(JSON.parse(cachedFallback)); } catch { /* noop */ }
+          }
           if (cached) {
             const parsedVideos = JSON.parse(cached);
             setVideos(parsedVideos);
             setCachedVideos(parsedVideos);
-            toast.info("Playing cached videos (offline mode)");
+            toast.info("Playing cached content (offline mode)");
           }
           setLoading(false);
           return;
