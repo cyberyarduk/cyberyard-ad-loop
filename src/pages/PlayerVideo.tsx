@@ -838,7 +838,24 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
         </div>
       )}
 
-      {currentVideo && !isImageItem && (
+      {currentVideo && isIframeItem && (
+        <iframe
+          key={`${currentVideo.id}-${safeIndex}-iframe`}
+          src={iframeSrc}
+          title={currentVideo.title}
+          className="player-media-fade absolute inset-0 z-10 h-full w-full border-0 bg-black"
+          allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+          allowFullScreen
+          referrerPolicy="no-referrer"
+          sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
+          onError={() => {
+            console.error('[Iframe] Failed to load:', iframeSrc);
+            if (videos.length > 1) handleVideoEnd();
+          }}
+        />
+      )}
+
+      {currentVideo && !isImageItem && !isIframeItem && (
         <video
           ref={videoRef}
           key={`${currentVideo.id}-${safeIndex}`}
