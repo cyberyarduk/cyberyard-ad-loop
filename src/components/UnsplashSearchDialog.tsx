@@ -104,6 +104,44 @@ export default function UnsplashSearchDialog({ trigger, onComplete }: Props) {
         body: { action: "track_download", downloadLocation: photo.downloadLocation },
       }).catch(() => {});
 
+      // ===== ANIMATED PATH (Shotstack — uses 1 credit) =====
+      if (animate) {
+        if (!overlayText.trim()) {
+          throw new Error("Add a headline to animate.");
+        }
+        toast.info("Generating animated video… (this can take 1–2 mins)");
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error("Not authenticated");
+
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-video`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`,
+            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            imageUrl: photo.regularUrl,
+            mainText: overlayText.trim(),
+            subtext: overlaySub.trim() || undefined,
+            duration: 8,
+            style: animStyle,
+            animatedOverlays: true,
+            useImageAsIs: false,
+          }),
+        });
+        const data = await response.json();
+        if (!response.ok || !data?.success) {
+          throw new Error(data?.error || "Animated video generation failed");
+        }
+        toast.success("Animated video added to your library");
+        setOpen(false);
+        reset();
+        onComplete?.();
+        return;
+      }
+
+      // ===== STATIC PATH (free canvas overlay) =====
       toast.info("Optimising photo for every screen…");
       const overlay = (overlayText.trim() || overlaySub.trim())
         ? { text: overlayText, subtext: overlaySub, position: overlayPos, background: overlayBg }
