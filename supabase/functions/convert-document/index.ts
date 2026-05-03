@@ -1,5 +1,7 @@
 // Converts uploaded PDF / PPTX / DOCX into PNG slides via CloudConvert,
-// uploads them to the `images` bucket, and returns public URLs.
+// then renders ONE looping Shotstack video (portrait + landscape) showing
+// every page in sequence. A blurred copy of the page fills the background
+// so there are no black bars on TVs/phones regardless of page orientation.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { z } from "https://esm.sh/zod@3.23.8";
 
@@ -13,6 +15,7 @@ const BodySchema = z.object({
   fileUrl: z.string().url(),
   fileName: z.string().min(1).max(255),
   companyId: z.string().uuid(),
+  secondsPerPage: z.number().int().min(1).max(120).optional(),
 });
 
 Deno.serve(async (req) => {
@@ -20,7 +23,9 @@ Deno.serve(async (req) => {
 
   try {
     const CC_KEY = Deno.env.get("CLOUDCONVERT_API_KEY");
+    const SHOTSTACK_API_KEY = Deno.env.get("SHOTSTACK_API_KEY");
     if (!CC_KEY) throw new Error("CLOUDCONVERT_API_KEY not configured");
+    if (!SHOTSTACK_API_KEY) throw new Error("SHOTSTACK_API_KEY not configured");
 
     const parsed = BodySchema.safeParse(await req.json());
     if (!parsed.success) {
@@ -29,7 +34,7 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const { fileUrl, fileName, companyId } = parsed.data;
+    const { fileUrl, fileName, companyId, secondsPerPage = 8 } = parsed.data;
 
     const ext = fileName.split(".").pop()?.toLowerCase() || "";
     if (!["pdf", "pptx", "ppt", "docx", "doc"].includes(ext)) {
@@ -39,13 +44,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create CloudConvert job: import URL → convert to PNG → export URL
+    // ---- 1. CloudConvert: file -> PNG per page ----
     const jobRes = await fetch("https://api.cloudconvert.com/v2/jobs", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${CC_KEY}`,
-        "Content-Type": "application/json",
-      },
+      headers: { Authorization: `Bearer ${CC_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         tasks: {
           "import-1": { operation: "import/url", url: fileUrl, filename: fileName },
@@ -62,13 +64,10 @@ Deno.serve(async (req) => {
     });
 
     if (!jobRes.ok) {
-      const t = await jobRes.text();
-      throw new Error(`CloudConvert job failed [${jobRes.status}]: ${t}`);
+      throw new Error(`CloudConvert job failed [${jobRes.status}]: ${await jobRes.text()}`);
     }
-    const job = await jobRes.json();
-    const jobId = job.data.id;
+    const jobId = (await jobRes.json()).data.id;
 
-    // Poll job until finished (up to ~90s)
     let exportTask: any = null;
     for (let i = 0; i < 45; i++) {
       await new Promise((r) => setTimeout(r, 2000));
@@ -84,30 +83,126 @@ Deno.serve(async (req) => {
     }
     if (!exportTask) throw new Error("CloudConvert timed out");
 
-    const files: { filename: string; url: string }[] = exportTask.result?.files || [];
+    const ccFiles: { filename: string; url: string }[] = exportTask.result?.files || [];
+    if (!ccFiles.length) throw new Error("No pages produced");
 
-    // Re-upload each PNG to our images bucket
+    // ---- 2. Re-upload PNGs to our images bucket so Shotstack can fetch them ----
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const uploaded: { url: string; pageIndex: number }[] = [];
-    for (let i = 0; i < files.length; i++) {
-      const f = files[i];
-      const imgRes = await fetch(f.url);
-      const blob = await imgRes.arrayBuffer();
-      const path = `${companyId}/docs/${Date.now()}-${i}-${f.filename}`;
+    const stamp = Date.now();
+    const pageUrls: string[] = [];
+    for (let i = 0; i < ccFiles.length; i++) {
+      const f = ccFiles[i];
+      const buf = await (await fetch(f.url)).arrayBuffer();
+      const path = `${companyId}/docs/${stamp}-${i}-${f.filename}`;
       const { error: upErr } = await supabase.storage
         .from("images")
-        .upload(path, blob, { contentType: "image/png", upsert: false });
+        .upload(path, buf, { contentType: "image/png", upsert: false, cacheControl: "31536000" });
       if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("images").getPublicUrl(path);
-      uploaded.push({ url: pub.publicUrl, pageIndex: i });
+      pageUrls.push(supabase.storage.from("images").getPublicUrl(path).data.publicUrl);
     }
 
+    // ---- 3. Build ONE Shotstack render that walks through every page ----
+    // Layered per page: blurred-cover background + crisp contained page on top.
+    // No black bars on either orientation, full content always visible.
+    const buildEdit = (isPortrait: boolean) => {
+      const W = isPortrait ? 1080 : 1920;
+      const H = isPortrait ? 1920 : 1080;
+      const tracks: any[] = [];
+
+      // Foreground (page, full visible)
+      tracks.push({
+        clips: pageUrls.map((src, i) => ({
+          asset: { type: "image", src },
+          start: i * secondsPerPage,
+          length: secondsPerPage,
+          fit: "contain",
+          transition: i === 0 ? undefined : { in: "fade", out: "fade" },
+        })),
+      });
+
+      // Background (same page, blurred + cover, fills the canvas)
+      tracks.push({
+        clips: pageUrls.map((src, i) => ({
+          asset: { type: "image", src },
+          start: i * secondsPerPage,
+          length: secondsPerPage,
+          fit: "cover",
+          filter: "blur",
+          opacity: 0.85,
+        })),
+      });
+
+      return {
+        timeline: { background: "#000000", tracks },
+        output: {
+          format: "mp4",
+          aspectRatio: isPortrait ? "9:16" : "16:9",
+          size: { width: W, height: H },
+          fps: 30,
+        },
+      };
+    };
+
+    const submitRender = async (edit: any) => {
+      const r = await fetch("https://api.shotstack.io/v1/render", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": SHOTSTACK_API_KEY },
+        body: JSON.stringify(edit),
+      });
+      if (!r.ok) throw new Error(`Shotstack submit failed: ${await r.text()}`);
+      return (await r.json()).response.id as string;
+    };
+
+    const [portraitId, landscapeId] = await Promise.all([
+      submitRender(buildEdit(true)),
+      submitRender(buildEdit(false)),
+    ]);
+
+    const pollRender = async (id: string): Promise<string> => {
+      for (let i = 0; i < 90; i++) {
+        await new Promise((r) => setTimeout(r, 4000));
+        const r = await fetch(`https://api.shotstack.io/v1/render/${id}`, {
+          headers: { "x-api-key": SHOTSTACK_API_KEY },
+        });
+        if (!r.ok) continue;
+        const j = await r.json();
+        if (j.response.status === "done") return j.response.url;
+        if (j.response.status === "failed") throw new Error(`Shotstack render failed: ${j.response.error || ""}`);
+      }
+      throw new Error("Shotstack render timed out");
+    };
+
+    const [portraitUrlRaw, landscapeUrlRaw] = await Promise.all([
+      pollRender(portraitId),
+      pollRender(landscapeId).catch((e) => { console.error(e); return null; }),
+    ]);
+
+    // ---- 4. Persist MP4s into our storage so Shotstack expiry doesn't matter ----
+    const persist = async (url: string, label: string) => {
+      const buf = new Uint8Array(await (await fetch(url)).arrayBuffer());
+      const path = `${companyId}/docs/${stamp}-${label}.mp4`;
+      const { error } = await supabase.storage.from("videos").upload(path, buf, {
+        contentType: "video/mp4", upsert: false, cacheControl: "31536000",
+      });
+      if (error) throw error;
+      return supabase.storage.from("videos").getPublicUrl(path).data.publicUrl;
+    };
+
+    const portraitUrl = await persist(portraitUrlRaw, "portrait");
+    const landscapeUrl = landscapeUrlRaw ? await persist(landscapeUrlRaw, "landscape") : null;
+
     return new Response(
-      JSON.stringify({ pages: uploaded, totalPages: uploaded.length }),
+      JSON.stringify({
+        videoUrl: portraitUrl,
+        videoUrlLandscape: landscapeUrl,
+        posterUrl: pageUrls[0],
+        totalPages: pageUrls.length,
+        totalDurationSeconds: pageUrls.length * secondsPerPage,
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
