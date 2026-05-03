@@ -457,6 +457,26 @@ const Videos = () => {
               }
               onComplete={fetchVideos}
             />
+            <AddLinkMediaDialog
+              kind="youtube"
+              trigger={
+                <Button variant="outline" size="sm">
+                  <Youtube className="mr-2 h-4 w-4" />
+                  YouTube link
+                </Button>
+              }
+              onComplete={fetchVideos}
+            />
+            <AddLinkMediaDialog
+              kind="webpage"
+              trigger={
+                <Button variant="outline" size="sm">
+                  <Globe className="mr-2 h-4 w-4" />
+                  Web page
+                </Button>
+              }
+              onComplete={fetchVideos}
+            />
             <Dialog open={imageOpen} onOpenChange={setImageOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
