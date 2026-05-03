@@ -17,7 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Loader2, Image as ImageIcon, ArrowLeft } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Search, Loader2, Image as ImageIcon, ArrowLeft, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { generateOrientedVariants } from "@/lib/imageOrient";
@@ -56,6 +57,8 @@ export default function UnsplashSearchDialog({ trigger, onComplete }: Props) {
   const [overlaySub, setOverlaySub] = useState("");
   const [overlayPos, setOverlayPos] = useState<"top" | "middle" | "bottom">("bottom");
   const [overlayBg, setOverlayBg] = useState<"none" | "dark" | "light" | "accent">("dark");
+  const [animate, setAnimate] = useState(false);
+  const [animStyle, setAnimStyle] = useState<"boom" | "sparkle" | "stars" | "minimal">("boom");
 
   const reset = () => {
     setSelected(null);
@@ -63,6 +66,8 @@ export default function UnsplashSearchDialog({ trigger, onComplete }: Props) {
     setOverlaySub("");
     setOverlayPos("bottom");
     setOverlayBg("dark");
+    setAnimate(false);
+    setAnimStyle("boom");
   };
 
   const search = async (e?: React.FormEvent) => {
@@ -99,6 +104,44 @@ export default function UnsplashSearchDialog({ trigger, onComplete }: Props) {
         body: { action: "track_download", downloadLocation: photo.downloadLocation },
       }).catch(() => {});
 
+      // ===== ANIMATED PATH (Shotstack — uses 1 credit) =====
+      if (animate) {
+        if (!overlayText.trim()) {
+          throw new Error("Add a headline to animate.");
+        }
+        toast.info("Generating animated video… (this can take 1–2 mins)");
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error("Not authenticated");
+
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-video`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`,
+            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            imageUrl: photo.regularUrl,
+            mainText: overlayText.trim(),
+            subtext: overlaySub.trim() || undefined,
+            duration: 8,
+            style: animStyle,
+            animatedOverlays: true,
+            useImageAsIs: false,
+          }),
+        });
+        const data = await response.json();
+        if (!response.ok || !data?.success) {
+          throw new Error(data?.error || "Animated video generation failed");
+        }
+        toast.success("Animated video added to your library");
+        setOpen(false);
+        reset();
+        onComplete?.();
+        return;
+      }
+
+      // ===== STATIC PATH (free canvas overlay) =====
       toast.info("Optimising photo for every screen…");
       const overlay = (overlayText.trim() || overlaySub.trim())
         ? { text: overlayText, subtext: overlaySub, position: overlayPos, background: overlayBg }
@@ -276,12 +319,44 @@ export default function UnsplashSearchDialog({ trigger, onComplete }: Props) {
                   </div>
                 </div>
 
+                {/* Animate toggle — uses generate-video edge function (1 credit) */}
+                <div className="rounded-lg border p-3 space-y-2 bg-muted/30">
+                  <div className="flex items-start gap-3">
+                    <Sparkles className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="animate-toggle" className="cursor-pointer">Animate text (AI poster)</Label>
+                        <Switch id="animate-toggle" checked={animate} onCheckedChange={setAnimate} disabled={picking} />
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        Generates a kinetic video like the AI promo videos. Uses <strong>1 credit</strong>. Requires a headline.
+                      </p>
+                    </div>
+                  </div>
+                  {animate && (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Animation style</Label>
+                      <Select value={animStyle} onValueChange={(v) => setAnimStyle(v as any)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="boom">Boom (explosive red/pink)</SelectItem>
+                          <SelectItem value="sparkle">Sparkle (purple magic)</SelectItem>
+                          <SelectItem value="stars">Stars (hot pink glamour)</SelectItem>
+                          <SelectItem value="minimal">Minimal (clean modern)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex gap-2 pt-2">
                   <Button variant="outline" onClick={() => setSelected(null)} disabled={picking}>
                     <ArrowLeft className="h-4 w-4 mr-1" /> Back
                   </Button>
                   <Button onClick={confirmAdd} disabled={picking} className="flex-1">
-                    {picking ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Adding…</> : "Add to library"}
+                    {picking
+                      ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {animate ? "Generating…" : "Adding…"}</>
+                      : (animate ? "Generate animated video" : "Add to library")}
                   </Button>
                 </div>
               </div>
