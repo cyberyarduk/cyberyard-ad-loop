@@ -49,9 +49,13 @@ const Auth = () => {
         // Decide route based on profile
         const { data: profile } = await supabase
           .from("profiles")
-          .select("role")
+          .select("role, must_change_password")
           .eq("id", session.user.id)
           .single();
+        if (profile?.must_change_password) {
+          navigate("/reset-password?first_login=1");
+          return;
+        }
         if (profile?.role === "super_admin") navigate("/admin");
         else if (profile?.role === "salesperson") navigate("/sales");
         else navigate("/dashboard");
