@@ -186,7 +186,7 @@ const ResearchLeadDetail = () => {
                   const empty = v == null || v === "" || (Array.isArray(v) && v.length === 0);
                   const display = empty ? <span className="text-muted-foreground italic">No answer</span>
                     : q.type === "single" ? <span className="font-medium">{getOptionLabel(q.id, v as string)}</span>
-                    : q.type === "multi" ? <span className="font-medium">{(v as string[]).map((x) => getOptionLabel(q.id, x)).join(", ")}</span>
+                    : q.type === "multi" ? <span className="font-medium">{(Array.isArray(v) ? v : [v as string]).map((x) => getOptionLabel(q.id, x)).join(", ")}</span>
                     : <span className="font-medium whitespace-pre-wrap">{v as string}</span>;
                   return (
                     <div key={q.id} className="border-b last:border-0 pb-3 last:pb-0">
