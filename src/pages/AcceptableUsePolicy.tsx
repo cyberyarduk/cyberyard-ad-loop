@@ -30,7 +30,7 @@ const AcceptableUsePolicy = () => {
 
         <div className="prose prose-lg max-w-none space-y-8">
           <p>
-            This Acceptable Use Policy governs the use of the Cyberyard platform and services. All users must comply with this policy.
+            This Acceptable Use Policy ("AUP") governs use of the Cyberyard platform, supplied by <strong>Cyberyard Limited</strong> (Company No. <strong>15430744</strong>, registered in England &amp; Wales). All users must comply with this policy and the Terms of Service.
           </p>
 
           <section>

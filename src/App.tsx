@@ -38,6 +38,7 @@ import NewResearchLead from "./pages/NewResearchLead";
 import ResearchLeadDetail from "./pages/ResearchLeadDetail";
 import ResearchAnalytics from "./pages/ResearchAnalytics";
 import PostTrialSurvey from "./pages/PostTrialSurvey";
+import CookieConsent from "@/components/CookieConsent";
 import { toast } from "sonner";
 
 const queryClient = new QueryClient();
@@ -159,6 +160,7 @@ const App = () => (
             <Route path="/acceptable-use-policy" element={<AcceptableUsePolicy />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          {!isNativeApp && <CookieConsent />}
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
