@@ -1,30 +1,45 @@
 import { useEffect, useState } from "react";
 import PortalLayout from "@/components/PortalLayout";
-// Card removed — using premium-card divs
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Link } from "react-router-dom";
-import { Users, Building2, PoundSterling, TrendingUp, Plus, UserPlus } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  Users, Building2, PoundSterling, TrendingUp, Plus, UserPlus,
+  Monitor, Video as VideoIcon, Image as ImageIcon, Eye,
+} from "lucide-react";
+import { toast } from "sonner";
 
 const formatGBP = (pence: number) =>
   new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 0 }).format(pence / 100);
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalClients: 0,
     activeClients: 0,
     salespeople: 0,
     mrrPence: 0,
     thisMonth: 0,
+    totalDevices: 0,
+    onlineDevices: 0,
+    totalVideos: 0,
+    totalImages: 0,
   });
   const [topSales, setTopSales] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
-      const [{ data: companies }, { data: sps }] = await Promise.all([
+      const [
+        { data: companies },
+        { data: sps },
+        { data: devices },
+        { data: media },
+      ] = await Promise.all([
         supabase.from("companies").select("id, status, monthly_price_pence, signed_up_by_salesperson_id, created_at"),
         supabase.from("salespeople").select("id, full_name, employee_number, area, monthly_target, active"),
+        supabase.from("devices").select("id, status, last_seen_at"),
+        supabase.from("videos").select("id, media_type"),
       ]);
 
       const now = new Date();
@@ -35,15 +50,28 @@ const AdminDashboard = () => {
       const mrrPence = (companies || []).reduce((s, c) => s + (c.monthly_price_pence || 0), 0);
       const thisMonth = (companies || []).filter((c) => new Date(c.created_at) >= monthStart).length;
 
+      // Devices: "online" = seen in the last 5 minutes
+      const fiveMinAgo = Date.now() - 5 * 60 * 1000;
+      const totalDevices = devices?.length || 0;
+      const onlineDevices = (devices || []).filter(
+        (d) => d.last_seen_at && new Date(d.last_seen_at).getTime() >= fiveMinAgo
+      ).length;
+
+      const totalVideos = (media || []).filter((m) => (m.media_type || "video") === "video").length;
+      const totalImages = (media || []).filter((m) => m.media_type === "image").length;
+
       setStats({
         totalClients,
         activeClients,
         salespeople: (sps || []).filter((s) => s.active).length,
         mrrPence,
         thisMonth,
+        totalDevices,
+        onlineDevices,
+        totalVideos,
+        totalImages,
       });
 
-      // Per-salesperson signups
       const ranked = (sps || []).map((sp) => {
         const theirs = (companies || []).filter((c) => c.signed_up_by_salesperson_id === sp.id);
         const month = theirs.filter((c) => new Date(c.created_at) >= monthStart).length;
@@ -56,6 +84,14 @@ const AdminDashboard = () => {
     load();
   }, []);
 
+  const enterDemoMode = () => {
+    try {
+      sessionStorage.setItem("cyberyard_demo_mode", "1");
+    } catch { /* ignore */ }
+    toast.success("Entering Demo Mode — viewing the customer dashboard.");
+    navigate("/dashboard");
+  };
+
   return (
     <PortalLayout variant="admin">
       <div className="max-w-6xl mx-auto space-y-8">
@@ -64,7 +100,10 @@ const AdminDashboard = () => {
             <p className="text-sm text-muted-foreground">Cyberyard CRM</p>
             <h1 className="text-4xl md:text-5xl font-semibold tracking-tight mt-1">Admin overview</h1>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" className="rounded-full" onClick={enterDemoMode}>
+              <Eye className="mr-2 h-4 w-4" /> Demo Mode
+            </Button>
             <Link to="/admin/salespeople/new">
               <Button variant="outline" className="rounded-full">
                 <UserPlus className="mr-2 h-4 w-4" /> New salesperson
@@ -78,11 +117,40 @@ const AdminDashboard = () => {
           </div>
         </div>
 
+        {/* CRM stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard icon={Building2} label="Total clients" value={stats.totalClients.toString()} tone="bg-lavender" />
+          <StatCard icon={Building2} label="Total clients" value={stats.totalClients.toString()} sub={`${stats.activeClients} active`} tone="bg-lavender" />
           <StatCard icon={TrendingUp} label="Signups this month" value={stats.thisMonth.toString()} tone="bg-mint" />
           <StatCard icon={PoundSterling} label="MRR" value={formatGBP(stats.mrrPence)} tone="bg-peach" />
           <StatCard icon={Users} label="Active salespeople" value={stats.salespeople.toString()} tone="bg-sky" />
+        </div>
+
+        {/* Platform-wide content stats */}
+        <div>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+            Platform totals — across every account
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <StatCard
+              icon={Monitor}
+              label="Devices connected"
+              value={stats.totalDevices.toString()}
+              sub={`${stats.onlineDevices} online now`}
+              tone="bg-yellow-soft"
+            />
+            <StatCard
+              icon={VideoIcon}
+              label="Videos created"
+              value={stats.totalVideos.toString()}
+              tone="bg-mint"
+            />
+            <StatCard
+              icon={ImageIcon}
+              label="Images uploaded"
+              value={stats.totalImages.toString()}
+              tone="bg-peach"
+            />
+          </div>
         </div>
 
         <div className="premium-card card-highlight rounded-2xl p-6">
@@ -133,7 +201,7 @@ const AdminDashboard = () => {
   );
 };
 
-const StatCard = ({ icon: Icon, label, value, tone }: { icon: any; label: string; value: string; tone: string }) => (
+const StatCard = ({ icon: Icon, label, value, sub, tone }: { icon: any; label: string; value: string; sub?: string; tone: string }) => (
   <div className="premium-card card-highlight hover-lift rounded-2xl p-5">
     <div className="flex items-center justify-between mb-3">
       <p className="text-xs text-muted-foreground">{label}</p>
@@ -142,6 +210,7 @@ const StatCard = ({ icon: Icon, label, value, tone }: { icon: any; label: string
       </div>
     </div>
     <p className="text-2xl font-semibold tracking-tight">{value}</p>
+    {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
   </div>
 );
 
