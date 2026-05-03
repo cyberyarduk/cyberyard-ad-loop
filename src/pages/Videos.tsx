@@ -814,6 +814,38 @@ const Videos = () => {
           </DialogContent>
         </Dialog>
 
+        {/* Expiry Dialog */}
+        <Dialog open={!!expiryEdit} onOpenChange={(o) => !o && setExpiryEdit(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Set expiry date</DialogTitle>
+              <DialogDescription>
+                After this date and time, the item is automatically removed from
+                playback. Leave blank for no expiry.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2 py-2">
+              <Label htmlFor="expiry">Expires at</Label>
+              <Input
+                id="expiry"
+                type="datetime-local"
+                value={expiryEdit?.value ?? ""}
+                onChange={(e) =>
+                  setExpiryEdit((prev) => (prev ? { ...prev, value: e.target.value } : prev))
+                }
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setExpiryEdit({ id: expiryEdit!.id, value: "" })} disabled={savingExpiry}>
+                Clear
+              </Button>
+              <Button onClick={saveExpiry} disabled={savingExpiry}>
+                {savingExpiry ? "Saving…" : "Save"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Duration Dialog */}
         <Dialog open={!!durationEdit} onOpenChange={(o) => !o && setDurationEdit(null)}>
           <DialogContent className="max-w-sm">
