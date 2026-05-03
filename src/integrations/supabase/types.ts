@@ -160,6 +160,13 @@ export type Database = {
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "company_credits_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies_basic"
+            referencedColumns: ["id"]
+          },
         ]
       }
       credit_transactions: {
@@ -196,6 +203,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_transactions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies_basic"
             referencedColumns: ["id"]
           },
         ]
@@ -264,6 +278,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies_basic"
             referencedColumns: ["id"]
           },
           {
@@ -339,6 +360,13 @@ export type Database = {
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "direct_debit_mandates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies_basic"
+            referencedColumns: ["id"]
+          },
         ]
       }
       playlist_videos: {
@@ -410,6 +438,13 @@ export type Database = {
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "playlists_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies_basic"
+            referencedColumns: ["id"]
+          },
         ]
       }
       profiles: {
@@ -452,6 +487,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies_basic"
             referencedColumns: ["id"]
           },
         ]
@@ -623,6 +665,13 @@ export type Database = {
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "venues_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies_basic"
+            referencedColumns: ["id"]
+          },
         ]
       }
       videos: {
@@ -691,11 +740,44 @@ export type Database = {
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "videos_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies_basic"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      companies_basic: {
+        Row: {
+          business_type: string | null
+          id: string | null
+          name: string | null
+          plan_type: Database["public"]["Enums"]["plan_type"] | null
+          slug: string | null
+          status: Database["public"]["Enums"]["company_status"] | null
+        }
+        Insert: {
+          business_type?: string | null
+          id?: string | null
+          name?: string | null
+          plan_type?: Database["public"]["Enums"]["plan_type"] | null
+          slug?: string | null
+          status?: Database["public"]["Enums"]["company_status"] | null
+        }
+        Update: {
+          business_type?: string | null
+          id?: string | null
+          name?: string | null
+          plan_type?: Database["public"]["Enums"]["plan_type"] | null
+          slug?: string | null
+          status?: Database["public"]["Enums"]["company_status"] | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       current_salesperson_id: { Args: never; Returns: string }
