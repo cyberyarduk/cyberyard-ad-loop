@@ -41,8 +41,9 @@ const isImageMedia = (item?: Video | null) => {
 const isIframeMedia = (item?: Video | null) =>
   item?.media_type === 'youtube' || item?.media_type === 'webpage';
 
-// Convert any YouTube URL to an embed URL with autoplay+mute and JS API enabled
-// so we can detect when the video naturally ends.
+// Convert any YouTube URL to a plain embed URL with autoplay+mute.
+// Keep this intentionally simple: YouTube can show Error 153 when the JS API,
+// origin/referrer policy, or sandbox setup do not match the preview/native host.
 const toYouTubeEmbed = (url: string): string => {
   try {
     const u = new URL(url);
@@ -57,11 +58,7 @@ const toYouTubeEmbed = (url: string): string => {
       id = u.pathname.split('/shorts/')[1];
     }
     if (!id) return url;
-    // NOTE: Do NOT pass `origin` — when it doesn't match the embedding page
-    // (which happens inside the Lovable preview iframe and inside Capacitor's
-    // webview), YouTube returns "Error 153: Video player configuration error".
-    // Keep enablejsapi=1 so we can still listen for the natural end event.
-    return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1&rel=0&enablejsapi=1`;
+    return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1&rel=0`;
   } catch {
     return url;
   }
@@ -543,39 +540,6 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_currentForImage?.id, _safeIdxForImage, _isImageItemEffect, _isIframeItemEffect, _isYouTubeItem, videos.length]);
 
-  // Listen for YouTube IFrame API end-of-video events and advance the playlist.
-  useEffect(() => {
-    if (!_isYouTubeItem || videos.length <= 1) return;
-    const onMsg = (event: MessageEvent) => {
-      if (typeof event.data !== 'string') return;
-      if (!/youtube\.com$/.test(new URL(event.origin).hostname || '')) return;
-      try {
-        const msg = JSON.parse(event.data);
-        // YT.PlayerState.ENDED === 0
-        if (msg?.event === 'onStateChange' && msg.info === 0) {
-          handleVideoEnd();
-        }
-      } catch { /* ignore */ }
-    };
-    window.addEventListener('message', onMsg);
-    // Ask the iframe to start sending us state-change events.
-    const iframes = document.querySelectorAll<HTMLIFrameElement>('iframe[src*="youtube.com/embed"]');
-    iframes.forEach((f) => {
-      try {
-        f.contentWindow?.postMessage(
-          JSON.stringify({ event: 'listening', id: f.id || 'yt' }),
-          '*'
-        );
-        f.contentWindow?.postMessage(
-          JSON.stringify({ event: 'command', func: 'addEventListener', args: ['onStateChange'] }),
-          '*'
-        );
-      } catch { /* ignore */ }
-    });
-    return () => window.removeEventListener('message', onMsg);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_currentForImage?.id, _isYouTubeItem, videos.length]);
-
   // Track fullscreen state changes (Esc key, etc.) — must stay before any
   // conditional returns so React hook order is stable when media loads.
   useEffect(() => {
@@ -887,8 +851,8 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
           className="player-media-fade absolute inset-0 z-10 h-full w-full border-0 bg-black"
           allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
           allowFullScreen
-          referrerPolicy="no-referrer"
-          sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
+          referrerPolicy="strict-origin-when-cross-origin"
+          sandbox="allow-scripts allow-same-origin allow-presentation allow-popups allow-popups-to-escape-sandbox"
           onError={() => {
             console.error('[Iframe] Failed to load:', iframeSrc);
             if (videos.length > 1) handleVideoEnd();
