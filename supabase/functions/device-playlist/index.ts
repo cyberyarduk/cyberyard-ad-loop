@@ -78,7 +78,7 @@ serve(async (req) => {
     if (device.status === 'suspended') {
       return new Response(
         JSON.stringify({
-          success: true, suspended: true,
+          success: true, suspended: true, offline_fallback: offlineFallback,
           device_id: device.id, device_name: device.name, company_id: device.company_id, videos: []
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -131,7 +131,7 @@ serve(async (req) => {
     if (offHours && !emergency.active) {
       return new Response(
         JSON.stringify({
-          success: true, suspended: false, off_hours: true, emergency,
+          success: true, suspended: false, off_hours: true, emergency, offline_fallback: offlineFallback,
           device_id: device.id, device_name: device.name, company_id: device.company_id, videos: []
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -175,7 +175,7 @@ serve(async (req) => {
     if (!playlistId) {
       return new Response(
         JSON.stringify({
-          success: true, emergency,
+          success: true, emergency, offline_fallback: offlineFallback,
           device_id: device.id, device_name: device.name, company_id: device.company_id, playlist: null, videos: []
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -196,7 +196,7 @@ serve(async (req) => {
     if (!playlistActive && !emergency.active) {
       return new Response(
         JSON.stringify({
-          success: true, off_hours: false, playlist_inactive: true, emergency,
+          success: true, off_hours: false, playlist_inactive: true, emergency, offline_fallback: offlineFallback,
           device_id: device.id, device_name: device.name, company_id: device.company_id, playlist_id: playlistId, videos: []
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -292,7 +292,7 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        success: true, suspended: false, off_hours: false, emergency,
+        success: true, suspended: false, off_hours: false, emergency, offline_fallback: offlineFallback,
         device_id: device.id, device_name: device.name, company_id: device.company_id,
         playlist_id: playlistId, videos
       }),
