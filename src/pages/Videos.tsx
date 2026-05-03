@@ -457,16 +457,7 @@ const Videos = () => {
               }
               onComplete={fetchVideos}
             />
-            <AddLinkMediaDialog
-              kind="youtube"
-              trigger={
-                <Button variant="outline" size="sm">
-                  <Youtube className="mr-2 h-4 w-4" />
-                  YouTube link
-                </Button>
-              }
-              onComplete={fetchVideos}
-            />
+            {/* YouTube link temporarily disabled — embed reliability issues */}
             <AddLinkMediaDialog
               kind="webpage"
               trigger={
