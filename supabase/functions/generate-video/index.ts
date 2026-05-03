@@ -29,6 +29,8 @@ const isHttpsTrustedUrl = (u: string): boolean => {
       '.supabase.in',
       'lovable-uploads.s3.amazonaws.com',
       'cdn.shotstack.io',
+      'images.unsplash.com',
+      'plus.unsplash.com',
     ];
     return allowed.some((d) => url.hostname.endsWith(d) || url.hostname === d.replace(/^\./, ''));
   } catch { return false; }
