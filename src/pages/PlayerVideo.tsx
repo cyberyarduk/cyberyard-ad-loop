@@ -777,8 +777,8 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
         >
           <img
             src={offlineFallback.image_url}
-            alt="Offline"
-            className="absolute inset-0 h-full w-full object-contain"
+            alt={offlineFallback.company_name || 'Logo'}
+            className="max-w-[60%] max-h-[60%] object-contain"
           />
           <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center gap-2 z-50">
             <WifiOff className="h-3 w-3" /> Offline
