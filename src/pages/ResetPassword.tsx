@@ -84,31 +84,19 @@ const ResetPassword = () => {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
 
-      // Clear the must_change_password flag and route to the correct portal
+      // Clear the must_change_password flag, sign out, and send back to login
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         await supabase
           .from("profiles")
           .update({ must_change_password: false })
           .eq("id", session.user.id);
-
-        if (firstLogin) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("role")
-            .eq("id", session.user.id)
-            .single();
-          toast.success("Password updated. Welcome!");
-          if (profile?.role === "super_admin") navigate("/admin");
-          else if (profile?.role === "salesperson") navigate("/sales");
-          else navigate("/dashboard");
-          return;
-        }
       }
 
-      toast.success("Password updated. Please sign in again.");
+      toast.success("Password updated. Please sign in with your new password.");
       await supabase.auth.signOut();
-      navigate("/auth");
+      navigate("/auth", { replace: true });
+
     } catch (error: any) {
       toast.error(error.message || "Unable to update password.");
     } finally {
