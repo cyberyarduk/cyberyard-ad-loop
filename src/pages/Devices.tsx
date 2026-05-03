@@ -303,7 +303,10 @@ const Devices = () => {
         name: editDevice.name,
         playlist_id: editDevice.playlist_id && editDevice.playlist_id !== 'none' ? editDevice.playlist_id : null,
         venue_id: editDevice.venue_id && editDevice.venue_id !== 'none' ? editDevice.venue_id : null,
-      })
+        working_hours_enabled: !!editDevice.working_hours_enabled,
+        working_hours_start: editDevice.working_hours_enabled ? (editDevice.working_hours_start || null) : null,
+        working_hours_end: editDevice.working_hours_enabled ? (editDevice.working_hours_end || null) : null,
+      } as any)
       .eq('id', editDevice.id);
 
     if (error) {
