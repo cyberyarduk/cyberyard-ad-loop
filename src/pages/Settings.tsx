@@ -14,7 +14,7 @@ import { DashboardAnalytics } from "@/components/DashboardAnalytics";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Upload, X, WifiOff } from "lucide-react";
+import { Upload, X, Image as ImageIcon } from "lucide-react";
 
 const Settings = () => {
   const { profile } = useAuth();
