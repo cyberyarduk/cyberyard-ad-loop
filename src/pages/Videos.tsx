@@ -15,7 +15,7 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Video, Trash2, Sparkles, RefreshCw, Clock, Play, Image as ImageIcon } from "lucide-react";
+import { Plus, Video, Trash2, Sparkles, RefreshCw, Clock, Play, Image as ImageIcon, ListPlus } from "lucide-react";
 import { generateOrientedVariants } from "@/lib/imageOrient";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -56,6 +56,7 @@ const Videos = () => {
   const [pendingAction, setPendingAction] = useState<
     | { type: "image_upload" }
     | { type: "regenerate"; video: any }
+    | { type: "add_existing"; video: any }
     | null
   >(null);
 
@@ -322,6 +323,37 @@ const Videos = () => {
     }
   };
 
+  const addExistingToPlaylist = async (video: any, playlistId: string) => {
+    try {
+      // Avoid duplicates
+      const { data: existing } = await supabase
+        .from("playlist_videos")
+        .select("id")
+        .eq("playlist_id", playlistId)
+        .eq("video_id", video.id)
+        .maybeSingle();
+      if (existing) {
+        toast.info("Already in this playlist");
+        return;
+      }
+      const { data: lastRow } = await supabase
+        .from("playlist_videos")
+        .select("order_index")
+        .eq("playlist_id", playlistId)
+        .order("order_index", { ascending: false })
+        .limit(1);
+      const nextOrder = lastRow && lastRow.length > 0 ? lastRow[0].order_index + 1 : 0;
+      const { error } = await supabase
+        .from("playlist_videos")
+        .insert({ playlist_id: playlistId, video_id: video.id, order_index: nextOrder });
+      if (error) throw error;
+      toast.success("Added to playlist");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Failed to add to playlist");
+    }
+  };
+
   const handlePlaylistChosen = (playlistId: string) => {
     const action = pendingAction;
     setPendingAction(null);
@@ -330,6 +362,8 @@ const Videos = () => {
       uploadImageToPlaylist(playlistId);
     } else if (action.type === "regenerate") {
       regenerateIntoPlaylist(action.video, playlistId);
+    } else if (action.type === "add_existing") {
+      addExistingToPlaylist(action.video, playlistId);
     }
   };
 
