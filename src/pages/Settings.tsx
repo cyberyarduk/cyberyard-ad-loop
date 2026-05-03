@@ -14,7 +14,7 @@ import { DashboardAnalytics } from "@/components/DashboardAnalytics";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Upload, X, WifiOff } from "lucide-react";
+import { Upload, X, Image as ImageIcon } from "lucide-react";
 
 const Settings = () => {
   const { profile } = useAuth();
@@ -152,17 +152,17 @@ const Settings = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <WifiOff className="h-5 w-5" /> Offline Fallback Image
+              <ImageIcon className="h-5 w-5" /> Company Logo
             </CardTitle>
             <CardDescription>
-              Shown on screens if they lose internet and have no cached content. Recommended: a branded image or "Back shortly" message (16:9 or 9:16, JPG/PNG).
+              Your logo appears on screens when they lose internet connection. Use a square or wide PNG/JPG with a transparent or solid background.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {fallbackUrl ? (
               <div className="space-y-3">
-                <div className="rounded-lg overflow-hidden border bg-muted/30 max-w-sm">
-                  <img src={fallbackUrl} alt="Offline fallback" className="w-full h-auto object-contain" />
+                <div className="rounded-lg overflow-hidden border bg-black/90 max-w-sm flex items-center justify-center p-6 min-h-[160px]">
+                  <img src={fallbackUrl} alt="Company logo" className="max-w-full max-h-40 object-contain" />
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={handleFallbackRemove}>
@@ -180,13 +180,13 @@ const Settings = () => {
               <Button asChild disabled={fallbackUploading}>
                 <label className="cursor-pointer">
                   <Upload className="h-4 w-4 mr-2" />
-                  {fallbackUploading ? 'Uploading...' : 'Upload fallback image'}
+                  {fallbackUploading ? 'Uploading...' : 'Upload company logo'}
                   <input type="file" accept="image/*" className="hidden" onChange={handleFallbackUpload} />
                 </label>
               </Button>
             )}
             <p className="text-xs text-muted-foreground">
-              If no image is uploaded, screens will show your company name on a clean black background while offline.
+              If no logo is uploaded, screens will show your company name on a clean black background while offline.
             </p>
           </CardContent>
         </Card>
