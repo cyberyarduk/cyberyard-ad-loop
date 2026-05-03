@@ -22,6 +22,14 @@ interface Props {
   onComplete?: () => void;
 }
 
+// Add https:// if the user didn't include a protocol (so "www.example.com" works)
+const normalizeUrl = (raw: string): string => {
+  const trimmed = raw.trim();
+  if (!trimmed) return trimmed;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed.replace(/^\/+/, "")}`;
+};
+
 const validateUrl = (url: string, kind: Kind): string | null => {
   try {
     const u = new URL(url);
@@ -47,7 +55,9 @@ const AddLinkMediaDialog = ({ kind, trigger, onComplete }: Props) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const err = validateUrl(url.trim(), kind);
+    const normalizedUrl = normalizeUrl(url);
+    if (normalizedUrl !== url) setUrl(normalizedUrl);
+    const err = validateUrl(normalizedUrl, kind);
     if (err) {
       toast.error(err);
       return;
@@ -76,8 +86,8 @@ const AddLinkMediaDialog = ({ kind, trigger, onComplete }: Props) => {
           user_id: user.id,
           company_id: profile?.company_id,
           media_type: kind,
-          source_url: url.trim(),
-          video_url: url.trim(),
+          source_url: normalizedUrl,
+          video_url: normalizedUrl,
           display_duration: dur,
           source: kind,
         } as any)
@@ -150,15 +160,26 @@ const AddLinkMediaDialog = ({ kind, trigger, onComplete }: Props) => {
               <Label htmlFor="link-url">{isYT ? "YouTube URL" : "Web page URL"}</Label>
               <Input
                 id="link-url"
-                type="url"
-                placeholder={isYT ? "https://www.youtube.com/watch?v=..." : "https://example.com/menu"}
+                type="text"
+                inputMode="url"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                placeholder={isYT ? "youtube.com/watch?v=..." : "www.example.com/menu"}
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 required
               />
+              <p className="text-xs text-muted-foreground">
+                {isYT
+                  ? "Paste any YouTube link — it will play to the end before moving on."
+                  : "No need to type https:// — we'll add it for you."}
+              </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="link-dur">Display time (seconds)</Label>
+              <Label htmlFor="link-dur">
+                {isYT ? "Fallback display time (seconds)" : "Display time (seconds)"}
+              </Label>
               <Input
                 id="link-dur"
                 type="number"
@@ -170,7 +191,7 @@ const AddLinkMediaDialog = ({ kind, trigger, onComplete }: Props) => {
               />
               <p className="text-xs text-muted-foreground">
                 {isYT
-                  ? "How long to show this video before moving to the next playlist item."
+                  ? "YouTube videos play to their natural end. This is only used if YouTube can't tell us when it finished."
                   : "How long to show this page before the next playlist item."}
               </p>
             </div>

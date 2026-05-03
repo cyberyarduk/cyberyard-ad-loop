@@ -41,7 +41,8 @@ const isImageMedia = (item?: Video | null) => {
 const isIframeMedia = (item?: Video | null) =>
   item?.media_type === 'youtube' || item?.media_type === 'webpage';
 
-// Convert any YouTube URL to an embed URL with autoplay+mute+loop
+// Convert any YouTube URL to an embed URL with autoplay+mute and JS API enabled
+// so we can detect when the video naturally ends.
 const toYouTubeEmbed = (url: string): string => {
   try {
     const u = new URL(url);
@@ -56,7 +57,8 @@ const toYouTubeEmbed = (url: string): string => {
       id = u.pathname.split('/shorts/')[1];
     }
     if (!id) return url;
-    return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&modestbranding=1&playsinline=1&rel=0`;
+    const origin = typeof window !== 'undefined' ? encodeURIComponent(window.location.origin) : '';
+    return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1&rel=0&enablejsapi=1&origin=${origin}`;
   } catch {
     return url;
   }
@@ -522,18 +524,54 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const _currentForImage = videos[_safeIdxForImage];
   const _isImageItemEffect = isImageMedia(_currentForImage);
   const _isIframeItemEffect = isIframeMedia(_currentForImage);
+  const _isYouTubeItem = _currentForImage?.media_type === 'youtube';
   useEffect(() => {
     if (!_currentForImage) return;
     if (!_isImageItemEffect && !_isIframeItemEffect) return;
     if (videos.length <= 1) return;
-    const defaultSecs = _isIframeItemEffect ? 30 : 10;
-    const seconds = Math.max(1, Math.min(3600, _currentForImage.display_duration ?? defaultSecs));
+    // YouTube: long fallback (1h) — natural end is detected via postMessage below.
+    // Webpage: 60s default. Image: 10s default.
+    const defaultSecs = _isYouTubeItem ? 3600 : (_isIframeItemEffect ? 60 : 10);
+    const seconds = Math.max(1, Math.min(7200, _currentForImage.display_duration ?? defaultSecs));
     const t = setTimeout(() => {
       handleVideoEnd();
     }, seconds * 1000);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_currentForImage?.id, _safeIdxForImage, _isImageItemEffect, _isIframeItemEffect, videos.length]);
+  }, [_currentForImage?.id, _safeIdxForImage, _isImageItemEffect, _isIframeItemEffect, _isYouTubeItem, videos.length]);
+
+  // Listen for YouTube IFrame API end-of-video events and advance the playlist.
+  useEffect(() => {
+    if (!_isYouTubeItem || videos.length <= 1) return;
+    const onMsg = (event: MessageEvent) => {
+      if (typeof event.data !== 'string') return;
+      if (!/youtube\.com$/.test(new URL(event.origin).hostname || '')) return;
+      try {
+        const msg = JSON.parse(event.data);
+        // YT.PlayerState.ENDED === 0
+        if (msg?.event === 'onStateChange' && msg.info === 0) {
+          handleVideoEnd();
+        }
+      } catch { /* ignore */ }
+    };
+    window.addEventListener('message', onMsg);
+    // Ask the iframe to start sending us state-change events.
+    const iframes = document.querySelectorAll<HTMLIFrameElement>('iframe[src*="youtube.com/embed"]');
+    iframes.forEach((f) => {
+      try {
+        f.contentWindow?.postMessage(
+          JSON.stringify({ event: 'listening', id: f.id || 'yt' }),
+          '*'
+        );
+        f.contentWindow?.postMessage(
+          JSON.stringify({ event: 'command', func: 'addEventListener', args: ['onStateChange'] }),
+          '*'
+        );
+      } catch { /* ignore */ }
+    });
+    return () => window.removeEventListener('message', onMsg);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_currentForImage?.id, _isYouTubeItem, videos.length]);
 
   // Track fullscreen state changes (Esc key, etc.) — must stay before any
   // conditional returns so React hook order is stable when media loads.
