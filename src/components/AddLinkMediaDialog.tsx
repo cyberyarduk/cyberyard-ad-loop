@@ -22,6 +22,14 @@ interface Props {
   onComplete?: () => void;
 }
 
+// Add https:// if the user didn't include a protocol (so "www.example.com" works)
+const normalizeUrl = (raw: string): string => {
+  const trimmed = raw.trim();
+  if (!trimmed) return trimmed;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed.replace(/^\/+/, "")}`;
+};
+
 const validateUrl = (url: string, kind: Kind): string | null => {
   try {
     const u = new URL(url);
@@ -47,7 +55,9 @@ const AddLinkMediaDialog = ({ kind, trigger, onComplete }: Props) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const err = validateUrl(url.trim(), kind);
+    const normalizedUrl = normalizeUrl(url);
+    if (normalizedUrl !== url) setUrl(normalizedUrl);
+    const err = validateUrl(normalizedUrl, kind);
     if (err) {
       toast.error(err);
       return;
@@ -76,8 +86,8 @@ const AddLinkMediaDialog = ({ kind, trigger, onComplete }: Props) => {
           user_id: user.id,
           company_id: profile?.company_id,
           media_type: kind,
-          source_url: url.trim(),
-          video_url: url.trim(),
+          source_url: normalizedUrl,
+          video_url: normalizedUrl,
           display_duration: dur,
           source: kind,
         } as any)
