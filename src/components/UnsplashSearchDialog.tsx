@@ -57,6 +57,8 @@ export default function UnsplashSearchDialog({ trigger, onComplete }: Props) {
   const [overlaySub, setOverlaySub] = useState("");
   const [overlayPos, setOverlayPos] = useState<"top" | "middle" | "bottom">("bottom");
   const [overlayBg, setOverlayBg] = useState<"none" | "dark" | "light" | "accent">("dark");
+  const [animate, setAnimate] = useState(false);
+  const [animStyle, setAnimStyle] = useState<"boom" | "sparkle" | "stars" | "minimal">("boom");
 
   const reset = () => {
     setSelected(null);
@@ -64,6 +66,8 @@ export default function UnsplashSearchDialog({ trigger, onComplete }: Props) {
     setOverlaySub("");
     setOverlayPos("bottom");
     setOverlayBg("dark");
+    setAnimate(false);
+    setAnimStyle("boom");
   };
 
   const search = async (e?: React.FormEvent) => {
