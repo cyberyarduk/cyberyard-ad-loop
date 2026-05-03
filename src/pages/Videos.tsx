@@ -781,7 +781,13 @@ const Videos = () => {
             if (!o) setPendingAction(null);
           }}
           onSelected={handlePlaylistChosen}
-          title={pendingAction?.type === "regenerate" ? "Add regenerated video to a playlist" : "Add image to a playlist"}
+          title={
+            pendingAction?.type === "regenerate"
+              ? "Add regenerated video to a playlist"
+              : pendingAction?.type === "add_existing"
+                ? "Add this media to a playlist"
+                : "Add image to a playlist"
+          }
           description="Pick the playlist this should be added to, or create a new one."
         />
       </div>
