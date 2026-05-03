@@ -44,6 +44,48 @@ const validateUrl = (url: string, kind: Kind): string | null => {
   }
 };
 
+// Pull the 11-char video id out of any YouTube URL shape.
+const extractYouTubeId = (url: string): string | null => {
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes("youtu.be")) return u.pathname.slice(1).split("/")[0] || null;
+    if (u.searchParams.get("v")) return u.searchParams.get("v");
+    if (u.pathname.startsWith("/embed/")) return u.pathname.split("/embed/")[1]?.split("/")[0] || null;
+    if (u.pathname.startsWith("/shorts/")) return u.pathname.split("/shorts/")[1]?.split("/")[0] || null;
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+// Use YouTube's oEmbed endpoint to verify the video both exists AND is allowed
+// to be embedded. Owners commonly disable embedding on official music videos,
+// which causes Error 153 in the iframe player. oEmbed returns 401/403/404 in
+// those cases, letting us reject the URL up-front instead of silently failing.
+const checkYouTubeEmbeddable = async (
+  url: string
+): Promise<{ ok: true; title?: string } | { ok: false; reason: string }> => {
+  try {
+    const res = await fetch(
+      `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(url)}`
+    );
+    if (res.status === 401 || res.status === 403) {
+      return { ok: false, reason: "This video's owner has disabled embedding, so it can't play on screens. Try a different YouTube link." };
+    }
+    if (res.status === 404) {
+      return { ok: false, reason: "We couldn't find that YouTube video — please check the link." };
+    }
+    if (!res.ok) {
+      return { ok: false, reason: "YouTube wouldn't let us preview that video. Try a different link." };
+    }
+    const data = await res.json().catch(() => ({}));
+    return { ok: true, title: data?.title };
+  } catch {
+    // Network blocked? Don't hard-fail — let the user proceed.
+    return { ok: true };
+  }
+};
+
 const AddLinkMediaDialog = ({ kind, trigger, onComplete }: Props) => {
   const [open, setOpen] = useState(false);
   const [url, setUrl] = useState("");
@@ -70,6 +112,27 @@ const AddLinkMediaDialog = ({ kind, trigger, onComplete }: Props) => {
 
     setSubmitting(true);
     try {
+      // For YouTube, drop "Mix / Radio" list params (list=RD…) and similar —
+      // they reference auto-generated playlists that almost never embed cleanly.
+      let cleanUrl = normalizedUrl;
+      let resolvedTitle = title;
+      if (kind === "youtube") {
+        const id = extractYouTubeId(normalizedUrl);
+        if (!id) {
+          toast.error("We couldn't read a video ID from that YouTube link.");
+          setSubmitting(false);
+          return;
+        }
+        cleanUrl = `https://www.youtube.com/watch?v=${id}`;
+        const check = await checkYouTubeEmbeddable(cleanUrl);
+        if (!check.ok) {
+          toast.error((check as { ok: false; reason: string }).reason);
+          setSubmitting(false);
+          return;
+        }
+        if (!resolvedTitle && check.ok && check.title) resolvedTitle = check.title;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
@@ -82,12 +145,12 @@ const AddLinkMediaDialog = ({ kind, trigger, onComplete }: Props) => {
       const { data: inserted, error } = await supabase
         .from("videos")
         .insert({
-          title: title || (kind === "youtube" ? "YouTube video" : "Web page"),
+          title: resolvedTitle || (kind === "youtube" ? "YouTube video" : "Web page"),
           user_id: user.id,
           company_id: profile?.company_id,
           media_type: kind,
-          source_url: normalizedUrl,
-          video_url: normalizedUrl,
+          source_url: cleanUrl,
+          video_url: cleanUrl,
           display_duration: dur,
           source: kind,
         } as any)
