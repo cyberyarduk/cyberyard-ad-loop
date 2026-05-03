@@ -31,7 +31,7 @@ import logo from "@/assets/logo.png";
 import Reveal from "@/components/premium/Reveal";
 
 const stats = [
-  { value: "3-in-1", label: "Web, App Store & Google Play" },
+  { value: "3-in-1", label: "Available on Web, App Store & Google Play" },
   { value: "3×", label: "More attention than static signage" },
   { value: "<2s", label: "To push promos to every screen" },
   { value: "Any", label: "Screen — TV, tablet, phone or laptop" },
