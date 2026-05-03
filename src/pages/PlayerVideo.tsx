@@ -13,27 +13,53 @@ interface Video {
   title: string;
   video_url: string;
   order_index: number;
-  media_type?: 'video' | 'image';
+  media_type?: 'video' | 'image' | 'youtube' | 'webpage';
   image_url?: string | null;
   image_url_landscape?: string | null;
   video_url_landscape?: string | null;
+  source_url?: string | null;
   display_duration?: number | null;
   player_overlay?: string | null;
 }
 
 const getPlayableUrl = (item?: Video | null) => {
   if (!item) return "";
-  // Videos take priority — image_url on a video item is just the poster.
+  if (item.media_type === 'youtube' || item.media_type === 'webpage') {
+    return item.source_url || item.video_url || "";
+  }
   if (item.media_type === 'video') {
     return item.video_url || item.video_url_landscape || item.image_url || item.image_url_landscape || "";
   }
   return item.image_url || item.video_url || item.image_url_landscape || item.video_url_landscape || "";
 };
 const isImageMedia = (item?: Video | null) => {
-  if (item?.media_type === 'video') return false;
+  if (item?.media_type === 'video' || item?.media_type === 'youtube' || item?.media_type === 'webpage') return false;
   if (item?.media_type === 'image') return true;
   const url = getPlayableUrl(item);
   return /\.(jpe?g|png|gif|webp|avif)(\?|$)/i.test(url);
+};
+const isIframeMedia = (item?: Video | null) =>
+  item?.media_type === 'youtube' || item?.media_type === 'webpage';
+
+// Convert any YouTube URL to an embed URL with autoplay+mute+loop
+const toYouTubeEmbed = (url: string): string => {
+  try {
+    const u = new URL(url);
+    let id = '';
+    if (u.hostname.includes('youtu.be')) {
+      id = u.pathname.slice(1);
+    } else if (u.searchParams.get('v')) {
+      id = u.searchParams.get('v') || '';
+    } else if (u.pathname.startsWith('/embed/')) {
+      id = u.pathname.split('/embed/')[1];
+    } else if (u.pathname.startsWith('/shorts/')) {
+      id = u.pathname.split('/shorts/')[1];
+    }
+    if (!id) return url;
+    return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&modestbranding=1&playsinline=1&rel=0`;
+  } catch {
+    return url;
+  }
 };
 const appendCacheBust = (url: string, version: number) => {
   if (!url || !version) return url;
@@ -489,24 +515,25 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
     }
   }, [currentIndex, videos.length]);
 
-  // Image item auto-advance timer (must be before conditional returns).
-  // For image items, advance after `display_duration` seconds (default 10s).
+  // Image / iframe item auto-advance timer (must be before conditional returns).
+  // For image, youtube and webpage items, advance after `display_duration` seconds.
+  // Default duration: 10s (image), 30s (youtube/webpage).
   const _safeIdxForImage = currentIndex < videos.length ? currentIndex : 0;
   const _currentForImage = videos[_safeIdxForImage];
   const _isImageItemEffect = isImageMedia(_currentForImage);
+  const _isIframeItemEffect = isIframeMedia(_currentForImage);
   useEffect(() => {
-    if (!_currentForImage || !_isImageItemEffect) return;
-    // If this is the only item in the playlist, leave the image on screen
-    // permanently (e.g. a static menu). Only auto-advance when there are
-    // multiple items to rotate between.
+    if (!_currentForImage) return;
+    if (!_isImageItemEffect && !_isIframeItemEffect) return;
     if (videos.length <= 1) return;
-    const seconds = Math.max(1, Math.min(600, _currentForImage.display_duration ?? 10));
+    const defaultSecs = _isIframeItemEffect ? 30 : 10;
+    const seconds = Math.max(1, Math.min(3600, _currentForImage.display_duration ?? defaultSecs));
     const t = setTimeout(() => {
       handleVideoEnd();
     }, seconds * 1000);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_currentForImage?.id, _safeIdxForImage, _isImageItemEffect, videos.length]);
+  }, [_currentForImage?.id, _safeIdxForImage, _isImageItemEffect, _isIframeItemEffect, videos.length]);
 
   // Track fullscreen state changes (Esc key, etc.) — must stay before any
   // conditional returns so React hook order is stable when media loads.
@@ -701,8 +728,14 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
   const safeIndex = currentIndex < videos.length ? currentIndex : 0;
   const currentVideo = videos[safeIndex];
   const isImageItem = isImageMedia(currentVideo);
+  const isIframeItem = isIframeMedia(currentVideo);
   const currentMediaUrl = appendCacheBust(getPlayableUrl(currentVideo), playlistRevision);
   const currentImageUrl = isImageItem ? (imageRenderUrl || currentMediaUrl) : currentMediaUrl;
+  const iframeSrc = isIframeItem
+    ? (currentVideo?.media_type === 'youtube'
+        ? toYouTubeEmbed(currentVideo.source_url || currentVideo.video_url)
+        : (currentVideo?.source_url || currentVideo?.video_url || ''))
+    : '';
 
 
   return (
@@ -805,7 +838,24 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
         </div>
       )}
 
-      {currentVideo && !isImageItem && (
+      {currentVideo && isIframeItem && (
+        <iframe
+          key={`${currentVideo.id}-${safeIndex}-iframe`}
+          src={iframeSrc}
+          title={currentVideo.title}
+          className="player-media-fade absolute inset-0 z-10 h-full w-full border-0 bg-black"
+          allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+          allowFullScreen
+          referrerPolicy="no-referrer"
+          sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
+          onError={() => {
+            console.error('[Iframe] Failed to load:', iframeSrc);
+            if (videos.length > 1) handleVideoEnd();
+          }}
+        />
+      )}
+
+      {currentVideo && !isImageItem && !isIframeItem && (
         <video
           ref={videoRef}
           key={`${currentVideo.id}-${safeIndex}`}

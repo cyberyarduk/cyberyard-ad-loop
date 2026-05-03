@@ -683,12 +683,14 @@ export type Database = {
           company_id: string | null
           created_at: string
           display_duration: number | null
+          expires_at: string | null
           id: string
           image_url: string | null
           image_url_landscape: string | null
           media_type: string
           player_overlay: string | null
           source: string | null
+          source_url: string | null
           title: string
           user_id: string
           video_url: string | null
@@ -702,12 +704,14 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           display_duration?: number | null
+          expires_at?: string | null
           id?: string
           image_url?: string | null
           image_url_landscape?: string | null
           media_type?: string
           player_overlay?: string | null
           source?: string | null
+          source_url?: string | null
           title: string
           user_id: string
           video_url?: string | null
@@ -721,12 +725,14 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           display_duration?: number | null
+          expires_at?: string | null
           id?: string
           image_url?: string | null
           image_url_landscape?: string | null
           media_type?: string
           player_overlay?: string | null
           source?: string | null
+          source_url?: string | null
           title?: string
           user_id?: string
           video_url?: string | null
