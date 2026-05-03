@@ -151,6 +151,48 @@ const Settings = () => {
 
         <Card>
           <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <WifiOff className="h-5 w-5" /> Offline Fallback Image
+            </CardTitle>
+            <CardDescription>
+              Shown on screens if they lose internet and have no cached content. Recommended: a branded image or "Back shortly" message (16:9 or 9:16, JPG/PNG).
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {fallbackUrl ? (
+              <div className="space-y-3">
+                <div className="rounded-lg overflow-hidden border bg-muted/30 max-w-sm">
+                  <img src={fallbackUrl} alt="Offline fallback" className="w-full h-auto object-contain" />
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={handleFallbackRemove}>
+                    <X className="h-4 w-4 mr-2" /> Remove
+                  </Button>
+                  <Button asChild variant="outline" size="sm">
+                    <label className="cursor-pointer">
+                      <Upload className="h-4 w-4 mr-2" /> Replace
+                      <input type="file" accept="image/*" className="hidden" onChange={handleFallbackUpload} />
+                    </label>
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button asChild disabled={fallbackUploading}>
+                <label className="cursor-pointer">
+                  <Upload className="h-4 w-4 mr-2" />
+                  {fallbackUploading ? 'Uploading...' : 'Upload fallback image'}
+                  <input type="file" accept="image/*" className="hidden" onChange={handleFallbackUpload} />
+                </label>
+              </Button>
+            )}
+            <p className="text-xs text-muted-foreground">
+              If no image is uploaded, screens will show your company name on a clean black background while offline.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>Change Password</CardTitle>
             <CardDescription>
               Update your password to keep your account secure
