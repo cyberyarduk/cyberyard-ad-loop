@@ -571,7 +571,29 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
     return () => document.removeEventListener('fullscreenchange', handler);
   }, []);
 
-  // Android WebView can be flaky with cross-origin storage images. Fetch the
+  // When offline, swap the active video item's src to a cached blob URL
+  // so playback continues from local storage instead of failing.
+  useEffect(() => {
+    let revoked = "";
+    const safeIdx = currentIndex < videos.length ? currentIndex : 0;
+    const item = videos[safeIdx];
+    if (!isOffline || !item || isImageMedia(item) || isIframeMedia(item)) {
+      setOfflineVideoBlobUrl("");
+      return;
+    }
+    const url = getPlayableUrl(item);
+    getCachedBlobUrl(url).then((blobUrl) => {
+      if (blobUrl) {
+        setOfflineVideoBlobUrl(blobUrl);
+        revoked = blobUrl;
+      } else {
+        setOfflineVideoBlobUrl("");
+      }
+    });
+    return () => {
+      if (revoked) URL.revokeObjectURL(revoked);
+    };
+  }, [isOffline, currentIndex, videos]);
   // active image as a blob and render a local object URL, with direct URL fallback.
   useEffect(() => {
     if (!_currentForImage || !_isImageItemEffect) {
