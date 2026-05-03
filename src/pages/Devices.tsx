@@ -28,11 +28,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Monitor, Copy, Edit, Trash2, QrCode, KeyRound, PlayCircle } from "lucide-react";
+import { Plus, Monitor, Copy, Edit, Trash2, QrCode, KeyRound, PlayCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import QRCode from "qrcode";
+import DeviceScheduleDialog from "@/components/DeviceScheduleDialog";
 
 
 const Devices = () => {
@@ -49,6 +50,8 @@ const Devices = () => {
   const [editDevice, setEditDevice] = useState<any>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [deviceLimit, setDeviceLimit] = useState<number | null>(null);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [scheduleDevice, setScheduleDevice] = useState<any>(null);
 
   // Auth check
   useEffect(() => {
@@ -542,6 +545,15 @@ const Devices = () => {
                         Open player (enter code)
                       </Button>
                     )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => { setScheduleDevice(device); setScheduleOpen(true); }}
+                      title="Auto-switch playlists by time of day"
+                    >
+                      <Clock className="mr-2 h-4 w-4" />
+                      Schedule playlists
+                    </Button>
                     {device.status === 'active' && (
                       <>
                         <Button
@@ -687,6 +699,13 @@ const Devices = () => {
             )}
           </DialogContent>
         </Dialog>
+
+        <DeviceScheduleDialog
+          open={scheduleOpen}
+          onOpenChange={setScheduleOpen}
+          device={scheduleDevice}
+          playlists={playlists}
+        />
       </div>
     </DashboardLayout>
   );
