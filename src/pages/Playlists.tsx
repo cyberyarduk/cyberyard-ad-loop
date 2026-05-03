@@ -789,6 +789,36 @@ const Playlists = () => {
                               </button>
                             </TableCell>
                             <TableCell className="text-right space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  setScheduleEdit({
+                                    id: video.playlist_video_id,
+                                    data: {
+                                      schedule_start_date: video.schedule_start_date,
+                                      schedule_end_date: video.schedule_end_date,
+                                      schedule_days_of_week: video.schedule_days_of_week,
+                                      schedule_start_time: video.schedule_start_time,
+                                      schedule_end_time: video.schedule_end_time,
+                                    },
+                                  })
+                                }
+                                aria-label="Schedule"
+                                title={
+                                  video.schedule_start_date || video.schedule_end_date || video.schedule_days_of_week || video.schedule_start_time
+                                    ? "Scheduled"
+                                    : "Always plays"
+                                }
+                              >
+                                <CalendarClock
+                                  className={`h-4 w-4 ${
+                                    video.schedule_start_date || video.schedule_end_date || video.schedule_days_of_week || video.schedule_start_time
+                                      ? "text-primary"
+                                      : ""
+                                  }`}
+                                />
+                              </Button>
                               <Button 
                                 variant="ghost" 
                                 size="sm"
