@@ -708,6 +708,29 @@ const Playlists = () => {
                         <Send className="h-4 w-4 mr-2" />
                         Push to All
                       </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          setActiveWindowEdit({
+                            id: playlist.id,
+                            start: playlist.active_start_date ?? "",
+                            end: playlist.active_end_date ?? "",
+                          })
+                        }
+                        aria-label="Active window"
+                        title={
+                          playlist.active_start_date || playlist.active_end_date
+                            ? `Active ${playlist.active_start_date ?? "any"} → ${playlist.active_end_date ?? "any"}`
+                            : "Active always"
+                        }
+                      >
+                        <CalendarClock
+                          className={`h-4 w-4 ${
+                            playlist.active_start_date || playlist.active_end_date ? "text-primary" : ""
+                          }`}
+                        />
+                      </Button>
                       <Button 
                         variant="ghost" 
                         size="sm"
