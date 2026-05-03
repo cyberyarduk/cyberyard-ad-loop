@@ -227,10 +227,23 @@ const PlayerVideo = ({ authToken, deviceInfo }: PlayerVideoProps) => {
         setVideos(newVideos);
       }
       setCachedVideos(newVideos);
-      
-      // Cache videos for offline mode
+
+      // Persist offline fallback metadata
+      if (data.offline_fallback) {
+        setOfflineFallback(data.offline_fallback);
+        localStorage.setItem('cached_offline_fallback', JSON.stringify(data.offline_fallback));
+      }
+
+      // Cache videos manifest for offline mode
       localStorage.setItem('cached_videos', JSON.stringify(newVideos));
       localStorage.setItem('last_playlist_sync', new Date().toISOString());
+
+      // Pre-cache the actual media bytes (videos + images + fallback image)
+      const urlsToCache = newVideos
+        .map((v: Video) => getPlayableUrl(v))
+        .filter((u: string) => !!u && !/youtube|youtu\.be/i.test(u));
+      if (data.offline_fallback?.image_url) urlsToCache.push(data.offline_fallback.image_url);
+      precacheUrls(urlsToCache).catch((e) => console.warn('Precache failed:', e));
       
       setLoading(false);
     } catch (error) {
