@@ -630,7 +630,7 @@ const Index = () => {
             </div>
           </div>
           <div className="border-t border-background/15 pt-6 flex flex-col md:flex-row justify-between gap-4 text-xs text-background/60">
-            <p>© 2025 Cyberyard Limited. Registered in England & Wales.</p>
+            <p>© {new Date().getFullYear()} Cyberyard Limited. Registered in England &amp; Wales — Company No. 15430744.</p>
             <p>Built for modern shops.</p>
           </div>
         </div>
