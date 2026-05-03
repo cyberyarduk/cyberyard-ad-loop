@@ -133,7 +133,29 @@ serve(async (req) => {
       );
     }
 
-    let playlistId = device.playlist_id;
+    // Time-based playlist scheduling: pick a scheduled playlist active for current local time/day
+    let playlistId: string | null = null;
+    let activeScheduleLabel: string | null = null;
+    const { data: schedules } = await supabase
+      .from('device_playlist_schedules')
+      .select('playlist_id, label, start_time, end_time, days_of_week')
+      .eq('device_id', device.id);
+
+    if (schedules && schedules.length > 0) {
+      for (const s of schedules) {
+        if (Array.isArray(s.days_of_week) && s.days_of_week.length > 0 && !s.days_of_week.includes(dow)) continue;
+        const ss = toMinutes(s.start_time);
+        const se = toMinutes(s.end_time);
+        if (inTimeWindow(minutes, ss, se)) {
+          playlistId = s.playlist_id;
+          activeScheduleLabel = s.label ?? null;
+          break;
+        }
+      }
+    }
+
+    // Fall back to device's default playlist
+    if (!playlistId) playlistId = device.playlist_id;
     if (!playlistId) {
       const { data: defaultPlaylist } = await supabase
         .from('playlists')
