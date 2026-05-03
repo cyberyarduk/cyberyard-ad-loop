@@ -476,19 +476,36 @@ const Devices = () => {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Playlist:</span>{' '}
-                      {device.playlist_id ? 
-                        playlists.find(p => p.id === device.playlist_id)?.name || 'Unknown'
-                        : 'Default'}
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Venue:</span>{' '}
-                      {device.venue_id ?
-                        venues.find(v => v.id === device.venue_id)?.name || 'Unknown'
-                        : 'None'}
-                    </div>
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">Playlist</p>
+                    <Select
+                      value={device.playlist_id || "none"}
+                      onValueChange={async (val) => {
+                        const newId = val === "none" ? null : val;
+                        const { error } = await supabase
+                          .from("devices")
+                          .update({ playlist_id: newId })
+                          .eq("id", device.id);
+                        if (error) {
+                          toast.error("Failed to update playlist");
+                        } else {
+                          toast.success("Playlist updated");
+                          fetchDevices();
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="max-w-sm">
+                        <SelectValue placeholder="Select a playlist" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Default playlist</SelectItem>
+                        {playlists.map((playlist) => (
+                          <SelectItem key={playlist.id} value={playlist.id}>
+                            {playlist.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {device.battery_level !== null && device.battery_level !== undefined && (
