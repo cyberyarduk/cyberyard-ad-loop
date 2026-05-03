@@ -655,6 +655,14 @@ const Videos = () => {
                       alt={video.title}
                       className="w-full h-full object-cover"
                     />
+                  ) : video.media_type === 'youtube' ? (
+                    <div className="w-full h-full flex items-center justify-center bg-black text-white">
+                      <Youtube className="h-16 w-16" />
+                    </div>
+                  ) : video.media_type === 'webpage' ? (
+                    <div className="w-full h-full flex items-center justify-center bg-muted">
+                      <Globe className="h-16 w-16 text-muted-foreground" />
+                    </div>
                   ) : (
                     <video
                       src={video.video_url}
@@ -686,18 +694,38 @@ const Videos = () => {
                     </div>
                     {video.media_type === 'image' ? (
                       <Badge variant="secondary" className="shrink-0">
-                        <ImageIcon className="h-3 w-3 mr-1" />
-                        Image
+                        <ImageIcon className="h-3 w-3 mr-1" />Image
+                      </Badge>
+                    ) : video.media_type === 'youtube' ? (
+                      <Badge variant="secondary" className="shrink-0">
+                        <Youtube className="h-3 w-3 mr-1" />YouTube
+                      </Badge>
+                    ) : video.media_type === 'webpage' ? (
+                      <Badge variant="secondary" className="shrink-0">
+                        <Globe className="h-3 w-3 mr-1" />Web
                       </Badge>
                     ) : video.source === 'ai_generated' ? (
                       <Badge variant="secondary" className="shrink-0">
-                        <Sparkles className="h-3 w-3 mr-1" />
-                        Video
+                        <Sparkles className="h-3 w-3 mr-1" />Video
                       </Badge>
                     ) : (
                       <Badge variant="outline" className="shrink-0">Upload</Badge>
                     )}
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setExpiryEdit({ id: video.id, value: video.expires_at ? new Date(video.expires_at).toISOString().slice(0,16) : "" })}
+                    className="w-full flex items-center gap-2 text-xs text-muted-foreground border border-border rounded-md px-3 py-2 hover:bg-accent hover:text-foreground transition-colors"
+                  >
+                    <CalendarClock className="h-3.5 w-3.5" />
+                    <span className="flex-1 text-left">
+                      {video.expires_at
+                        ? `Expires ${new Date(video.expires_at).toLocaleDateString()}`
+                        : 'No expiry'}
+                    </span>
+                    <span className="text-primary font-medium">Edit</span>
+                  </button>
 
                   <button
                     type="button"
