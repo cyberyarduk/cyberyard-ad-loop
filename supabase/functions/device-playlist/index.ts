@@ -110,13 +110,18 @@ serve(async (req) => {
 
     const { data: company } = await supabase
       .from('companies')
-      .select('emergency_active, emergency_message, emergency_started_at')
+      .select('emergency_active, emergency_message, emergency_started_at, offline_fallback_image_url, name')
       .eq('id', device.company_id)
       .single();
 
     const emergency = company?.emergency_active
       ? { active: true, message: company.emergency_message ?? 'Emergency', started_at: company.emergency_started_at }
       : { active: false };
+
+    const offlineFallback = {
+      image_url: company?.offline_fallback_image_url ?? null,
+      company_name: company?.name ?? null,
+    };
 
     // Working hours check
     const whStart = toMinutes(device.working_hours_start);
