@@ -78,11 +78,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const fetchCompany = async (companyId: string) => {
-    const { data, error } = await supabase
-      .from('companies')
+    const { data, error } = await (supabase as any)
+      .from('company_basic_info')
       .select('id, name, status, start_date, end_date')
       .eq('id', companyId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Error fetching company:', error);
