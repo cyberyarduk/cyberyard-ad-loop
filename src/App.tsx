@@ -26,6 +26,8 @@ import CookiesPolicy from "./pages/CookiesPolicy";
 import DataProcessingAddendum from "./pages/DataProcessingAddendum";
 import RefundPolicy from "./pages/RefundPolicy";
 import AcceptableUsePolicy from "./pages/AcceptableUsePolicy";
+import Contact from "./pages/Contact";
+import Unsubscribe from "./pages/Unsubscribe";
 import SalesDashboard from "./pages/SalesDashboard";
 import SalesClients from "./pages/SalesClients";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -158,6 +160,8 @@ const App = () => (
             <Route path="/data-processing-addendum" element={<DataProcessingAddendum />} />
             <Route path="/refund-policy" element={<RefundPolicy />} />
             <Route path="/acceptable-use-policy" element={<AcceptableUsePolicy />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           {!isNativeApp && <CookieConsent />}
