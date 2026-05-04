@@ -55,9 +55,17 @@ const CookiesPolicy = () => {
           <section>
             <h2 className="text-2xl font-semibold mb-4">Your Choices</h2>
             <p>
-              On your first visit you'll see a cookie banner where you can <strong>Accept all</strong> or choose <strong>Essential only</strong>. You can change your choice at any time by clearing the <code>cyberyard_cookie_consent_v1</code> entry in your browser's site data, or by emailing us.
+              On your first visit you'll see a cookie banner where you can <strong>Accept all</strong>, choose <strong>Essential only</strong>, or open <strong>Manage preferences</strong> to toggle each category individually.
             </p>
-            <p>
+            <p className="mt-4">
+              <Button
+                onClick={() => window.openCookiePreferences?.()}
+                className="rounded-full"
+              >
+                Manage cookie preferences
+              </Button>
+            </p>
+            <p className="mt-4">
               You can also block or delete cookies via your browser settings. Note that disabling essential cookies may stop the platform from working.
             </p>
           </section>
