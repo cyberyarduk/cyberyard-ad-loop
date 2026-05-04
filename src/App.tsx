@@ -26,6 +26,8 @@ import CookiesPolicy from "./pages/CookiesPolicy";
 import DataProcessingAddendum from "./pages/DataProcessingAddendum";
 import RefundPolicy from "./pages/RefundPolicy";
 import AcceptableUsePolicy from "./pages/AcceptableUsePolicy";
+import Contact from "./pages/Contact";
+import Unsubscribe from "./pages/Unsubscribe";
 import SalesDashboard from "./pages/SalesDashboard";
 import SalesClients from "./pages/SalesClients";
 import AdminDashboard from "./pages/AdminDashboard";
