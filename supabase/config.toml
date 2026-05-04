@@ -1,19 +1,17 @@
 project_id = "coislwmlvrcgxdwcvoqu"
 
-[functions.generate-video]
-verify_jwt = false
-
-[functions.device-pair]
-verify_jwt = false
-
-[functions.device-playlist]
-verify_jwt = false
-
-[functions.device-playlists]
-verify_jwt = false
-
-[functions.device-check-pin]
-verify_jwt = false
-
-[functions.create-test-user]
-verify_jwt = false
+[functions]
+  [functions.auth-email-hook]
+    verify_jwt = false
+  [functions.create-test-user]
+    verify_jwt = false
+  [functions.device-check-pin]
+    verify_jwt = false
+  [functions.device-pair]
+    verify_jwt = false
+  [functions.device-playlist]
+    verify_jwt = false
+  [functions.device-playlists]
+    verify_jwt = false
+  [functions.generate-video]
+    verify_jwt = false
