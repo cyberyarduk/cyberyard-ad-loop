@@ -160,6 +160,8 @@ const App = () => (
             <Route path="/data-processing-addendum" element={<DataProcessingAddendum />} />
             <Route path="/refund-policy" element={<RefundPolicy />} />
             <Route path="/acceptable-use-policy" element={<AcceptableUsePolicy />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           {!isNativeApp && <CookieConsent />}
