@@ -1,18 +1,10 @@
 /// <reference types="npm:@types/react@18.3.1" />
 
 import * as React from 'npm:react@18.3.1'
-
 import {
-  Body,
-  Button,
-  Container,
-  Head,
-  Heading,
-  Html,
-  Link,
-  Preview,
-  Text,
+  Body, Button, Container, Head, Heading, Html, Link, Preview, Text,
 } from 'npm:@react-email/components@0.0.22'
+import { BrandHeader, BrandFooter, sharedStyles as s } from './_brand.tsx'
 
 interface InviteEmailProps {
   siteName: string
@@ -20,62 +12,27 @@ interface InviteEmailProps {
   confirmationUrl: string
 }
 
-export const InviteEmail = ({
-  siteName,
-  siteUrl,
-  confirmationUrl,
-}: InviteEmailProps) => (
+export const InviteEmail = ({ siteName, siteUrl, confirmationUrl }: InviteEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
     <Preview>You've been invited to join {siteName}</Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <Heading style={h1}>You've been invited</Heading>
-        <Text style={text}>
+    <Body style={s.main}>
+      <Container style={s.container}>
+        <BrandHeader />
+        <Heading style={s.h1}>You've been invited</Heading>
+        <Text style={s.text}>
           You've been invited to join{' '}
-          <Link href={siteUrl} style={link}>
-            <strong>{siteName}</strong>
-          </Link>
-          . Click the button below to accept the invitation and create your
-          account.
+          <Link href={siteUrl} style={s.link}><strong>{siteName}</strong></Link>.
+          Click the button below to accept the invitation and create your account.
         </Text>
-        <Button style={button} href={confirmationUrl}>
-          Accept Invitation
-        </Button>
-        <Text style={footer}>
-          If you weren't expecting this invitation, you can safely ignore this
-          email.
+        <Button style={s.button} href={confirmationUrl}>Accept Invitation</Button>
+        <Text style={s.footer}>
+          If you weren't expecting this invitation, you can safely ignore this email.
         </Text>
+        <BrandFooter />
       </Container>
     </Body>
   </Html>
 )
 
 export default InviteEmail
-
-const main = { backgroundColor: '#ffffff', fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif' }
-const container = { padding: '32px 28px', maxWidth: '560px' }
-const h1 = {
-  fontSize: '24px',
-  fontWeight: 'bold' as const,
-  color: '#1a2233',
-  margin: '0 0 20px',
-  letterSpacing: '-0.01em',
-}
-const text = {
-  fontSize: '15px',
-  color: '#55575d',
-  lineHeight: '1.6',
-  margin: '0 0 25px',
-}
-const link = { color: '#1a2233', textDecoration: 'underline' }
-const button = {
-  backgroundColor: '#FBC91B',
-  color: '#1a2233',
-  fontSize: '15px',
-  fontWeight: 600,
-  borderRadius: '12px',
-  padding: '14px 24px',
-  textDecoration: 'none',
-}
-const footer = { fontSize: '12px', color: '#999999', margin: '32px 0 0', lineHeight: '1.5' }
