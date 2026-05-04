@@ -278,13 +278,15 @@ const Index = () => {
           {/* CTAs */}
           <Reveal delay={300}>
             <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center items-center">
-              <Button
-                size="lg"
-                className="h-13 px-7 rounded-full bg-foreground text-background hover:bg-foreground/90 font-semibold text-base group shadow-lg shadow-foreground/20"
-              >
-                Book a demo
-                <ArrowRight className="ml-1.5 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </Button>
+              <Link to="/contact?source=Book%20a%20demo">
+                <Button
+                  size="lg"
+                  className="h-13 px-7 rounded-full bg-foreground text-background hover:bg-foreground/90 font-semibold text-base group shadow-lg shadow-foreground/20"
+                >
+                  Book a demo
+                  <ArrowRight className="ml-1.5 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </Button>
+              </Link>
               <Button
                 size="lg"
                 variant="outline"
