@@ -28,6 +28,7 @@ import {
   Cloud,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
+import HomeContactForm from "@/components/HomeContactForm";
 import Reveal from "@/components/premium/Reveal";
 
 const stats = [
