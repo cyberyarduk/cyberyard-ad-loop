@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { LayoutDashboard, Users, UserPlus, LogOut, Menu, Target, Building2, ClipboardList, BarChart3 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/logo.png";
+import ResetPasswordButton from "@/components/ResetPasswordButton";
 
 interface PortalLayoutProps {
   children: ReactNode;
@@ -85,6 +86,7 @@ const PortalLayout = ({ children, variant }: PortalLayoutProps) => {
             <p className="text-xs text-muted-foreground capitalize">{profile.role.replace("_", " ")}</p>
           </div>
         )}
+        <ResetPasswordButton />
         <button
           onClick={signOut}
           className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground/70 hover:bg-secondary hover:text-foreground transition-all"
