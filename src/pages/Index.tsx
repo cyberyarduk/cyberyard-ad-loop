@@ -577,16 +577,7 @@ const Index = () => {
                 </div>
 
                 <div className="bg-background text-foreground rounded-2xl p-7 md:p-8 shadow-2xl">
-                  <form className="space-y-4">
-                    <Input placeholder="Your name" className="h-12 rounded-xl bg-secondary border-0 focus-visible:ring-2 focus-visible:ring-foreground/10" />
-                    <Input type="email" placeholder="Email address" className="h-12 rounded-xl bg-secondary border-0 focus-visible:ring-2 focus-visible:ring-foreground/10" />
-                    <Input placeholder="Business name" className="h-12 rounded-xl bg-secondary border-0 focus-visible:ring-2 focus-visible:ring-foreground/10" />
-                    <Textarea placeholder="Tell us about your shop" className="min-h-[100px] rounded-xl bg-secondary border-0 focus-visible:ring-2 focus-visible:ring-foreground/10 resize-none" />
-                    <Button className="w-full h-12 rounded-xl bg-foreground text-background hover:bg-foreground/90 font-semibold text-base group">
-                      Send message
-                      <ArrowRight className="ml-1.5 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                    </Button>
-                  </form>
+                  <HomeContactForm />
                 </div>
               </div>
             </div>
