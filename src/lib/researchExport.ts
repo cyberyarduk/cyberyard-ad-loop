@@ -23,7 +23,10 @@ function buildRows(leads: any[], responses: any[]) {
     };
     for (const q of SURVEY_QUESTIONS) {
       const v = a[q.id];
-      row[q.label] = v == null || v === "" ? "" : q.type === "single" ? getOptionLabel(q.id, v) : v;
+      if (v == null || v === "") { row[q.label] = ""; continue; }
+      if (q.type === "single") row[q.label] = getOptionLabel(q.id, v);
+      else if (q.type === "multi") row[q.label] = (Array.isArray(v) ? v : [v]).map((x) => getOptionLabel(q.id, x)).join("; ");
+      else row[q.label] = v;
     }
     return row;
   });
