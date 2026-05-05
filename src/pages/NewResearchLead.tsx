@@ -61,7 +61,7 @@ const NewResearchLead = () => {
     if (!user) return;
     setSaving(true);
     try {
-      const isTrialLead = answers["q9_trial"] === "yes";
+      const isTrialLead = answers["q10_trial_interest"] === "yes";
       const { data: lead, error: leadErr } = await supabase
         .from("research_leads")
         .insert({
