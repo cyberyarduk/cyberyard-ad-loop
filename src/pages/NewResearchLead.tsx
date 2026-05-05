@@ -120,12 +120,23 @@ const NewResearchLead = () => {
             <Field label="Contact name" value={profile.contact_name} onChange={(v) => setProfile({ ...profile, contact_name: v })} />
             <div>
               <Label>Business type</Label>
-              <Select value={profile.business_type} onValueChange={(v) => setProfile({ ...profile, business_type: v })}>
+              <Select
+                value={RESEARCH_BUSINESS_TYPES.includes(profile.business_type as any) ? profile.business_type : (profile.business_type ? "Other" : "")}
+                onValueChange={(v) => setProfile({ ...profile, business_type: v === "Other" ? "Other:" : v })}
+              >
                 <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
                 <SelectContent>
                   {RESEARCH_BUSINESS_TYPES.map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
                 </SelectContent>
               </Select>
+              {(profile.business_type === "Other" || profile.business_type.startsWith("Other:")) && (
+                <Input
+                  className="mt-2"
+                  placeholder="Please specify business type"
+                  value={profile.business_type.startsWith("Other:") ? profile.business_type.slice(6).trimStart() : ""}
+                  onChange={(e) => setProfile({ ...profile, business_type: `Other: ${e.target.value}` })}
+                />
+              )}
             </div>
             <Field label="Address" value={profile.address} onChange={(v) => setProfile({ ...profile, address: v })} />
             <Field label="City / Town" value={profile.city} onChange={(v) => setProfile({ ...profile, city: v })} />
