@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Mail, Phone, MapPin, Building2, Trash2, UserPlus, ClipboardCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { LEAD_STATUSES, SURVEY_QUESTIONS, POST_TRIAL_QUESTIONS, SURVEY_VERSION, POST_TRIAL_SURVEY_VERSION, getOptionLabel } from "@/lib/survey";
+import { LEAD_STATUSES, POST_TRIAL_QUESTIONS, SURVEY_VERSION, POST_TRIAL_SURVEY_VERSION, getOptionLabel, getQuestionsForVersion } from "@/lib/survey";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -28,7 +28,7 @@ const ResearchLeadDetail = () => {
         .select("*")
         .eq("lead_id", id)
         .order("created_at", { ascending: false });
-      const v1 = rs?.find((r: any) => r.survey_version === SURVEY_VERSION) || null;
+      const v1 = rs?.find((r: any) => r.survey_version !== POST_TRIAL_SURVEY_VERSION) || null;
       const v2 = rs?.find((r: any) => r.survey_version === POST_TRIAL_SURVEY_VERSION) || null;
       setLead(l);
       setResponse(v1);
@@ -62,7 +62,8 @@ const ResearchLeadDetail = () => {
   }
 
   const answers = response?.answers || {};
-  const visible = SURVEY_QUESTIONS.filter((q) => !q.showIf || q.showIf(answers));
+  const responseQuestions = getQuestionsForVersion(response?.survey_version || SURVEY_VERSION);
+  const visible = responseQuestions.filter((q) => (!q.showIf || q.showIf(answers)) && answers[q.id] !== undefined);
   const ptAnswers = postTrial?.answers || {};
   const ptVisible = POST_TRIAL_QUESTIONS.filter((q) => !q.showIf || q.showIf(ptAnswers));
 
