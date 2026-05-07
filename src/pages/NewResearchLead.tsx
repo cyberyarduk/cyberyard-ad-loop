@@ -159,6 +159,31 @@ const NewResearchLead = () => {
             <p className="text-xs text-muted-foreground">Tap to answer. Some follow-up questions appear based on previous answers.</p>
           </CardHeader>
           <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label className="text-base font-medium">Who are you speaking to?</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  { v: "owner" as const, label: "Owner / Decision-maker", sub: "Full survey" },
+                  { v: "manager" as const, label: "Manager / Staff", sub: "Short survey + owner callback" },
+                ]).map((r) => {
+                  const active = role === r.v;
+                  return (
+                    <button
+                      key={r.v}
+                      type="button"
+                      onClick={() => { setRole(r.v); setAnswers({}); }}
+                      className={`rounded-xl border-2 p-3 text-left transition ${
+                        active ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                      }`}
+                    >
+                      <div className="text-sm font-medium">{r.label}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{r.sub}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {visibleQuestions.map((q, idx) => (
               <div key={q.id} className="space-y-2">
                 <Label className="text-base font-medium leading-snug">
