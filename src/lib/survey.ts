@@ -28,7 +28,10 @@ export type Question =
     };
 
 export const SURVEY_VERSION = "v3";
+export const MANAGER_SURVEY_VERSION = "v3_manager";
 export const POST_TRIAL_SURVEY_VERSION = "v2_post_trial";
+
+export type RespondentRole = "owner" | "manager";
 
 const yesNo: Choice[] = [
   { value: "yes", label: "Yes" },
@@ -241,7 +244,47 @@ export const SURVEY_QUESTIONS: Question[] = [
   },
 ];
 
-// Legacy v1 questions kept so that older responses still render on the lead detail page.
+// ===== MANAGER SURVEY (shorter — managers usually don't know pricing/budget) =====
+// Reuses question IDs from SURVEY_QUESTIONS so analytics can aggregate across both.
+export const MANAGER_SURVEY_QUESTIONS: Question[] = [
+  // Screen / current usage
+  SURVEY_QUESTIONS.find((q) => q.id === "q1_has_screen")!,
+  SURVEY_QUESTIONS.find((q) => q.id === "q1a_uses_for_promo")!,
+  SURVEY_QUESTIONS.find((q) => q.id === "q1b_displays")!,
+  SURVEY_QUESTIONS.find((q) => q.id === "q1c_update_method")!,
+  SURVEY_QUESTIONS.find((q) => q.id === "q1f_consider_screen")!,
+  // Interest in product
+  SURVEY_QUESTIONS.find((q) => q.id === "q5_ai_video_interest")!,
+  SURVEY_QUESTIONS.find((q) => q.id === "q6_try_today")!,
+  // Free trial
+  SURVEY_QUESTIONS.find((q) => q.id === "q10_trial_interest")!,
+  // Owner callback details
+  {
+    id: "m_owner_name",
+    type: "text",
+    label: "Owner's name (so we can follow up directly)",
+    placeholder: "Owner's full name",
+  },
+  {
+    id: "m_owner_phone",
+    type: "text",
+    label: "Owner's phone number",
+    placeholder: "Best number to reach the owner",
+  },
+  {
+    id: "m_owner_email",
+    type: "text",
+    label: "Owner's email (optional)",
+    placeholder: "owner@business.co.uk",
+  },
+  {
+    id: "m_best_callback_time",
+    type: "text",
+    label: "Best time to call the owner",
+    placeholder: "e.g. weekday mornings",
+  },
+];
+
 const LEGACY_SURVEY_QUESTIONS: Question[] = [
   { id: "q1a_screen_use", type: "multi", label: "What do you use it for?", options: [
     { value: "promotions", label: "Promotions" },
@@ -381,8 +424,16 @@ export const LEAD_STATUSES = [
 
 export const RESEARCH_BUSINESS_TYPES = BUSINESS_TYPES;
 
-// Helpers — work across current + legacy + post-trial questions
-const ALL_QUESTIONS = [...SURVEY_QUESTIONS, ...LEGACY_SURVEY_QUESTIONS, ...POST_TRIAL_QUESTIONS];
+// Helpers — work across current + manager + legacy + post-trial questions
+const MANAGER_ONLY_QUESTIONS = MANAGER_SURVEY_QUESTIONS.filter(
+  (mq) => !SURVEY_QUESTIONS.some((q) => q.id === mq.id),
+);
+const ALL_QUESTIONS = [
+  ...SURVEY_QUESTIONS,
+  ...MANAGER_ONLY_QUESTIONS,
+  ...LEGACY_SURVEY_QUESTIONS,
+  ...POST_TRIAL_QUESTIONS,
+];
 export function getQuestion(id: string) {
   return ALL_QUESTIONS.find((q) => q.id === id);
 }
@@ -395,7 +446,16 @@ export function getOptionLabel(qId: string, value: string): string {
 // Lookup the right question schema for a given stored response version.
 export function getQuestionsForVersion(version: string): Question[] {
   if (version === SURVEY_VERSION) return SURVEY_QUESTIONS;
+  if (version === MANAGER_SURVEY_VERSION) return MANAGER_SURVEY_QUESTIONS;
   if (version === POST_TRIAL_SURVEY_VERSION) return POST_TRIAL_QUESTIONS;
   // Legacy pre-trial responses (v1, v2-pre, etc.)
   return [...LEGACY_SURVEY_QUESTIONS, ...SURVEY_QUESTIONS];
 }
+
+export function getQuestionsForRole(role: RespondentRole): Question[] {
+  return role === "manager" ? MANAGER_SURVEY_QUESTIONS : SURVEY_QUESTIONS;
+}
+export function getVersionForRole(role: RespondentRole): string {
+  return role === "manager" ? MANAGER_SURVEY_VERSION : SURVEY_VERSION;
+}
+

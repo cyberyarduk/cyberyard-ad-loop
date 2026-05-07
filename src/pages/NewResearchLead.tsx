@@ -11,12 +11,13 @@ import { ArrowLeft, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { SURVEY_QUESTIONS, SURVEY_VERSION, RESEARCH_BUSINESS_TYPES } from "@/lib/survey";
+import { getQuestionsForRole, getVersionForRole, RESEARCH_BUSINESS_TYPES, type RespondentRole } from "@/lib/survey";
 
 const NewResearchLead = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
+  const [role, setRole] = useState<RespondentRole>("owner");
 
   const [profile, setProfile] = useState({
     business_name: "",
@@ -30,15 +31,16 @@ const NewResearchLead = () => {
   });
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
 
+  const activeQuestions = useMemo(() => getQuestionsForRole(role), [role]);
   const visibleQuestions = useMemo(
-    () => SURVEY_QUESTIONS.filter((q) => !q.showIf || q.showIf(answers)),
-    [answers]
+    () => activeQuestions.filter((q) => !q.showIf || q.showIf(answers)),
+    [activeQuestions, answers]
   );
 
   const setAnswer = (id: string, v: string | string[]) => {
     setAnswers((prev) => {
       const next = { ...prev, [id]: v };
-      for (const q of SURVEY_QUESTIONS) {
+      for (const q of activeQuestions) {
         if (q.showIf && !q.showIf(next) && next[q.id] !== undefined) {
           delete next[q.id];
         }
@@ -84,7 +86,7 @@ const NewResearchLead = () => {
       if (Object.keys(answers).length > 0) {
         const { error: respErr } = await supabase.from("research_responses").insert({
           lead_id: lead.id,
-          survey_version: SURVEY_VERSION,
+          survey_version: getVersionForRole(role),
           answers,
           submitted_by_user_id: user.id,
         });
@@ -157,6 +159,31 @@ const NewResearchLead = () => {
             <p className="text-xs text-muted-foreground">Tap to answer. Some follow-up questions appear based on previous answers.</p>
           </CardHeader>
           <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label className="text-base font-medium">Who are you speaking to?</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  { v: "owner" as const, label: "Owner / Decision-maker", sub: "Full survey" },
+                  { v: "manager" as const, label: "Manager / Staff", sub: "Short survey + owner callback" },
+                ]).map((r) => {
+                  const active = role === r.v;
+                  return (
+                    <button
+                      key={r.v}
+                      type="button"
+                      onClick={() => { setRole(r.v); setAnswers({}); }}
+                      className={`rounded-xl border-2 p-3 text-left transition ${
+                        active ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                      }`}
+                    >
+                      <div className="text-sm font-medium">{r.label}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{r.sub}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {visibleQuestions.map((q, idx) => (
               <div key={q.id} className="space-y-2">
                 <Label className="text-base font-medium leading-snug">
