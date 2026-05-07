@@ -169,10 +169,12 @@ const PublicSurvey = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 flex flex-col">
-      <header className="px-4 py-4 border-b border-border/50 bg-background/70 backdrop-blur">
+      <header className="px-4 py-4 bg-foreground">
         <div className="max-w-xl mx-auto flex items-center justify-between">
-          <div className="font-semibold tracking-tight">Cyberyard</div>
-          <div className="text-xs text-muted-foreground">Quick survey · ~2 min</div>
+          <a href="https://www.cyberyard.co.uk/" aria-label="Cyberyard">
+            <img src={logo} alt="Cyberyard" className="h-10 w-auto brightness-0 invert" />
+          </a>
+          <div className="text-xs text-background/70">Quick survey · ~2 min</div>
         </div>
       </header>
 
@@ -409,6 +411,10 @@ const PublicSurvey = () => {
                     We'll be in touch about your free 2-week trial.
                   </p>
                 )}
+                <p className="text-xs text-muted-foreground pt-2">Returning you to cyberyard.co.uk…</p>
+                <Button asChild size="lg" className="mt-2">
+                  <a href="https://www.cyberyard.co.uk/">Visit Cyberyard</a>
+                </Button>
               </CardContent>
             </Card>
           )}
@@ -438,7 +444,9 @@ const PublicSurvey = () => {
       </main>
 
       <footer className="px-4 py-4 text-center text-xs text-muted-foreground">
-        Cyberyard · <a href="/privacy-policy" className="underline">Privacy</a>
+        <a href="https://www.cyberyard.co.uk/" className="hover:underline">www.cyberyard.co.uk</a>
+        {" · "}
+        <a href="https://www.cyberyard.co.uk/privacy-policy" className="hover:underline">Privacy</a>
       </footer>
     </div>
   );
