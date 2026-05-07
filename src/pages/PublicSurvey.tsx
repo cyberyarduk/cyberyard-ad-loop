@@ -28,7 +28,7 @@ const INTRO_SLIDES = [
   {
     icon: Sparkles,
     title: "Hi, we're Cyberyard 👋",
-    body: "We're a small UK team building a simple way for local businesses to promote what they sell using any screen they already have — a TV, tablet, phone or laptop.",
+    body: "We help businesses promote what they sell using any screen they already have — a TV, tablet, phone or laptop. No new hardware, no technical setup.",
   },
   {
     icon: Tv,
@@ -37,8 +37,8 @@ const INTRO_SLIDES = [
   },
   {
     icon: Smartphone,
-    title: "Controlled from your phone",
-    body: "No technical setup. No expensive hardware. Update what's showing in seconds, from anywhere. Even create video adverts in one tap.",
+    title: "Controlled from anywhere",
+    body: "Update what's showing in seconds — from your phone, tablet or laptop, wherever you are. Manage one shop or hundreds remotely. Even create video adverts in one tap.",
   },
   {
     icon: MessageSquare,
