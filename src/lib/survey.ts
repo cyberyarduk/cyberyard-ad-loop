@@ -44,6 +44,19 @@ const yesNoMaybe: Choice[] = [
 ];
 
 export const SURVEY_QUESTIONS: Question[] = [
+  // Q0 — owner-only: how many shops do they own?
+  {
+    id: "q0_shop_count",
+    type: "single",
+    label: "How many physical shops / locations do you own?",
+    options: [
+      { value: "1", label: "1" },
+      { value: "2_3", label: "2–3" },
+      { value: "4_5", label: "4–5" },
+      { value: "6_10", label: "6–10" },
+      { value: "10_plus", label: "10+" },
+    ],
+  },
   // Q1
   {
     id: "q1_has_screen",
