@@ -86,7 +86,7 @@ const NewResearchLead = () => {
       if (Object.keys(answers).length > 0) {
         const { error: respErr } = await supabase.from("research_responses").insert({
           lead_id: lead.id,
-          survey_version: SURVEY_VERSION,
+          survey_version: getVersionForRole(role),
           answers,
           submitted_by_user_id: user.id,
         });
