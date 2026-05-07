@@ -17,6 +17,7 @@ const NewResearchLead = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
+  const [role, setRole] = useState<RespondentRole>("owner");
 
   const [profile, setProfile] = useState({
     business_name: "",
@@ -30,15 +31,16 @@ const NewResearchLead = () => {
   });
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
 
+  const activeQuestions = useMemo(() => getQuestionsForRole(role), [role]);
   const visibleQuestions = useMemo(
-    () => SURVEY_QUESTIONS.filter((q) => !q.showIf || q.showIf(answers)),
-    [answers]
+    () => activeQuestions.filter((q) => !q.showIf || q.showIf(answers)),
+    [activeQuestions, answers]
   );
 
   const setAnswer = (id: string, v: string | string[]) => {
     setAnswers((prev) => {
       const next = { ...prev, [id]: v };
-      for (const q of SURVEY_QUESTIONS) {
+      for (const q of activeQuestions) {
         if (q.showIf && !q.showIf(next) && next[q.id] !== undefined) {
           delete next[q.id];
         }
