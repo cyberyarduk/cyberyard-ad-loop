@@ -167,7 +167,7 @@ export const SURVEY_QUESTIONS: Question[] = [
   {
     id: "q5_ai_video_interest",
     type: "single",
-    label: "Would you use a feature that lets you photograph a product, add text (e.g. “Bacon sandwich £4.99”) and instantly create a video advert?",
+    label: "Would you use a feature that lets you photograph a product, add text (e.g. “Blueberry muffins only 99p”) and instantly create a video advert?",
     options: yesNoMaybe,
   },
 
