@@ -67,6 +67,14 @@ const PublicSurvey = () => {
   });
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
 
+  useEffect(() => {
+    if (stage !== "thanks") return;
+    const t = setTimeout(() => {
+      window.location.href = "https://www.cyberyard.co.uk/";
+    }, 5000);
+    return () => clearTimeout(t);
+  }, [stage]);
+
   const activeQuestions = useMemo(() => getQuestionsForRole(role), [role]);
   const visibleQuestions = useMemo(
     () => activeQuestions.filter((q) => !q.showIf || q.showIf(answers)),
