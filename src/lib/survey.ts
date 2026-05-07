@@ -244,7 +244,47 @@ export const SURVEY_QUESTIONS: Question[] = [
   },
 ];
 
-// Legacy v1 questions kept so that older responses still render on the lead detail page.
+// ===== MANAGER SURVEY (shorter — managers usually don't know pricing/budget) =====
+// Reuses question IDs from SURVEY_QUESTIONS so analytics can aggregate across both.
+export const MANAGER_SURVEY_QUESTIONS: Question[] = [
+  // Screen / current usage
+  SURVEY_QUESTIONS.find((q) => q.id === "q1_has_screen")!,
+  SURVEY_QUESTIONS.find((q) => q.id === "q1a_uses_for_promo")!,
+  SURVEY_QUESTIONS.find((q) => q.id === "q1b_displays")!,
+  SURVEY_QUESTIONS.find((q) => q.id === "q1c_update_method")!,
+  SURVEY_QUESTIONS.find((q) => q.id === "q1f_consider_screen")!,
+  // Interest in product
+  SURVEY_QUESTIONS.find((q) => q.id === "q5_ai_video_interest")!,
+  SURVEY_QUESTIONS.find((q) => q.id === "q6_try_today")!,
+  // Free trial
+  SURVEY_QUESTIONS.find((q) => q.id === "q10_trial_interest")!,
+  // Owner callback details
+  {
+    id: "m_owner_name",
+    type: "text",
+    label: "Owner's name (so we can follow up directly)",
+    placeholder: "Owner's full name",
+  },
+  {
+    id: "m_owner_phone",
+    type: "text",
+    label: "Owner's phone number",
+    placeholder: "Best number to reach the owner",
+  },
+  {
+    id: "m_owner_email",
+    type: "text",
+    label: "Owner's email (optional)",
+    placeholder: "owner@business.co.uk",
+  },
+  {
+    id: "m_best_callback_time",
+    type: "text",
+    label: "Best time to call the owner",
+    placeholder: "e.g. weekday mornings",
+  },
+];
+
 const LEGACY_SURVEY_QUESTIONS: Question[] = [
   { id: "q1a_screen_use", type: "multi", label: "What do you use it for?", options: [
     { value: "promotions", label: "Promotions" },
