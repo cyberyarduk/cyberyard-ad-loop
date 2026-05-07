@@ -40,6 +40,7 @@ import NewResearchLead from "./pages/NewResearchLead";
 import ResearchLeadDetail from "./pages/ResearchLeadDetail";
 import ResearchAnalytics from "./pages/ResearchAnalytics";
 import PostTrialSurvey from "./pages/PostTrialSurvey";
+import PublicSurvey from "./pages/PublicSurvey";
 import CookieConsent from "@/components/CookieConsent";
 import { toast } from "sonner";
 
@@ -152,6 +153,7 @@ const App = () => (
             <Route path="/companies/:id" element={<ProtectedRoute requireSuperAdmin><CompanyDetail /></ProtectedRoute>} />
             <Route path="/companies/:id/edit" element={<ProtectedRoute requireSuperAdmin><CompanyForm /></ProtectedRoute>} />
 
+            <Route path="/survey" element={<PublicSurvey />} />
             <Route path="/player" element={<Player />} />
             <Route path="/player/:deviceId" element={<Player />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
