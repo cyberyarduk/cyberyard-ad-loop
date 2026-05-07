@@ -424,8 +424,16 @@ export const LEAD_STATUSES = [
 
 export const RESEARCH_BUSINESS_TYPES = BUSINESS_TYPES;
 
-// Helpers — work across current + legacy + post-trial questions
-const ALL_QUESTIONS = [...SURVEY_QUESTIONS, ...LEGACY_SURVEY_QUESTIONS, ...POST_TRIAL_QUESTIONS];
+// Helpers — work across current + manager + legacy + post-trial questions
+const MANAGER_ONLY_QUESTIONS = MANAGER_SURVEY_QUESTIONS.filter(
+  (mq) => !SURVEY_QUESTIONS.some((q) => q.id === mq.id),
+);
+const ALL_QUESTIONS = [
+  ...SURVEY_QUESTIONS,
+  ...MANAGER_ONLY_QUESTIONS,
+  ...LEGACY_SURVEY_QUESTIONS,
+  ...POST_TRIAL_QUESTIONS,
+];
 export function getQuestion(id: string) {
   return ALL_QUESTIONS.find((q) => q.id === id);
 }
@@ -438,7 +446,16 @@ export function getOptionLabel(qId: string, value: string): string {
 // Lookup the right question schema for a given stored response version.
 export function getQuestionsForVersion(version: string): Question[] {
   if (version === SURVEY_VERSION) return SURVEY_QUESTIONS;
+  if (version === MANAGER_SURVEY_VERSION) return MANAGER_SURVEY_QUESTIONS;
   if (version === POST_TRIAL_SURVEY_VERSION) return POST_TRIAL_QUESTIONS;
   // Legacy pre-trial responses (v1, v2-pre, etc.)
   return [...LEGACY_SURVEY_QUESTIONS, ...SURVEY_QUESTIONS];
 }
+
+export function getQuestionsForRole(role: RespondentRole): Question[] {
+  return role === "manager" ? MANAGER_SURVEY_QUESTIONS : SURVEY_QUESTIONS;
+}
+export function getVersionForRole(role: RespondentRole): string {
+  return role === "manager" ? MANAGER_SURVEY_VERSION : SURVEY_VERSION;
+}
+
