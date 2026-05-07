@@ -11,7 +11,7 @@ import { ArrowLeft, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { SURVEY_QUESTIONS, SURVEY_VERSION, RESEARCH_BUSINESS_TYPES } from "@/lib/survey";
+import { getQuestionsForRole, getVersionForRole, RESEARCH_BUSINESS_TYPES, type RespondentRole } from "@/lib/survey";
 
 const NewResearchLead = () => {
   const navigate = useNavigate();
