@@ -75,7 +75,7 @@ const AcceptableUsePolicy = () => {
           <section>
             <h2 className="text-2xl font-semibold mb-4">Reporting Violations</h2>
             <p>
-              If you believe a user is violating this policy, please report it to <a href="mailto:support@cyberyard.co.uk" className="text-primary hover:underline">support@cyberyard.co.uk</a>
+              If you believe a user is violating this policy, please report it to <a href="mailto:jason@cyberyard.co.uk" className="text-primary hover:underline">jason@cyberyard.co.uk</a>
             </p>
           </section>
 

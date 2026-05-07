@@ -103,7 +103,7 @@ const Unsubscribe = () => {
             <h1 className="text-2xl font-bold mb-3">Link invalid or expired</h1>
             <p className="text-muted-foreground mb-8">
               This unsubscribe link is no longer valid. Please email{" "}
-              <a href="mailto:privacy@cyberyard.co.uk" className="underline">privacy@cyberyard.co.uk</a>{" "}
+              <a href="mailto:jason@cyberyard.co.uk" className="underline">jason@cyberyard.co.uk</a>{" "}
               for help.
             </p>
             <Link to="/">
