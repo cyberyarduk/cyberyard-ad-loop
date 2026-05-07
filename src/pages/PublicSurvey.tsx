@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, ArrowRight, Check, Sparkles, Smartphone, Tv, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import logo from "@/assets/logo.png";
 import {
   getQuestionsForRole,
   getVersionForRole,
@@ -33,7 +34,7 @@ const INTRO_SLIDES = [
   {
     icon: Tv,
     title: "What we do",
-    body: "Cyberyard turns any screen in your shop into a smart promotional display. Snap a photo of a product, add a price, and instantly show it to your customers.",
+    body: "Cyberyard turns any screen in your shop into a smart promotional display. Snap a photo of a product, upload an image — or create an advert from scratch in seconds — and instantly show it to your customers.",
   },
   {
     icon: Smartphone,
