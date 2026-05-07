@@ -28,7 +28,10 @@ export type Question =
     };
 
 export const SURVEY_VERSION = "v3";
+export const MANAGER_SURVEY_VERSION = "v3_manager";
 export const POST_TRIAL_SURVEY_VERSION = "v2_post_trial";
+
+export type RespondentRole = "owner" | "manager";
 
 const yesNo: Choice[] = [
   { value: "yes", label: "Yes" },
