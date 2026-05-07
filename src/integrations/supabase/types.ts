@@ -728,12 +728,13 @@ export type Database = {
           city: string | null
           contact_name: string | null
           created_at: string
-          created_by_user_id: string
+          created_by_user_id: string | null
           email: string | null
           id: string
           is_trial_lead: boolean
           notes: string | null
           phone: string | null
+          source: string
           status: string
           updated_at: string
         }
@@ -744,12 +745,13 @@ export type Database = {
           city?: string | null
           contact_name?: string | null
           created_at?: string
-          created_by_user_id: string
+          created_by_user_id?: string | null
           email?: string | null
           id?: string
           is_trial_lead?: boolean
           notes?: string | null
           phone?: string | null
+          source?: string
           status?: string
           updated_at?: string
         }
@@ -760,12 +762,13 @@ export type Database = {
           city?: string | null
           contact_name?: string | null
           created_at?: string
-          created_by_user_id?: string
+          created_by_user_id?: string | null
           email?: string | null
           id?: string
           is_trial_lead?: boolean
           notes?: string | null
           phone?: string | null
+          source?: string
           status?: string
           updated_at?: string
         }
@@ -777,7 +780,7 @@ export type Database = {
           created_at: string
           id: string
           lead_id: string
-          submitted_by_user_id: string
+          submitted_by_user_id: string | null
           survey_version: string
         }
         Insert: {
@@ -785,7 +788,7 @@ export type Database = {
           created_at?: string
           id?: string
           lead_id: string
-          submitted_by_user_id: string
+          submitted_by_user_id?: string | null
           survey_version?: string
         }
         Update: {
@@ -793,7 +796,7 @@ export type Database = {
           created_at?: string
           id?: string
           lead_id?: string
-          submitted_by_user_id?: string
+          submitted_by_user_id?: string | null
           survey_version?: string
         }
         Relationships: [
