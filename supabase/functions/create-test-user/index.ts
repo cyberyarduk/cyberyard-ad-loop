@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
 
     // Create the test user
     const { data: user, error: createError } = await supabase.auth.admin.createUser({
-      email: "user@cyberyard.com",
+      email: "jason@cyberyard.co.uk",
       password: "password",
       email_confirm: true,
       user_metadata: {
@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         message: "Test user created",
-        email: "user@cyberyard.com",
+        email: "jason@cyberyard.co.uk",
         password: "password"
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

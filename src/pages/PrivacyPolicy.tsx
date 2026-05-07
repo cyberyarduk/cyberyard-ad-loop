@@ -151,7 +151,7 @@ const PrivacyPolicy = () => {
               <li>Transfer your data</li>
               <li>Object to processing</li>
             </ul>
-            <p className="mt-4">To exercise rights, email: <a href="mailto:privacy@cyberyard.co.uk" className="text-primary hover:underline">privacy@cyberyard.co.uk</a></p>
+            <p className="mt-4">To exercise rights, email: <a href="mailto:jason@cyberyard.co.uk" className="text-primary hover:underline">jason@cyberyard.co.uk</a></p>
           </section>
 
           <section>
@@ -183,7 +183,7 @@ const PrivacyPolicy = () => {
           <section>
             <h2 className="text-2xl font-semibold mb-4">10. Complaints</h2>
             <p>
-              You have the right to lodge a complaint with the UK Information Commissioner's Office (ICO) at <a href="https://ico.org.uk" target="_blank" rel="noreferrer" className="text-primary hover:underline">ico.org.uk</a>. We'd appreciate the chance to address concerns first — email <a href="mailto:privacy@cyberyard.co.uk" className="text-primary hover:underline">privacy@cyberyard.co.uk</a>.
+              You have the right to lodge a complaint with the UK Information Commissioner's Office (ICO) at <a href="https://ico.org.uk" target="_blank" rel="noreferrer" className="text-primary hover:underline">ico.org.uk</a>. We'd appreciate the chance to address concerns first — email <a href="mailto:jason@cyberyard.co.uk" className="text-primary hover:underline">jason@cyberyard.co.uk</a>.
             </p>
           </section>
 
@@ -192,7 +192,7 @@ const PrivacyPolicy = () => {
             <p>
               <strong>Cyberyard Limited</strong><br />
               Company No. 15430744 — Registered in England &amp; Wales<br />
-              Email: <a href="mailto:privacy@cyberyard.co.uk" className="text-primary hover:underline">privacy@cyberyard.co.uk</a>
+              Email: <a href="mailto:jason@cyberyard.co.uk" className="text-primary hover:underline">jason@cyberyard.co.uk</a>
             </p>
           </section>
         </div>

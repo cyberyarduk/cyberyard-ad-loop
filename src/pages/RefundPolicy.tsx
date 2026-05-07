@@ -72,7 +72,7 @@ const RefundPolicy = () => {
           <section>
             <h2 className="text-2xl font-semibold mb-4">Contact</h2>
             <p>
-              For questions about refunds or cancellations, please contact <a href="mailto:support@cyberyard.co.uk" className="text-primary hover:underline">support@cyberyard.co.uk</a>
+              For questions about refunds or cancellations, please contact <a href="mailto:jason@cyberyard.co.uk" className="text-primary hover:underline">jason@cyberyard.co.uk</a>
             </p>
           </section>
         </div>

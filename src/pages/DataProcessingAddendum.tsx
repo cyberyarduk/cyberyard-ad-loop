@@ -85,7 +85,7 @@ const DataProcessingAddendum = () => {
           <section>
             <h2 className="text-2xl font-semibold mb-4">Contact</h2>
             <p>
-              For DPA-related inquiries, please contact <a href="mailto:privacy@cyberyard.co.uk" className="text-primary hover:underline">privacy@cyberyard.co.uk</a>
+              For DPA-related inquiries, please contact <a href="mailto:jason@cyberyard.co.uk" className="text-primary hover:underline">jason@cyberyard.co.uk</a>
             </p>
           </section>
         </div>

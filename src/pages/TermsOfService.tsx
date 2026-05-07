@@ -123,7 +123,7 @@ const TermsOfService = () => {
             <h2 className="text-2xl font-semibold mb-4">10. Support &amp; Contact</h2>
             <p>
               <strong>Cyberyard Limited</strong> — Company No. 15430744, registered in England &amp; Wales.<br />
-              Email support: <a href="mailto:support@cyberyard.co.uk" className="text-primary hover:underline">support@cyberyard.co.uk</a>
+              Email support: <a href="mailto:jason@cyberyard.co.uk" className="text-primary hover:underline">jason@cyberyard.co.uk</a>
             </p>
           </section>
         </div>
