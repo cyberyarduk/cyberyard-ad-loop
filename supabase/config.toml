@@ -25,3 +25,5 @@ project_id = "coislwmlvrcgxdwcvoqu"
     verify_jwt = false
   [functions.handle-email-suppression]
     verify_jwt = false
+  [functions.submit-public-survey]
+    verify_jwt = false
