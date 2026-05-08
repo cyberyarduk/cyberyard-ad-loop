@@ -86,7 +86,7 @@ serve(async (req) => {
     // subtle eye-catcher. Old "bars" requests are silently upgraded to shine.
     const requestedOverlay = (overlayAnimation === 'bars' ? 'shine' : overlayAnimation);
     const overlayKind: string = requestedOverlay ?? (animatedOverlays ? 'shine' : 'none');
-    console.log('Generating video with params:', { hasImageUrl: !!imageUrl, hasImageUrlLandscape: !!imageUrlLandscape, hasImageData: !!imageData, mainText, subtext, duration, style, playlistId, deviceToken: !!deviceToken, customization, price, limitedOffer, badgeText, animatedOverlays, useImageAsIs });
+    console.log('Generating video with params:', { hasImageUrl: !!imageUrl, hasImageUrlLandscape: !!imageUrlLandscape, hasImageData: !!imageData, mainText, subtext, duration, style, playlistId, deviceToken: !!deviceToken, customization, price, limitedOffer, badgeText, animatedOverlays, overlayAnimation, overlayKind, useImageAsIs });
 
     // Resolve title/price: prefer explicit `price`, fall back to subtext for backward compat.
     const titleText = (mainText || '').toString().trim();
