@@ -55,6 +55,7 @@ const InputSchema = z.object({
   limitedOffer: z.boolean().optional(),
   badgeText: z.string().max(40).optional(),
   animatedOverlays: z.boolean().optional(),
+  overlayAnimation: z.enum(['none', 'bars', 'shine', 'pulse-border', 'sparkles', 'corner-burst']).optional(),
   useImageAsIs: z.boolean().optional(),
 });
 
@@ -80,7 +81,10 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    const { imageUrl, imageUrlLandscape, imageData, mainText, subtext, duration, style = 'boom', playlistId, deviceToken, customization, price, limitedOffer, badgeText, animatedOverlays = true, useImageAsIs = false } = parsedInput.data;
+    const { imageUrl, imageUrlLandscape, imageData, mainText, subtext, duration, style = 'boom', playlistId, deviceToken, customization, price, limitedOffer, badgeText, animatedOverlays = true, overlayAnimation, useImageAsIs = false } = parsedInput.data;
+    // Resolve which animated overlay to render. Backwards compat: if no
+    // explicit kind, fall back to "bars" (the original) when overlays on.
+    const overlayKind: string = overlayAnimation ?? (animatedOverlays ? 'bars' : 'none');
     console.log('Generating video with params:', { hasImageUrl: !!imageUrl, hasImageUrlLandscape: !!imageUrlLandscape, hasImageData: !!imageData, mainText, subtext, duration, style, playlistId, deviceToken: !!deviceToken, customization, price, limitedOffer, badgeText, animatedOverlays, useImageAsIs });
 
     // Resolve title/price: prefer explicit `price`, fall back to subtext for backward compat.
@@ -343,9 +347,9 @@ serve(async (req) => {
       // the AI poster text and looked cheap. The "limited offer" stamp is
       // now baked directly into the AI-generated poster image instead.
 
-      // Swiping accent bar — coloured stripe sliding across at intervals.
-      // Skipped entirely when overlays are disabled (e.g. for menus).
-      if (animatedOverlays) {
+      // Animated overlay — choice of motion effect on top of the poster.
+      // Skipped entirely when "none".
+      if (overlayKind === 'bars') {
         const barHtml = `<div class="bar"></div>`;
         const barH = isPortrait ? 24 : 20;
         const barCss = `.bar{width:100%;height:${barH}px;background:${accent};box-shadow:0 0 30px ${accent};}`;
@@ -366,6 +370,74 @@ serve(async (req) => {
             }]
           });
         }
+      } else if (overlayKind === 'shine') {
+        // Single big diagonal light sweep across the whole frame.
+        const shineW = Math.round(W * 0.35);
+        const shineHtml = `<div class="shine"></div>`;
+        const shineCss = `.shine{width:${shineW}px;height:${H * 1.4}px;background:linear-gradient(115deg,transparent 0%,rgba(255,255,255,0.25) 45%,rgba(255,255,255,0.65) 50%,rgba(255,255,255,0.25) 55%,transparent 100%);transform:skewX(-15deg);}`;
+        const sweepStarts = [0.6, videoDuration * 0.55].filter(s => s + 2 <= videoDuration);
+        for (const start of sweepStarts) {
+          tracks.push({
+            clips: [{
+              asset: { type: 'html', html: shineHtml, css: shineCss, width: shineW, height: H, background: 'transparent' },
+              start,
+              length: 2,
+              position: 'center',
+              transition: { in: 'slideRight', out: 'slideRight' },
+            }]
+          });
+        }
+      } else if (overlayKind === 'pulse-border') {
+        // Pulsing accent frame around the whole edge.
+        const borderW = isPortrait ? 14 : 12;
+        const borderHtml = `<div class="frame"></div>`;
+        const borderCss = `.frame{width:${W - borderW * 2}px;height:${H - borderW * 2}px;border:${borderW}px solid ${accent};box-shadow:0 0 60px ${accent},inset 0 0 60px ${accent};animation:pulse 1.4s ease-in-out infinite;}@keyframes pulse{0%,100%{opacity:0.5}50%{opacity:1}}`;
+        tracks.push({
+          clips: [{
+            asset: { type: 'html', html: borderHtml, css: borderCss, width: W, height: H, background: 'transparent' },
+            start: 0,
+            length: videoDuration,
+            position: 'center',
+            transition: { in: 'fade', out: 'fade' },
+          }]
+        });
+      } else if (overlayKind === 'sparkles') {
+        // Twinkling star particles scattered across the frame.
+        const points = Array.from({ length: 14 }).map(() => ({
+          x: Math.random() * 100, y: Math.random() * 100,
+          delay: (Math.random() * 2).toFixed(2),
+          size: 18 + Math.round(Math.random() * 18),
+        }));
+        const dots = points.map((p, i) => `<span class="s s${i}">★</span>`).join('');
+        const cssPoints = points.map((p, i) =>
+          `.s${i}{left:${p.x}%;top:${p.y}%;font-size:${p.size}px;animation-delay:${p.delay}s;}`
+        ).join('');
+        const sparkHtml = `<div class="wrap">${dots}</div>`;
+        const sparkCss = `.wrap{position:relative;width:${W}px;height:${H}px;}.s{position:absolute;color:#FFD24A;text-shadow:0 0 20px rgba(255,210,74,0.9);opacity:0;transform:translate(-50%,-50%) scale(0.4);animation:tw 2.4s ease-in-out infinite;}@keyframes tw{0%,100%{opacity:0;transform:translate(-50%,-50%) scale(0.4)}50%{opacity:1;transform:translate(-50%,-50%) scale(1)}}${cssPoints}`;
+        tracks.push({
+          clips: [{
+            asset: { type: 'html', html: sparkHtml, css: sparkCss, width: W, height: H, background: 'transparent' },
+            start: 0,
+            length: videoDuration,
+            position: 'center',
+            transition: { in: 'fade', out: 'fade' },
+          }]
+        });
+      } else if (overlayKind === 'corner-burst') {
+        // Flashing radial glow in the top-right corner.
+        const burstSize = Math.round(Math.min(W, H) * 0.55);
+        const burstHtml = `<div class="burst"></div>`;
+        const burstCss = `.burst{width:${burstSize}px;height:${burstSize}px;border-radius:50%;background:radial-gradient(circle,${accent} 0%,rgba(0,0,0,0) 70%);animation:flash 1.6s ease-in-out infinite;}@keyframes flash{0%,100%{opacity:0.25;transform:scale(0.85)}50%{opacity:0.9;transform:scale(1.05)}}`;
+        tracks.push({
+          clips: [{
+            asset: { type: 'html', html: burstHtml, css: burstCss, width: burstSize, height: burstSize, background: 'transparent' },
+            start: 0,
+            length: videoDuration,
+            position: 'topRight',
+            offset: { x: 0.04, y: -0.04 },
+            transition: { in: 'fade', out: 'fade' },
+          }]
+        });
       }
 
       // HERO POSTER — the AI-generated promo image with slow Ken Burns.

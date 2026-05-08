@@ -98,6 +98,7 @@ const CreateAIVideo = () => {
   const [limitedOffer, setLimitedOffer] = useState(false);
   const [badgeText, setBadgeText] = useState("TODAY ONLY");
   const [animatedOverlays, setAnimatedOverlays] = useState(true);
+  const [overlayAnimation, setOverlayAnimation] = useState<string>("bars");
 
   // Fetch playlists on mount
   useEffect(() => {
@@ -210,7 +211,8 @@ const CreateAIVideo = () => {
           playlistId: firstPlaylistId,
           limitedOffer,
           badgeText: limitedOffer ? badgeText.trim() : undefined,
-          animatedOverlays,
+          animatedOverlays: overlayAnimation !== "none",
+          overlayAnimation,
           customization: {
             fontFamily,
             textColor,
@@ -387,23 +389,37 @@ const CreateAIVideo = () => {
                 )}
               </div>
 
-              {/* Animated overlays toggle */}
-              <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-4">
-                <div className="flex items-center gap-3">
-                  <Checkbox
-                    id="animatedOverlays"
-                    checked={animatedOverlays}
-                    onCheckedChange={(v) => setAnimatedOverlays(v === true)}
-                  />
-                  <Label htmlFor="animatedOverlays" className="cursor-pointer font-medium">
-                    Add animated overlays (swiping bars, pulsing badge)
-                  </Label>
-                </div>
-                <p className="ml-7 text-xs text-muted-foreground">
-                  {animatedOverlays
-                    ? "Adds motion effects on top of the poster — great for offers."
-                    : "Clean & still — perfect for menus or static information."}
+              {/* Animated overlay style picker */}
+              <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+                <Label className="font-medium">Animated overlay style</Label>
+                <p className="text-xs text-muted-foreground">
+                  Choose the motion effect layered on top of your poster. Pick "None" for clean menus.
                 </p>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {[
+                    { value: "none", label: "None", desc: "Clean & still" },
+                    { value: "shine", label: "Light Shine", desc: "Single diagonal sweep" },
+                    { value: "pulse-border", label: "Pulse Border", desc: "Glowing accent frame" },
+                    { value: "sparkles", label: "Sparkles", desc: "Twinkling dots" },
+                    { value: "corner-burst", label: "Corner Burst", desc: "Flashing corner glow" },
+                    { value: "bars", label: "Swiping Bars", desc: "Original sliding stripes" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setOverlayAnimation(opt.value)}
+                      className={cn(
+                        "rounded-md border p-3 text-left text-sm transition-colors",
+                        overlayAnimation === opt.value
+                          ? "border-primary bg-primary/5 ring-2 ring-primary/30"
+                          : "border-border hover:border-primary/50"
+                      )}
+                    >
+                      <div className="font-medium">{opt.label}</div>
+                      <div className="text-xs text-muted-foreground">{opt.desc}</div>
+                    </button>
+                  ))}
+                </div>
               </div>
 
 
