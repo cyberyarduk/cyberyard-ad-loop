@@ -98,7 +98,7 @@ const CreateAIVideo = () => {
   const [limitedOffer, setLimitedOffer] = useState(false);
   const [badgeText, setBadgeText] = useState("TODAY ONLY");
   const [animatedOverlays, setAnimatedOverlays] = useState(true);
-  const [overlayAnimation, setOverlayAnimation] = useState<string>("bars");
+  const [overlayAnimation, setOverlayAnimation] = useState<string>("shine");
 
   // Fetch playlists on mount
   useEffect(() => {
