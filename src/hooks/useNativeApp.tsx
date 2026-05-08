@@ -63,9 +63,14 @@ export const useNativeApp = () => {
           console.log('Brightness control not available:', error);
         }
         
-        // Hide status bar for fullscreen experience
-        await StatusBar.hide();
-        console.log('[Native] Status bar hidden');
+        // Keep status bar visible so content respects the safe area (notch).
+        // We previously hid it, which caused content to render under the camera notch.
+        try {
+          await StatusBar.show();
+          await StatusBar.setStyle({ style: Style.Dark });
+        } catch (e) {
+          console.log('[Native] StatusBar config failed:', e);
+        }
         
         // Lock orientation to portrait
         await ScreenOrientation.lock({ orientation: 'portrait' });

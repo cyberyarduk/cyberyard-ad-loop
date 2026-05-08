@@ -203,7 +203,10 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background text-foreground antialiased overflow-x-hidden">
       {/* NAV — dark for logo contrast */}
-      <nav className="fixed top-0 w-full z-50 bg-foreground/95 backdrop-blur-xl border-b border-foreground/20">
+      <nav
+        className="fixed top-0 w-full z-50 bg-foreground/95 backdrop-blur-xl border-b border-foreground/20"
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+      >
         <div className="container mx-auto px-6 py-2">
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center gap-3">

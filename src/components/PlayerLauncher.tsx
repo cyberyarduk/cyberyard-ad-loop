@@ -20,7 +20,13 @@ const PlayerLauncher = ({ onChoose }: PlayerLauncherProps) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+    <div
+      className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
+      style={{
+        paddingTop: 'calc(1rem + env(safe-area-inset-top))',
+        paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))',
+      }}
+    >
       <div className="pointer-events-none absolute inset-0 -z-10 bg-wash-warm opacity-70" />
       <div className="w-full max-w-md">
         <div className="premium-card card-highlight rounded-3xl p-8 sm:p-10 space-y-8">
