@@ -62,8 +62,8 @@ const PortalLayout = ({ children, variant }: PortalLayoutProps) => {
     <div className="flex h-full min-h-0 flex-col overflow-y-auto pr-1">
       <div className="mb-4 shrink-0">
         <Link to={variant === "sales" ? "/sales" : "/admin"} className="block">
-          <div className="rounded-xl bg-foreground/95 px-3 py-2 flex items-center justify-center overflow-hidden h-10">
-            <img alt="Cyberyard" src={logo} className="block h-full w-auto max-w-[5.5rem] object-contain brightness-0 invert" />
+          <div className="rounded-2xl bg-foreground/95 px-4 py-4 flex items-center justify-center overflow-hidden">
+            <img alt="Cyberyard" src={logo} className="block h-auto w-full max-w-[6.75rem] object-contain brightness-0 invert" />
           </div>
         </Link>
         <div className="chip mt-3 bg-yellow-soft text-foreground/80">
@@ -118,8 +118,8 @@ const PortalLayout = ({ children, variant }: PortalLayoutProps) => {
           </SheetContent>
         </Sheet>
         <Link to={variant === "sales" ? "/sales" : "/admin"} className="ml-3 flex items-center gap-3 min-w-0">
-          <div className="rounded-xl bg-foreground/95 px-3 py-2 flex items-center justify-center shrink-0 overflow-hidden">
-            <img alt="Cyberyard" src={logo} className="block h-auto w-full max-w-[5.75rem] object-contain brightness-0 invert" />
+          <div className="rounded-lg bg-foreground/95 h-9 px-2.5 flex items-center justify-center shrink-0 overflow-hidden">
+            <img alt="Cyberyard" src={logo} className="block h-5 w-auto object-contain brightness-0 invert" />
           </div>
           <span className="text-sm font-semibold text-foreground truncate">{portalLabel}</span>
         </Link>

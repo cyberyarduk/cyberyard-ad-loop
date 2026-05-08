@@ -49,8 +49,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     <div className="flex h-full min-h-0 flex-col overflow-y-auto pr-1">
       <div className="mb-4 shrink-0">
         <Link to="/dashboard" className="block">
-          <div className="rounded-xl bg-foreground/95 px-3 py-2 flex items-center justify-center overflow-hidden h-10">
-            <img alt="Cyberyard" src={logo} className="block h-full w-auto max-w-[5.5rem] object-contain brightness-0 invert" />
+          <div className="rounded-2xl bg-foreground/95 px-4 py-4 flex items-center justify-center overflow-hidden">
+            <img alt="Cyberyard" src={logo} className="block h-auto w-full max-w-[6.75rem] object-contain brightness-0 invert" />
           </div>
         </Link>
         {!isSuperAdmin && company && (
@@ -108,8 +108,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           </SheetContent>
         </Sheet>
         <Link to="/dashboard" className="ml-3 flex items-center gap-3 min-w-0">
-          <div className="rounded-xl bg-foreground/95 px-3 py-2 flex items-center justify-center shrink-0 overflow-hidden">
-            <img alt="Cyberyard" src={logo} className="block h-auto w-full max-w-[5.75rem] object-contain brightness-0 invert" />
+          <div className="rounded-lg bg-foreground/95 h-9 px-2.5 flex items-center justify-center shrink-0 overflow-hidden">
+            <img alt="Cyberyard" src={logo} className="block h-5 w-auto object-contain brightness-0 invert" />
           </div>
           {!isSuperAdmin && company && (
             <span className="text-sm font-semibold text-foreground truncate">{company.name}</span>
