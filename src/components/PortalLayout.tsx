@@ -24,6 +24,7 @@ const PortalLayout = ({ children, variant }: PortalLayoutProps) => {
           { path: "/sales", icon: LayoutDashboard, label: "My Dashboard" },
           { path: "/sales/new-client", icon: UserPlus, label: "New Client" },
           { path: "/sales/clients", icon: Building2, label: "All Clients" },
+          { path: "/player", icon: Tv, label: "Media Player" },
         ]
       : [
           { path: "/admin", icon: LayoutDashboard, label: "Overview" },
@@ -33,6 +34,7 @@ const PortalLayout = ({ children, variant }: PortalLayoutProps) => {
           { path: "/admin/new-client", icon: Target, label: "Create Client" },
           { path: "/admin/research", icon: ClipboardList, label: "Market Research" },
           { path: "/admin/research/analytics", icon: BarChart3, label: "Research Analytics" },
+          { path: "/player", icon: Tv, label: "Media Player" },
         ];
 
   const portalLabel = variant === "sales" ? "Salesperson Portal" : "Admin Portal";
