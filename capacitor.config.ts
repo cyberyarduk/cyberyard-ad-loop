@@ -9,10 +9,10 @@ const config: CapacitorConfig = {
     captureInput: true
   },
   ios: {
-    contentInset: 'never',
+    contentInset: 'always',
     limitsNavigationsToAppBoundDomains: false,
     backgroundColor: '#000000',
-    scrollEnabled: false
+    scrollEnabled: true
   },
   plugins: {
     SplashScreen: {
