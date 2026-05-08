@@ -208,7 +208,7 @@ const CreateAIVideo = () => {
           subtext,
           duration,
           style,
-          playlistId: firstPlaylistId,
+          ...(firstPlaylistId ? { playlistId: firstPlaylistId } : {}),
           limitedOffer,
           badgeText: limitedOffer ? badgeText.trim() : undefined,
           animatedOverlays: overlayAnimation !== "none",
