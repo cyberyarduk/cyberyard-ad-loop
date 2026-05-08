@@ -17,6 +17,20 @@ const PlayerPairing = ({ onPaired }: PlayerPairingProps) => {
   const [deviceCode, setDeviceCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'choose' | 'manual' | 'qr'>('choose');
+  const navigate = useNavigate();
+  const tapCountRef = useRef(0);
+  const tapTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleSecretTap = () => {
+    tapCountRef.current += 1;
+    if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
+    tapTimerRef.current = setTimeout(() => { tapCountRef.current = 0; }, 1500);
+    if (tapCountRef.current >= 4) {
+      tapCountRef.current = 0;
+      toast.success("Exiting media player…");
+      navigate("/auth");
+    }
+  };
 
   const handlePairing = async () => {
     if (!deviceCode.trim()) {
