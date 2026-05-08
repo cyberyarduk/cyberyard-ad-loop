@@ -108,8 +108,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           </SheetContent>
         </Sheet>
         <Link to="/dashboard" className="ml-3 flex items-center gap-3 min-w-0">
-          <div className="rounded-xl bg-foreground/95 px-3 py-2 flex items-center justify-center shrink-0 overflow-hidden">
-            <img alt="Cyberyard" src={logo} className="block h-auto w-full max-w-[5.75rem] object-contain brightness-0 invert" />
+          <div className="rounded-lg bg-foreground/95 h-9 px-2.5 flex items-center justify-center shrink-0 overflow-hidden">
+            <img alt="Cyberyard" src={logo} className="block h-5 w-auto object-contain brightness-0 invert" />
           </div>
           {!isSuperAdmin && company && (
             <span className="text-sm font-semibold text-foreground truncate">{company.name}</span>
