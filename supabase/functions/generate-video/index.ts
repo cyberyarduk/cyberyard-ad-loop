@@ -86,7 +86,7 @@ serve(async (req) => {
     // subtle eye-catcher. Old "bars" requests are silently upgraded to shine.
     const requestedOverlay = (overlayAnimation === 'bars' ? 'shine' : overlayAnimation);
     const overlayKind: string = requestedOverlay ?? (animatedOverlays ? 'shine' : 'none');
-    console.log('Generating video with params:', { hasImageUrl: !!imageUrl, hasImageUrlLandscape: !!imageUrlLandscape, hasImageData: !!imageData, mainText, subtext, duration, style, playlistId, deviceToken: !!deviceToken, customization, price, limitedOffer, badgeText, animatedOverlays, useImageAsIs });
+    console.log('Generating video with params:', { hasImageUrl: !!imageUrl, hasImageUrlLandscape: !!imageUrlLandscape, hasImageData: !!imageData, mainText, subtext, duration, style, playlistId, deviceToken: !!deviceToken, customization, price, limitedOffer, badgeText, animatedOverlays, overlayAnimation, overlayKind, useImageAsIs });
 
     // Resolve title/price: prefer explicit `price`, fall back to subtext for backward compat.
     const titleText = (mainText || '').toString().trim();
@@ -380,20 +380,25 @@ serve(async (req) => {
         });
       } else if (overlayKind === 'confetti') {
         // Falling colourful specks — celebratory, perfect for offers.
-        const colors = ['#FF3B30', '#FFD60A', '#30D158', '#0A84FF', '#FF2D87', '#FFFFFF'];
-        const pieces = Array.from({ length: 22 }).map((_, i) => ({
+        // Many pieces, varied sizes, several start with zero delay so confetti
+        // is visible from the very first frame.
+        const colors = ['#FF3B30', '#FFD60A', '#30D158', '#0A84FF', '#FF2D87', '#FFFFFF', '#FF9F0A', '#BF5AF2'];
+        const pieces = Array.from({ length: 60 }).map((_, i) => ({
           x: Math.random() * 100,
-          delay: (Math.random() * 3).toFixed(2),
-          dur: (3 + Math.random() * 3).toFixed(2),
+          // Stagger but keep ~third of pieces with no delay so the effect
+          // is unmistakably visible immediately.
+          delay: (i < 20 ? 0 : Math.random() * 2.5).toFixed(2),
+          dur: (2.5 + Math.random() * 2.5).toFixed(2),
           color: colors[i % colors.length],
-          size: 8 + Math.round(Math.random() * 8),
+          size: 10 + Math.round(Math.random() * 10),
+          rot: Math.round(Math.random() * 360),
         }));
         const dots = pieces.map((_, i) => `<span class="c c${i}"></span>`).join('');
         const cssPieces = pieces.map((p, i) =>
-          `.c${i}{left:${p.x}%;width:${p.size}px;height:${p.size}px;background:${p.color};animation-delay:${p.delay}s;animation-duration:${p.dur}s;}`
+          `.c${i}{left:${p.x}%;width:${p.size}px;height:${p.size}px;background:${p.color};animation-delay:${p.delay}s;animation-duration:${p.dur}s;transform:rotate(${p.rot}deg);}`
         ).join('');
         const html = `<div class="wrap">${dots}</div>`;
-        const css = `.wrap{position:relative;width:${W}px;height:${H}px;overflow:hidden;}.c{position:absolute;top:-20px;border-radius:2px;animation:fall linear infinite;}@keyframes fall{0%{transform:translateY(-40px) rotate(0deg);opacity:0}10%{opacity:1}100%{transform:translateY(${H + 40}px) rotate(540deg);opacity:0.8}}${cssPieces}`;
+        const css = `.wrap{position:relative;width:${W}px;height:${H}px;overflow:hidden;}.c{display:block;position:absolute;top:-30px;border-radius:2px;animation:fall linear infinite;will-change:transform,opacity;}@keyframes fall{0%{transform:translateY(-40px) rotate(0deg);opacity:0}8%{opacity:1}100%{transform:translateY(${H + 60}px) rotate(720deg);opacity:0.9}}${cssPieces}`;
         tracks.push({
           clips: [{
             asset: { type: 'html', html, css, width: W, height: H, background: 'transparent' },
