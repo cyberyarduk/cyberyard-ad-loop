@@ -398,11 +398,15 @@ const CreateAIVideo = () => {
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {[
                     { value: "none", label: "None", desc: "Clean & still" },
-                    { value: "shine", label: "Light Shine", desc: "Single diagonal sweep" },
+                    { value: "shine", label: "Light Shine", desc: "Soft diagonal sweep" },
                     { value: "pulse-border", label: "Pulse Border", desc: "Glowing accent frame" },
-                    { value: "sparkles", label: "Sparkles", desc: "Twinkling dots" },
+                    { value: "sparkles", label: "Sparkles", desc: "Twinkling stars" },
                     { value: "corner-burst", label: "Corner Burst", desc: "Flashing corner glow" },
-                    { value: "bars", label: "Swiping Bars", desc: "Original sliding stripes" },
+                    { value: "spotlight", label: "Spotlight", desc: "Moving radial light" },
+                    { value: "zoom-rings", label: "Zoom Rings", desc: "Pulsing ripple from centre" },
+                    { value: "confetti", label: "Confetti", desc: "Falling colour specks" },
+                    { value: "neon-flicker", label: "Neon Flicker", desc: "Buzzing neon outline" },
+                    { value: "color-pulse", label: "Colour Pulse", desc: "Gentle full-frame glow" },
                   ].map((opt) => (
                     <button
                       key={opt.value}
