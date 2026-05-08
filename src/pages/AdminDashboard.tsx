@@ -89,8 +89,7 @@ const AdminDashboard = () => {
     try {
       sessionStorage.setItem("cyberyard_demo_mode", "1");
     } catch { /* ignore */ }
-    toast.success("Opening Demo Mode in a new tab.");
-    window.open("/dashboard", "_blank", "noopener");
+    navigate("/dashboard");
   };
 
   return (
