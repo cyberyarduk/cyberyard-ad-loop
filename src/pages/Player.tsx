@@ -100,6 +100,21 @@ const Player = () => {
     return <PlayerVideo authToken={authToken} deviceInfo={deviceInfo} />;
   }
 
+  // Show launcher: choose between media player or portal sign-in
+  if (!launcherChoice) {
+    return (
+      <PlayerLauncher
+        onChoose={(mode) => {
+          if (mode === "portal") {
+            navigate("/auth");
+          } else {
+            setLauncherChoice("player");
+          }
+        }}
+      />
+    );
+  }
+
   // Otherwise, show pairing screen
   return <PlayerPairing onPaired={handlePaired} />;
 };
