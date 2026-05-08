@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,6 +6,7 @@ import { QrCode, Keyboard, Tv, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { BarcodeScanner } from '@capacitor-mlkit/barcode-scanning';
 import { Capacitor } from '@capacitor/core';
+import { useNavigate } from "react-router-dom";
 import logo from "@/assets/logo.png";
 
 interface PlayerPairingProps {
