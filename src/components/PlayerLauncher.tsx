@@ -48,7 +48,7 @@ const PlayerLauncher = ({ onChoose }: PlayerLauncherProps) => {
           </div>
 
           <p className="text-xs text-center text-muted-foreground">
-            You can switch modes any time by reopening the app.
+            You can switch between Player and Portal at any time from the bottom navigation bar.
           </p>
         </div>
       </div>
