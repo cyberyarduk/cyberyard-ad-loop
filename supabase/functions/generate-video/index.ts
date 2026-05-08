@@ -55,7 +55,7 @@ const InputSchema = z.object({
   limitedOffer: z.boolean().optional(),
   badgeText: z.string().max(40).optional(),
   animatedOverlays: z.boolean().optional(),
-  overlayAnimation: z.enum(['none', 'bars', 'shine', 'pulse-border', 'sparkles', 'corner-burst']).optional(),
+  overlayAnimation: z.enum(['none', 'shine', 'pulse-border', 'sparkles', 'corner-burst', 'spotlight', 'zoom-rings', 'confetti', 'neon-flicker', 'color-pulse']).optional(),
   useImageAsIs: z.boolean().optional(),
 });
 
