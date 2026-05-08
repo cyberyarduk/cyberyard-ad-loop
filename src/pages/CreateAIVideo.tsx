@@ -226,7 +226,14 @@ const CreateAIVideo = () => {
 
       const data = await response.json();
 
-      if (!response.ok) throw new Error(data?.error || "Video generation failed");
+      if (!response.ok) {
+        const fieldErrors = data?.details?.fieldErrors
+          ? Object.entries(data.details.fieldErrors as Record<string, string[]>)
+              .map(([k, v]) => `${k}: ${(v || []).join(', ')}`)
+              .join(' • ')
+          : '';
+        throw new Error(`${data?.error || "Video generation failed"}${fieldErrors ? ` — ${fieldErrors}` : ''}`);
+      }
 
       if (data?.success) {
         const extraPlaylistIds = selectedPlaylistIds.slice(1);
