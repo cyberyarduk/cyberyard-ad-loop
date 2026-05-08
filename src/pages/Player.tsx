@@ -1,20 +1,25 @@
 import { useState, useEffect } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import PlayerPairing from "./PlayerPairing";
 import PlayerVideo from "./PlayerVideo";
 import PlayerSplash from "@/components/PlayerSplash";
+import PlayerLauncher from "@/components/PlayerLauncher";
 import { useNativeApp } from "@/hooks/useNativeApp";
 import { toast } from "sonner";
 
 const Player = () => {
   const { deviceId } = useParams();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [deviceInfo, setDeviceInfo] = useState<any>(null);
   const [autoPairing, setAutoPairing] = useState(false);
   const [showSplash, setShowSplash] = useState(() => {
     const splashShown = sessionStorage.getItem('splash_shown');
     return !splashShown;
+  });
+  const [launcherChoice, setLauncherChoice] = useState<"player" | null>(() => {
+    return localStorage.getItem('cyberyard_device_token') ? "player" : null;
   });
 
   // Initialize native app features (fullscreen, orientation lock, etc.)
