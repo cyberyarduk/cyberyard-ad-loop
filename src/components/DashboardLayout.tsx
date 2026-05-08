@@ -49,8 +49,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     <>
       <div className="mb-6 shrink-0">
         <Link to="/dashboard" className="block">
-          <div className="rounded-2xl bg-foreground/95 px-4 py-4 flex items-center justify-center">
-            <img alt="Cyberyard" src={logo} className="h-14 w-auto object-contain brightness-0 invert" />
+          <div className="rounded-2xl bg-foreground/95 px-4 py-5 flex items-center justify-center overflow-hidden">
+            <img alt="Cyberyard" src={logo} className="block h-auto w-full max-w-[9.5rem] object-contain brightness-0 invert" />
           </div>
         </Link>
         {!isSuperAdmin && company && (
@@ -103,13 +103,13 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               <Menu className="h-6 w-6" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-72 p-5 flex flex-col bg-background">
+          <SheetContent side="left" className="w-72 p-5 flex h-full flex-col overflow-hidden bg-background">
             {sidebarContent}
           </SheetContent>
         </Sheet>
         <Link to="/dashboard" className="ml-3 flex items-center gap-3 min-w-0">
-          <div className="rounded-xl bg-foreground/95 px-3 py-1.5 flex items-center justify-center shrink-0">
-            <img alt="Cyberyard" src={logo} className="h-7 w-auto object-contain brightness-0 invert" />
+          <div className="rounded-xl bg-foreground/95 px-3 py-2 flex items-center justify-center shrink-0 overflow-hidden">
+            <img alt="Cyberyard" src={logo} className="block h-auto w-full max-w-[7.25rem] object-contain brightness-0 invert" />
           </div>
           {!isSuperAdmin && company && (
             <span className="text-sm font-semibold text-foreground truncate">{company.name}</span>
@@ -118,7 +118,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       </header>
 
       {/* Desktop Sidebar — glass card style */}
-      <aside className="hidden lg:flex fixed left-4 top-4 bottom-4 w-60 glass-card rounded-2xl p-5 flex-col z-40">
+      <aside className="hidden lg:flex fixed left-4 top-4 bottom-4 w-60 glass-card rounded-2xl p-5 flex-col overflow-hidden z-40">
         {sidebarContent}
       </aside>
 
