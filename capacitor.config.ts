@@ -8,6 +8,12 @@ const config: CapacitorConfig = {
     allowMixedContent: true,
     captureInput: true
   },
+  ios: {
+    contentInset: 'never',
+    limitsNavigationsToAppBoundDomains: false,
+    backgroundColor: '#000000',
+    scrollEnabled: false
+  },
   plugins: {
     SplashScreen: {
       launchAutoHide: false,
@@ -15,12 +21,14 @@ const config: CapacitorConfig = {
       launchFadeOutDuration: 500,
       androidScaleType: 'CENTER_CROP',
       androidSplashResourceName: 'splash',
+      iosSpinnerStyle: 'small',
       backgroundColor: '#000000',
       showSpinner: false
     },
     StatusBar: {
       style: 'DARK',
-      backgroundColor: '#000000'
+      backgroundColor: '#000000',
+      overlaysWebView: false
     }
   }
 };
