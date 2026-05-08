@@ -127,7 +127,25 @@ const PortalLayout = ({ children, variant }: PortalLayoutProps) => {
         {sidebarContent}
       </aside>
 
-      <main className="lg:ml-[17rem] pt-20 lg:pt-8 px-4 lg:pr-8 pb-12">{children}</main>
+      <main className="lg:ml-[17rem] pt-20 lg:pt-8 px-4 lg:pr-8 pb-28 lg:pb-12">{children}</main>
+
+      <BottomNav
+        items={
+          variant === "sales"
+            ? [
+                { path: "/sales", icon: LayoutDashboard, label: "Home" },
+                { path: "/sales/clients", icon: Building2, label: "Clients" },
+                { path: "/sales/new-client", icon: UserPlus, label: "New" },
+                { path: "/player", icon: Tv, label: "Player" },
+              ]
+            : [
+                { path: "/admin", icon: LayoutDashboard, label: "Home" },
+                { path: "/companies", icon: Building2, label: "Clients" },
+                { path: "/admin/research", icon: ClipboardList, label: "Research" },
+                { path: "/player", icon: Tv, label: "Player" },
+              ]
+        }
+      />
     </div>
   );
 };
