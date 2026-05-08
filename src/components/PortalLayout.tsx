@@ -60,10 +60,10 @@ const PortalLayout = ({ children, variant }: PortalLayoutProps) => {
 
   const sidebarContent = (
     <>
-      <div className="mb-6">
+      <div className="mb-6 shrink-0">
         <Link to={variant === "sales" ? "/sales" : "/admin"} className="block">
-          <div className="rounded-2xl bg-foreground/95 px-4 py-6 flex items-center justify-center">
-            <img alt="Cyberyard" src={logo} className="h-20 w-auto object-contain brightness-0 invert" />
+          <div className="rounded-2xl bg-foreground/95 px-4 py-5 flex items-center justify-center overflow-hidden">
+            <img alt="Cyberyard" src={logo} className="block h-auto w-full max-w-[9.5rem] object-contain brightness-0 invert" />
           </div>
         </Link>
         <div className="chip mt-3 bg-yellow-soft text-foreground/80">
@@ -76,13 +76,13 @@ const PortalLayout = ({ children, variant }: PortalLayoutProps) => {
         )}
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto">
+      <nav className="flex-1 min-h-0 space-y-1 overflow-y-auto pr-1">
         {navItems.map((item) => (
           <NavButton key={item.path} item={item} onClick={() => setMobileOpen(false)} />
         ))}
       </nav>
 
-      <div className="border-t border-border/60 pt-3 space-y-1">
+      <div className="border-t border-border/60 pt-3 space-y-1 shrink-0">
         {profile && (
           <div className="px-3 mb-2">
             <p className="text-sm font-medium truncate">{profile.full_name || profile.email}</p>
@@ -113,19 +113,19 @@ const PortalLayout = ({ children, variant }: PortalLayoutProps) => {
               <Menu className="h-6 w-6" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-72 p-5 flex flex-col bg-background">
+          <SheetContent side="left" className="w-72 p-5 flex h-full flex-col overflow-hidden bg-background">
             {sidebarContent}
           </SheetContent>
         </Sheet>
         <Link to={variant === "sales" ? "/sales" : "/admin"} className="ml-3 flex items-center gap-3 min-w-0">
-          <div className="rounded-xl bg-foreground/95 px-3 py-1.5 flex items-center justify-center shrink-0">
-            <img alt="Cyberyard" src={logo} className="h-7 w-auto object-contain brightness-0 invert" />
+          <div className="rounded-xl bg-foreground/95 px-3 py-2 flex items-center justify-center shrink-0 overflow-hidden">
+            <img alt="Cyberyard" src={logo} className="block h-auto w-full max-w-[7.25rem] object-contain brightness-0 invert" />
           </div>
           <span className="text-sm font-semibold text-foreground truncate">{portalLabel}</span>
         </Link>
       </header>
 
-      <aside className="hidden lg:flex fixed left-4 top-4 bottom-4 w-60 glass-card rounded-2xl p-5 flex-col z-40">
+      <aside className="hidden lg:flex fixed left-4 top-4 bottom-4 w-60 glass-card rounded-2xl p-5 flex-col overflow-hidden z-40">
         {sidebarContent}
       </aside>
 
