@@ -350,28 +350,87 @@ serve(async (req) => {
 
       // Animated overlay — choice of motion effect on top of the poster.
       // Skipped entirely when "none".
-      if (overlayKind === 'bars') {
-        const barHtml = `<div class="bar"></div>`;
-        const barH = isPortrait ? 24 : 20;
-        const barCss = `.bar{width:100%;height:${barH}px;background:${accent};box-shadow:0 0 30px ${accent};}`;
-        const swipes = [
-          { start: 0.4, dir: 'slideRight' as const, y: -0.18 },
-          { start: videoDuration * 0.55, dir: 'slideLeft' as const, y: 0.22 },
-        ];
-        for (const s of swipes) {
-          if (s.start + 1.4 > videoDuration) continue;
-          tracks.push({
-            clips: [{
-              asset: { type: 'html', html: barHtml, css: barCss, width: W, height: barH, background: 'transparent' },
-              start: s.start,
-              length: 1.4,
-              position: 'center',
-              offset: { x: 0, y: s.y },
-              transition: { in: s.dir, out: 'fade' },
-            }]
-          });
-        }
-      } else if (overlayKind === 'shine') {
+      if (overlayKind === 'spotlight') {
+        // Soft moving radial light that drifts across the poster — pulls
+        // the eye without obscuring the artwork.
+        const spotSize = Math.round(Math.min(W, H) * 0.65);
+        const spotHtml = `<div class="spot"></div>`;
+        const spotCss = `.spot{width:${spotSize}px;height:${spotSize}px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,0.35) 0%,rgba(255,255,255,0) 70%);animation:drift ${Math.max(6, videoDuration)}s ease-in-out infinite;}@keyframes drift{0%{transform:translate(-25%,-15%)}50%{transform:translate(25%,15%)}100%{transform:translate(-25%,-15%)}}`;
+        tracks.push({
+          clips: [{
+            asset: { type: 'html', html: spotHtml, css: spotCss, width: W, height: H, background: 'transparent' },
+            start: 0,
+            length: videoDuration,
+            position: 'center',
+            transition: { in: 'fade', out: 'fade' },
+          }]
+        });
+      } else if (overlayKind === 'zoom-rings') {
+        // Concentric rings rippling out from the centre — strong attention grabber.
+        const ringHtml = `<div class="r r1"></div><div class="r r2"></div><div class="r r3"></div>`;
+        const ringCss = `.r{position:absolute;left:50%;top:50%;width:80px;height:80px;margin:-40px 0 0 -40px;border:4px solid ${accent};border-radius:50%;opacity:0;animation:ring 2.4s ease-out infinite;box-shadow:0 0 30px ${accent};}.r2{animation-delay:0.8s}.r3{animation-delay:1.6s}@keyframes ring{0%{transform:scale(0.4);opacity:0.9}100%{transform:scale(8);opacity:0}}`;
+        tracks.push({
+          clips: [{
+            asset: { type: 'html', html: `<div style="position:relative;width:${W}px;height:${H}px">${ringHtml}</div>`, css: ringCss, width: W, height: H, background: 'transparent' },
+            start: 0,
+            length: videoDuration,
+            position: 'center',
+            transition: { in: 'fade', out: 'fade' },
+          }]
+        });
+      } else if (overlayKind === 'confetti') {
+        // Falling colourful specks — celebratory, perfect for offers.
+        const colors = ['#FF3B30', '#FFD60A', '#30D158', '#0A84FF', '#FF2D87', '#FFFFFF'];
+        const pieces = Array.from({ length: 22 }).map((_, i) => ({
+          x: Math.random() * 100,
+          delay: (Math.random() * 3).toFixed(2),
+          dur: (3 + Math.random() * 3).toFixed(2),
+          color: colors[i % colors.length],
+          size: 8 + Math.round(Math.random() * 8),
+        }));
+        const dots = pieces.map((_, i) => `<span class="c c${i}"></span>`).join('');
+        const cssPieces = pieces.map((p, i) =>
+          `.c${i}{left:${p.x}%;width:${p.size}px;height:${p.size}px;background:${p.color};animation-delay:${p.delay}s;animation-duration:${p.dur}s;}`
+        ).join('');
+        const html = `<div class="wrap">${dots}</div>`;
+        const css = `.wrap{position:relative;width:${W}px;height:${H}px;overflow:hidden;}.c{position:absolute;top:-20px;border-radius:2px;animation:fall linear infinite;}@keyframes fall{0%{transform:translateY(-40px) rotate(0deg);opacity:0}10%{opacity:1}100%{transform:translateY(${H + 40}px) rotate(540deg);opacity:0.8}}${cssPieces}`;
+        tracks.push({
+          clips: [{
+            asset: { type: 'html', html, css, width: W, height: H, background: 'transparent' },
+            start: 0,
+            length: videoDuration,
+            position: 'center',
+            transition: { in: 'fade', out: 'fade' },
+          }]
+        });
+      } else if (overlayKind === 'neon-flicker') {
+        // Buzzing neon outline — like a shop sign at night.
+        const bw = isPortrait ? 10 : 8;
+        const html = `<div class="frame"></div>`;
+        const css = `.frame{width:${W - bw * 2}px;height:${H - bw * 2}px;border:${bw}px solid ${accent};border-radius:6px;box-shadow:0 0 20px ${accent},0 0 50px ${accent},inset 0 0 20px ${accent};animation:flick 3.2s steps(1,end) infinite;}@keyframes flick{0%,18%,22%,25%,53%,57%,100%{opacity:1}19%,21%,55%{opacity:0.4}20%,56%{opacity:0.85}}`;
+        tracks.push({
+          clips: [{
+            asset: { type: 'html', html, css, width: W, height: H, background: 'transparent' },
+            start: 0,
+            length: videoDuration,
+            position: 'center',
+            transition: { in: 'fade', out: 'fade' },
+          }]
+        });
+      } else if (overlayKind === 'color-pulse') {
+        // Very gentle full-frame accent glow that breathes in and out.
+        const html = `<div class="wash"></div>`;
+        const css = `.wash{width:${W}px;height:${H}px;background:radial-gradient(ellipse at center, rgba(255,255,255,0) 40%, ${accent} 130%);mix-blend-mode:screen;opacity:0.0;animation:breath 3.6s ease-in-out infinite;}@keyframes breath{0%,100%{opacity:0.0}50%{opacity:0.55}}`;
+        tracks.push({
+          clips: [{
+            asset: { type: 'html', html, css, width: W, height: H, background: 'transparent' },
+            start: 0,
+            length: videoDuration,
+            position: 'center',
+            transition: { in: 'fade', out: 'fade' },
+          }]
+        });
+      }
         // Single big diagonal light sweep across the whole frame.
         const shineW = Math.round(W * 0.35);
         const shineHtml = `<div class="shine"></div>`;
