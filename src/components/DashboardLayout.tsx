@@ -122,7 +122,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         {sidebarContent}
       </aside>
 
-      <main className="lg:ml-[17rem] pt-20 lg:pt-8 px-4 lg:pr-8 pb-28 lg:pb-12">
+      <main className="lg:ml-[17rem] pt-20 lg:pt-8 px-4 lg:pr-8 pb-28">
         <DemoModeBanner />
         {children}
       </main>
@@ -131,6 +131,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         items={[
           { path: "/dashboard", icon: LayoutDashboard, label: "Home" },
           { path: "/devices", icon: Monitor, label: "Devices" },
+          { path: "/videos/create-ai", icon: Video, label: "Create" },
           { path: "/playlists", icon: List, label: "Playlists" },
           { path: "/player", icon: Tv, label: "Player" },
         ]}

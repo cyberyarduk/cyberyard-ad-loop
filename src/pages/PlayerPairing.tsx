@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,6 +6,7 @@ import { QrCode, Keyboard, Tv, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { BarcodeScanner } from '@capacitor-mlkit/barcode-scanning';
 import { Capacitor } from '@capacitor/core';
+import { useNavigate } from "react-router-dom";
 import logo from "@/assets/logo.png";
 
 interface PlayerPairingProps {
@@ -16,6 +17,20 @@ const PlayerPairing = ({ onPaired }: PlayerPairingProps) => {
   const [deviceCode, setDeviceCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'choose' | 'manual' | 'qr'>('choose');
+  const navigate = useNavigate();
+  const tapCountRef = useRef(0);
+  const tapTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleSecretTap = () => {
+    tapCountRef.current += 1;
+    if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
+    tapTimerRef.current = setTimeout(() => { tapCountRef.current = 0; }, 1500);
+    if (tapCountRef.current >= 4) {
+      tapCountRef.current = 0;
+      toast.success("Exiting media player…");
+      navigate("/auth");
+    }
+  };
 
   const handlePairing = async () => {
     if (!deviceCode.trim()) {
@@ -137,7 +152,7 @@ const PlayerPairing = ({ onPaired }: PlayerPairingProps) => {
         <div className="w-full max-w-md">
           <div className="premium-card card-highlight rounded-3xl p-8 sm:p-10 space-y-8">
             <div className="text-center space-y-3">
-              <img src={logo} alt="Cyberyard" className="h-16 mx-auto" />
+              <img src={logo} alt="Cyberyard" className="h-16 mx-auto cursor-pointer select-none" onClick={handleSecretTap} />
               <div className="chip bg-mint text-foreground/80">
                 <Tv className="h-3.5 w-3.5" />
                 Device Setup
@@ -191,7 +206,7 @@ const PlayerPairing = ({ onPaired }: PlayerPairingProps) => {
       <div className="w-full max-w-md">
         <div className="premium-card card-highlight rounded-3xl p-8 sm:p-10 space-y-6">
           <div className="text-center space-y-3">
-            <img src={logo} alt="Cyberyard" className="h-14 mx-auto" />
+            <img src={logo} alt="Cyberyard" className="h-14 mx-auto cursor-pointer select-none" onClick={handleSecretTap} />
             <div className="chip bg-lavender text-foreground/80">
               <Keyboard className="h-3.5 w-3.5" />
               Manual Pairing
