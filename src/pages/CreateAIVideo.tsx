@@ -174,9 +174,11 @@ const CreateAIVideo = () => {
     try {
       toast.info("Uploading image...");
 
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) throw new Error("Not authenticated");
       const fileExt = imageFile.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-      const filePath = `offer-images/${fileName}`;
+      const filePath = `${currentUser.id}/offer-images/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('videos')
