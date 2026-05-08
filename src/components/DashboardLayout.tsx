@@ -96,7 +96,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       <div className="pointer-events-none fixed inset-0 -z-10 bg-background/30" />
 
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 h-16 border-b border-border/60 bg-background/80 backdrop-blur-xl flex items-center px-4 z-50">
+      <header
+        className="lg:hidden fixed top-0 left-0 right-0 border-b border-border/60 bg-background/80 backdrop-blur-xl flex items-center px-4 z-50"
+        style={{ paddingTop: 'env(safe-area-inset-top)', height: 'calc(4rem + env(safe-area-inset-top))' }}
+      >
         <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon">
@@ -122,7 +125,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         {sidebarContent}
       </aside>
 
-      <main className="lg:ml-[17rem] pt-20 lg:pt-8 px-4 lg:pr-8 pb-28">
+      <main
+        className="lg:ml-[17rem] lg:pt-8 px-4 lg:pr-8 pb-28"
+        style={{ paddingTop: 'calc(5rem + env(safe-area-inset-top))' }}
+      >
         <DemoModeBanner />
         {children}
       </main>
