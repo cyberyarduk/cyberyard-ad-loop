@@ -206,7 +206,7 @@ const PlayerPairing = ({ onPaired }: PlayerPairingProps) => {
       <div className="w-full max-w-md">
         <div className="premium-card card-highlight rounded-3xl p-8 sm:p-10 space-y-6">
           <div className="text-center space-y-3">
-            <img src={logo} alt="Cyberyard" className="h-14 mx-auto" />
+            <img src={logo} alt="Cyberyard" className="h-14 mx-auto cursor-pointer select-none" onClick={handleSecretTap} />
             <div className="chip bg-lavender text-foreground/80">
               <Keyboard className="h-3.5 w-3.5" />
               Manual Pairing
