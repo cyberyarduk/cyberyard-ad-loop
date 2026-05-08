@@ -430,7 +430,7 @@ serve(async (req) => {
             transition: { in: 'fade', out: 'fade' },
           }]
         });
-      }
+      } else if (overlayKind === 'shine') {
         // Single big diagonal light sweep across the whole frame.
         const shineW = Math.round(W * 0.35);
         const shineHtml = `<div class="shine"></div>`;
