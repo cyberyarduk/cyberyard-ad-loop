@@ -2,11 +2,12 @@ import { ReactNode, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { LayoutDashboard, Video, List, Monitor, LogOut, Building2, Settings, Menu } from "lucide-react";
+import { LayoutDashboard, Video, List, Monitor, LogOut, Building2, Settings, Menu, Tv } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/logo.png";
 import DemoModeBanner from "@/components/DemoModeBanner";
 import ResetPasswordButton from "@/components/ResetPasswordButton";
+import BottomNav from "@/components/BottomNav";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -121,10 +122,19 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         {sidebarContent}
       </aside>
 
-      <main className="lg:ml-[17rem] pt-20 lg:pt-8 px-4 lg:pr-8 pb-12">
+      <main className="lg:ml-[17rem] pt-20 lg:pt-8 px-4 lg:pr-8 pb-28 lg:pb-12">
         <DemoModeBanner />
         {children}
       </main>
+
+      <BottomNav
+        items={[
+          { path: "/dashboard", icon: LayoutDashboard, label: "Home" },
+          { path: "/devices", icon: Monitor, label: "Devices" },
+          { path: "/playlists", icon: List, label: "Playlists" },
+          { path: "/player", icon: Tv, label: "Player" },
+        ]}
+      />
     </div>
   );
 };

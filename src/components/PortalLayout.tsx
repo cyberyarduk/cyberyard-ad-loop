@@ -2,10 +2,11 @@ import { ReactNode, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { LayoutDashboard, Users, UserPlus, LogOut, Menu, Target, Building2, ClipboardList, BarChart3 } from "lucide-react";
+import { LayoutDashboard, Users, UserPlus, LogOut, Menu, Target, Building2, ClipboardList, BarChart3, Tv } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/logo.png";
 import ResetPasswordButton from "@/components/ResetPasswordButton";
+import BottomNav from "@/components/BottomNav";
 
 interface PortalLayoutProps {
   children: ReactNode;
@@ -23,6 +24,7 @@ const PortalLayout = ({ children, variant }: PortalLayoutProps) => {
           { path: "/sales", icon: LayoutDashboard, label: "My Dashboard" },
           { path: "/sales/new-client", icon: UserPlus, label: "New Client" },
           { path: "/sales/clients", icon: Building2, label: "All Clients" },
+          { path: "/player", icon: Tv, label: "Media Player" },
         ]
       : [
           { path: "/admin", icon: LayoutDashboard, label: "Overview" },
@@ -32,6 +34,7 @@ const PortalLayout = ({ children, variant }: PortalLayoutProps) => {
           { path: "/admin/new-client", icon: Target, label: "Create Client" },
           { path: "/admin/research", icon: ClipboardList, label: "Market Research" },
           { path: "/admin/research/analytics", icon: BarChart3, label: "Research Analytics" },
+          { path: "/player", icon: Tv, label: "Media Player" },
         ];
 
   const portalLabel = variant === "sales" ? "Salesperson Portal" : "Admin Portal";
@@ -126,7 +129,25 @@ const PortalLayout = ({ children, variant }: PortalLayoutProps) => {
         {sidebarContent}
       </aside>
 
-      <main className="lg:ml-[17rem] pt-20 lg:pt-8 px-4 lg:pr-8 pb-12">{children}</main>
+      <main className="lg:ml-[17rem] pt-20 lg:pt-8 px-4 lg:pr-8 pb-28 lg:pb-12">{children}</main>
+
+      <BottomNav
+        items={
+          variant === "sales"
+            ? [
+                { path: "/sales", icon: LayoutDashboard, label: "Home" },
+                { path: "/sales/clients", icon: Building2, label: "Clients" },
+                { path: "/sales/new-client", icon: UserPlus, label: "New" },
+                { path: "/player", icon: Tv, label: "Player" },
+              ]
+            : [
+                { path: "/admin", icon: LayoutDashboard, label: "Home" },
+                { path: "/companies", icon: Building2, label: "Clients" },
+                { path: "/admin/research", icon: ClipboardList, label: "Research" },
+                { path: "/player", icon: Tv, label: "Player" },
+              ]
+        }
+      />
     </div>
   );
 };
