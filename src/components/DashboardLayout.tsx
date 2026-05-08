@@ -47,10 +47,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   const sidebarContent = (
     <>
-      <div className="mb-6">
+      <div className="mb-6 shrink-0">
         <Link to="/dashboard" className="block">
-          <div className="rounded-2xl bg-foreground/95 px-4 py-6 flex items-center justify-center">
-            <img alt="Cyberyard" src={logo} className="h-20 w-auto object-contain brightness-0 invert" />
+          <div className="rounded-2xl bg-foreground/95 px-4 py-4 flex items-center justify-center">
+            <img alt="Cyberyard" src={logo} className="h-14 w-auto object-contain brightness-0 invert" />
           </div>
         </Link>
         {!isSuperAdmin && company && (
@@ -58,13 +58,13 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         )}
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto">
+      <nav className="flex-1 min-h-0 space-y-1 overflow-y-auto">
         {navItems.map((item) => (
           <NavButton key={item.path} item={item} onClick={() => setMobileMenuOpen(false)} />
         ))}
       </nav>
 
-      <div className="border-t border-border/60 pt-3 space-y-1">
+      <div className="border-t border-border/60 pt-3 space-y-1 shrink-0">
         {profile && (
           <div className="px-3 mb-2">
             <p className="text-sm font-medium truncate">{profile.full_name || profile.email}</p>
