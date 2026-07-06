@@ -203,8 +203,58 @@ const DeviceShowcase = () => {
   );
 };
 
+const MobileNav = () => {
+  const [open, setOpen] = useState(false);
+  const links = [
+    { href: "#features", label: "Features" },
+    { href: "#how-it-works", label: "How it works" },
+    { href: "#use-cases", label: "Use cases" },
+    { href: "#contact", label: "Contact us" },
+  ];
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon" className="text-background hover:bg-background/10">
+          <Menu className="h-6 w-6" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="right" className="w-72 bg-foreground text-background border-foreground/20 p-0">
+        <div className="flex flex-col h-full">
+          <div className="flex items-center justify-between p-6 border-b border-background/15">
+            <span className="font-semibold">Menu</span>
+            <Button variant="ghost" size="icon" onClick={() => setOpen(false)} className="text-background hover:bg-background/10">
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+          <nav className="flex-1 p-6 space-y-1">
+            {links.map((l) => (
+              <a
+                key={l.href}
+                href={l.href}
+                onClick={() => setOpen(false)}
+                className="block py-3 text-lg font-medium text-background/80 hover:text-background transition-colors border-b border-background/10"
+              >
+                {l.label}
+              </a>
+            ))}
+          </nav>
+          <div className="p-6 border-t border-background/15">
+            <Link to="/auth" onClick={() => setOpen(false)}>
+              <Button className="w-full rounded-full bg-yellow-bright text-foreground hover:bg-yellow-bright/90 font-semibold">
+                Login
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+};
+
 const Index = () => {
   return (
+
     <div className="min-h-screen bg-background text-foreground antialiased overflow-x-hidden">
       {/* NAV — dark for logo contrast */}
       <nav
