@@ -625,8 +625,9 @@ const Index = () => {
               <div className="relative grid md:grid-cols-2 gap-12 items-center">
                 <div>
                   <span className="chip bg-background/10 text-background border border-background/20 mb-5">
-                    Get in touch
+                    Contact us
                   </span>
+
                   <h2 className="text-3xl md:text-5xl font-semibold tracking-tight">
                     Ready to <span className="text-yellow-bright">light up</span> your shop?
                   </h2>
