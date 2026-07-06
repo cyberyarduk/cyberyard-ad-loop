@@ -232,13 +232,20 @@ const MobileNav = () => {
               <a
                 key={l.href}
                 href={l.href}
-                onClick={() => setOpen(false)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setOpen(false);
+                  setTimeout(() => {
+                    window.location.href = l.href;
+                  }, 200);
+                }}
                 className="block py-3 text-lg font-medium text-background/80 hover:text-background transition-colors border-b border-background/10"
               >
                 {l.label}
               </a>
             ))}
           </nav>
+
           <div className="p-6 border-t border-background/15">
             <Link to="/auth" onClick={() => setOpen(false)}>
               <Button className="w-full rounded-full bg-yellow-bright text-foreground hover:bg-yellow-bright/90 font-semibold">
