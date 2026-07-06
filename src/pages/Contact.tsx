@@ -29,26 +29,33 @@ const Contact = () => {
     }
     setSubmitting(true);
     try {
-      // 1. Notify Jason (template has fixed `to`)
-      const { error: notifyErr } = await supabase.functions.invoke(
-        "send-transactional-email",
-        {
-          body: {
-            templateName: "contact-notification",
-            templateData: { name, email, company, phone, message, source: initialSource },
-          },
-        }
-      );
-      if (notifyErr) throw notifyErr;
+      // 1. Store in database (source of truth)
+      const { error: insertErr } = await supabase.from("contact_messages").insert({
+        name,
+        email,
+        company: company || null,
+        phone: phone || null,
+        message,
+        source: initialSource,
+        user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+      });
+      if (insertErr) throw insertErr;
 
-      // 2. Send confirmation to the visitor
-      await supabase.functions.invoke("send-transactional-email", {
+      // 2. Fire email notifications (don't block on delivery)
+      supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "contact-notification",
+          templateData: { name, email, company, phone, message, source: initialSource },
+        },
+      }).catch((e) => console.error("notification email failed", e));
+
+      supabase.functions.invoke("send-transactional-email", {
         body: {
           templateName: "contact-confirmation",
           recipientEmail: email,
           templateData: { name: name.split(" ")[0] || name, message },
         },
-      });
+      }).catch((e) => console.error("confirmation email failed", e));
 
       setSent(true);
     } catch (err: any) {
