@@ -660,14 +660,16 @@ const Index = () => {
                 TVs, tablets, phones, laptops — all from one dashboard.
               </p>
             </div>
-            <div className="md:col-span-2 md:col-start-7">
+            <div className="md:col-span-2">
               <p className="text-xs uppercase tracking-[0.15em] font-semibold text-background mb-4">Product</p>
               <div className="space-y-2.5">
                 <a href="#features" className="block text-sm text-background/70 hover:text-background link-underline">Features</a>
                 <a href="#how-it-works" className="block text-sm text-background/70 hover:text-background link-underline">How it works</a>
                 <a href="#use-cases" className="block text-sm text-background/70 hover:text-background link-underline">Use cases</a>
+                <a href="#contact" className="block text-sm text-background/70 hover:text-background link-underline">Contact us</a>
               </div>
             </div>
+
             <div className="md:col-span-2">
               <p className="text-xs uppercase tracking-[0.15em] font-semibold text-background mb-4">Legal</p>
               <div className="space-y-2.5">
