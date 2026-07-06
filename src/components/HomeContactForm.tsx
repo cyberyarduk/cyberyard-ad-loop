@@ -22,21 +22,32 @@ const HomeContactForm = () => {
     }
     setSubmitting(true);
     try {
-      const { error } = await supabase.functions.invoke("send-transactional-email", {
+      // Store in database (source of truth)
+      const { error: insertError } = await supabase.from("contact_messages").insert({
+        name,
+        email,
+        company: company || null,
+        message,
+        source: "Homepage form",
+        user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+      });
+      if (insertError) throw insertError;
+
+      // Fire-and-forget email notifications (don't block success on email delivery)
+      supabase.functions.invoke("send-transactional-email", {
         body: {
           templateName: "contact-notification",
           templateData: { name, email, company, message, source: "Homepage form" },
         },
-      });
-      if (error) throw error;
+      }).catch((e) => console.error("notification email failed", e));
 
-      await supabase.functions.invoke("send-transactional-email", {
+      supabase.functions.invoke("send-transactional-email", {
         body: {
           templateName: "contact-confirmation",
           recipientEmail: email,
           templateData: { name: name.split(" ")[0] || name, message },
         },
-      });
+      }).catch((e) => console.error("confirmation email failed", e));
 
       setSent(true);
     } catch (err) {
