@@ -237,14 +237,20 @@ const Index = () => {
                 </Button>
               </Link>
             </div>
-            <Link to="/auth" className="md:hidden">
-              <Button size="sm" className="bg-yellow-bright text-foreground hover:bg-yellow-bright/90 rounded-full">
-                Login
-              </Button>
-            </Link>
+
+            {/* Mobile menu */}
+            <div className="md:hidden flex items-center gap-2">
+              <Link to="/auth">
+                <Button size="sm" className="bg-yellow-bright text-foreground hover:bg-yellow-bright/90 rounded-full">
+                  Login
+                </Button>
+              </Link>
+              <MobileNav />
+            </div>
           </div>
         </div>
       </nav>
+
 
       {/* HERO */}
       <section className="relative pt-32 md:pt-40 pb-32 md:pb-40 px-6 overflow-hidden">
