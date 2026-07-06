@@ -26,10 +26,14 @@ import {
   Play,
   Wifi,
   Cloud,
+  Menu,
+  X,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 import HomeContactForm from "@/components/HomeContactForm";
 import Reveal from "@/components/premium/Reveal";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+
 
 const stats = [
   { value: "3-in-1", label: "Available on Web, App Store & Google Play" },
@@ -199,8 +203,65 @@ const DeviceShowcase = () => {
   );
 };
 
+const MobileNav = () => {
+  const [open, setOpen] = useState(false);
+  const links = [
+    { href: "#features", label: "Features" },
+    { href: "#how-it-works", label: "How it works" },
+    { href: "#use-cases", label: "Use cases" },
+    { href: "#contact", label: "Contact us" },
+  ];
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon" className="text-background hover:bg-background/10">
+          <Menu className="h-6 w-6" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="right" className="w-72 bg-foreground text-background border-foreground/20 p-0">
+        <div className="flex flex-col h-full">
+          <div className="flex items-center justify-between p-6 border-b border-background/15">
+            <span className="font-semibold">Menu</span>
+            <Button variant="ghost" size="icon" onClick={() => setOpen(false)} className="text-background hover:bg-background/10">
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+          <nav className="flex-1 p-6 space-y-1">
+            {links.map((l) => (
+              <a
+                key={l.href}
+                href={l.href}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setOpen(false);
+                  setTimeout(() => {
+                    window.location.href = l.href;
+                  }, 200);
+                }}
+                className="block py-3 text-lg font-medium text-background/80 hover:text-background transition-colors border-b border-background/10"
+              >
+                {l.label}
+              </a>
+            ))}
+          </nav>
+
+          <div className="p-6 border-t border-background/15">
+            <Link to="/auth" onClick={() => setOpen(false)}>
+              <Button className="w-full rounded-full bg-yellow-bright text-foreground hover:bg-yellow-bright/90 font-semibold">
+                Login
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+};
+
 const Index = () => {
   return (
+
     <div className="min-h-screen bg-background text-foreground antialiased overflow-x-hidden">
       {/* NAV — dark for logo contrast */}
       <nav
@@ -233,14 +294,20 @@ const Index = () => {
                 </Button>
               </Link>
             </div>
-            <Link to="/auth" className="md:hidden">
-              <Button size="sm" className="bg-yellow-bright text-foreground hover:bg-yellow-bright/90 rounded-full">
-                Login
-              </Button>
-            </Link>
+
+            {/* Mobile menu */}
+            <div className="md:hidden flex items-center gap-2">
+              <Link to="/auth">
+                <Button size="sm" className="bg-yellow-bright text-foreground hover:bg-yellow-bright/90 rounded-full">
+                  Login
+                </Button>
+              </Link>
+              <MobileNav />
+            </div>
           </div>
         </div>
       </nav>
+
 
       {/* HERO */}
       <section className="relative pt-32 md:pt-40 pb-32 md:pb-40 px-6 overflow-hidden">
@@ -558,8 +625,9 @@ const Index = () => {
               <div className="relative grid md:grid-cols-2 gap-12 items-center">
                 <div>
                   <span className="chip bg-background/10 text-background border border-background/20 mb-5">
-                    Get in touch
+                    Contact us
                   </span>
+
                   <h2 className="text-3xl md:text-5xl font-semibold tracking-tight">
                     Ready to <span className="text-yellow-bright">light up</span> your shop?
                   </h2>
@@ -600,14 +668,16 @@ const Index = () => {
                 TVs, tablets, phones, laptops — all from one dashboard.
               </p>
             </div>
-            <div className="md:col-span-2 md:col-start-7">
+            <div className="md:col-span-2">
               <p className="text-xs uppercase tracking-[0.15em] font-semibold text-background mb-4">Product</p>
               <div className="space-y-2.5">
                 <a href="#features" className="block text-sm text-background/70 hover:text-background link-underline">Features</a>
                 <a href="#how-it-works" className="block text-sm text-background/70 hover:text-background link-underline">How it works</a>
                 <a href="#use-cases" className="block text-sm text-background/70 hover:text-background link-underline">Use cases</a>
+                <a href="#contact" className="block text-sm text-background/70 hover:text-background link-underline">Contact us</a>
               </div>
             </div>
+
             <div className="md:col-span-2">
               <p className="text-xs uppercase tracking-[0.15em] font-semibold text-background mb-4">Legal</p>
               <div className="space-y-2.5">
