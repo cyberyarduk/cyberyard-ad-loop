@@ -1,0 +1,10 @@
+REVOKE EXECUTE ON FUNCTION public.create_company_credits() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.deduct_credits(uuid, integer, uuid, text) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.hash_device_admin_pin() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.hash_pin(text) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.verify_pin(text, text) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.get_user_role(uuid) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.is_super_admin(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_user_role(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_super_admin(uuid) TO authenticated;
