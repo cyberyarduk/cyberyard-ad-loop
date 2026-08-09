@@ -135,7 +135,10 @@ const PortalLayout = ({ children, variant }: PortalLayoutProps) => {
         {sidebarContent}
       </aside>
 
-      <main className="lg:ml-[17rem] pt-20 lg:pt-8 px-4 lg:pr-8 pb-28">{children}</main>
+      <main
+        className="lg:ml-[17rem] lg:pt-8 px-4 lg:pr-8 pb-28 overflow-y-auto"
+        style={{ paddingTop: 'calc(5.5rem + env(safe-area-inset-top, 0px))' }}
+      >{children}</main>
 
       <BottomNav
         items={
