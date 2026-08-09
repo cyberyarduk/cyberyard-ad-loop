@@ -106,7 +106,13 @@ const PortalLayout = ({ children, variant }: PortalLayoutProps) => {
       <div className="pointer-events-none fixed inset-0 -z-10 bg-wash-warm opacity-80" />
       <div className="pointer-events-none fixed inset-0 -z-10 bg-background/30" />
 
-      <header className="lg:hidden fixed top-0 left-0 right-0 h-16 border-b border-border/60 bg-background/80 backdrop-blur-xl flex items-center px-4 z-50">
+      <header
+        className="lg:hidden fixed top-0 left-0 right-0 border-b border-border/60 bg-background/80 backdrop-blur-xl flex items-center px-4 z-50"
+        style={{
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.5rem)',
+          height: 'calc(4rem + env(safe-area-inset-top, 0px) + 0.5rem)',
+        }}
+      >
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon">
