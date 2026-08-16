@@ -27,6 +27,8 @@ import DataProcessingAddendum from "./pages/DataProcessingAddendum";
 import RefundPolicy from "./pages/RefundPolicy";
 import AcceptableUsePolicy from "./pages/AcceptableUsePolicy";
 import Contact from "./pages/Contact";
+import Support from "./pages/Support";
+import DeleteAccount from "./pages/DeleteAccount";
 import Unsubscribe from "./pages/Unsubscribe";
 import SalesDashboard from "./pages/SalesDashboard";
 import SalesClients from "./pages/SalesClients";
@@ -163,6 +165,8 @@ const App = () => (
             <Route path="/refund-policy" element={<RefundPolicy />} />
             <Route path="/acceptable-use-policy" element={<AcceptableUsePolicy />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/support" element={<Support />} />
+            <Route path="/delete-account" element={<DeleteAccount />} />
             <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
