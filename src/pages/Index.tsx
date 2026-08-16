@@ -692,6 +692,8 @@ const Index = () => {
               <div className="space-y-2.5">
                 <Link to="/data-processing-addendum" className="block text-sm text-background/70 hover:text-background link-underline">Data Processing</Link>
                 <Link to="/acceptable-use-policy" className="block text-sm text-background/70 hover:text-background link-underline">Acceptable Use</Link>
+                <Link to="/support" className="block text-sm text-background/70 hover:text-background link-underline">Support</Link>
+                <Link to="/delete-account" className="block text-sm text-background/70 hover:text-background link-underline">Delete Account</Link>
                 <Link to="/auth" className="block text-sm text-background/70 hover:text-background link-underline">Login</Link>
               </div>
             </div>
