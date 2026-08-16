@@ -15,6 +15,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { Link } from "react-router-dom";
+
 
 const Settings = () => {
   const { profile } = useAuth();
@@ -228,7 +230,33 @@ const Settings = () => {
             </form>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Support &amp; Account</CardTitle>
+            <CardDescription>
+              Get help, read our policies, or close your account
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
+              <Link to="/support" className="text-primary hover:underline">Support &amp; help</Link>
+              <Link to="/privacy-policy" className="text-primary hover:underline">Privacy Policy</Link>
+              <Link to="/terms-of-service" className="text-primary hover:underline">Terms of Service</Link>
+              <Link to="/acceptable-use-policy" className="text-primary hover:underline">Acceptable Use</Link>
+            </div>
+            <div className="pt-2 border-t">
+              <p className="text-muted-foreground mb-3">
+                You can request permanent deletion of your account and data at any time.
+              </p>
+              <Link to="/delete-account">
+                <Button variant="outline">Delete my account</Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
     </DashboardLayout>
   );
 };
