@@ -136,6 +136,12 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         {children}
       </main>
 
+      <GettingStartedTutorial
+        open={tutorialOpen}
+        onOpenChange={setTutorialOpen}
+        onFinish={markTutorialComplete}
+      />
+
       <BottomNav
         items={[
           { path: "/dashboard", icon: LayoutDashboard, label: "Home" },
