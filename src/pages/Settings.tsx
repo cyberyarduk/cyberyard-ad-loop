@@ -233,6 +233,20 @@ const Settings = () => {
 
         <Card>
           <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <GraduationCap className="h-5 w-5" /> Getting started tutorial
+            </CardTitle>
+            <CardDescription>
+              A quick walkthrough of creating an advert, building a playlist and setting up a screen
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => setTutorialOpen(true)}>Show me how it works</Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>Support &amp; Account</CardTitle>
             <CardDescription>
               Get help, read our policies, or close your account
