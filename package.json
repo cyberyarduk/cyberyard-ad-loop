@@ -8,7 +8,8 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "ios:fix": "node scripts/ios-fix.mjs"
   },
   "dependencies": {
     "@capacitor-community/keep-awake": "^7.1.0",
