@@ -1,4 +1,6 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import GettingStartedTutorial from "@/components/GettingStartedTutorial";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -17,6 +19,22 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const location = useLocation();
   const { isSuperAdmin, signOut, profile, company } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
+
+  useEffect(() => {
+    if (profile && !profile.tutorial_completed_at && !isSuperAdmin) {
+      setTutorialOpen(true);
+    }
+  }, [profile, isSuperAdmin]);
+
+  const markTutorialComplete = async () => {
+    if (!profile || profile.tutorial_completed_at) return;
+    profile.tutorial_completed_at = new Date().toISOString();
+    await supabase
+      .from("profiles")
+      .update({ tutorial_completed_at: profile.tutorial_completed_at } as never)
+      .eq("id", profile.id);
+  };
 
   const navItems = [
     { path: "/dashboard", icon: LayoutDashboard, label: "Home" },
@@ -135,6 +153,12 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         <DemoModeBanner />
         {children}
       </main>
+
+      <GettingStartedTutorial
+        open={tutorialOpen}
+        onOpenChange={setTutorialOpen}
+        onFinish={markTutorialComplete}
+      />
 
       <BottomNav
         items={[

@@ -14,8 +14,9 @@ import { DashboardAnalytics } from "@/components/DashboardAnalytics";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { Upload, X, Image as ImageIcon, GraduationCap } from "lucide-react";
 import { Link } from "react-router-dom";
+import GettingStartedTutorial from "@/components/GettingStartedTutorial";
 
 
 const Settings = () => {
@@ -25,6 +26,7 @@ const Settings = () => {
   const [loading, setLoading] = useState(false);
   const [fallbackUrl, setFallbackUrl] = useState<string>("");
   const [fallbackUploading, setFallbackUploading] = useState(false);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
 
   useEffect(() => {
     const loadFallback = async () => {
@@ -233,6 +235,20 @@ const Settings = () => {
 
         <Card>
           <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <GraduationCap className="h-5 w-5" /> Getting started tutorial
+            </CardTitle>
+            <CardDescription>
+              A quick walkthrough of creating an advert, building a playlist and setting up a screen
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => setTutorialOpen(true)}>Show me how it works</Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>Support &amp; Account</CardTitle>
             <CardDescription>
               Get help, read our policies, or close your account
@@ -257,6 +273,7 @@ const Settings = () => {
         </Card>
       </div>
 
+      <GettingStartedTutorial open={tutorialOpen} onOpenChange={setTutorialOpen} />
     </DashboardLayout>
   );
 };
