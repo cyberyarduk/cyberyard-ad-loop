@@ -273,6 +273,7 @@ const Settings = () => {
         </Card>
       </div>
 
+      <GettingStartedTutorial open={tutorialOpen} onOpenChange={setTutorialOpen} />
     </DashboardLayout>
   );
 };
