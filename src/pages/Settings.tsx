@@ -26,6 +26,7 @@ const Settings = () => {
   const [loading, setLoading] = useState(false);
   const [fallbackUrl, setFallbackUrl] = useState<string>("");
   const [fallbackUploading, setFallbackUploading] = useState(false);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
 
   useEffect(() => {
     const loadFallback = async () => {
