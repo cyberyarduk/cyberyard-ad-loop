@@ -108,7 +108,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   );
 
   return (
-    <div className="min-h-screen relative">
+    <div className="native-app-shell min-h-screen relative">
       {/* Soft pastel wash matching homepage */}
       <div className="pointer-events-none fixed inset-0 -z-10 bg-wash-warm opacity-80" />
       <div className="pointer-events-none fixed inset-0 -z-10 bg-background/30" />
@@ -147,7 +147,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       </aside>
 
       <main
-        className="lg:ml-[17rem] lg:pt-8 px-4 lg:pr-8 pb-28 overflow-y-auto"
+        className="native-app-scroll lg:ml-[17rem] lg:pt-8 px-4 lg:pr-8 pb-28"
         style={{ paddingTop: 'calc(5.5rem + env(safe-area-inset-top, 0px))' }}
       >
         <DemoModeBanner />

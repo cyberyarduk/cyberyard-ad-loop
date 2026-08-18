@@ -94,6 +94,31 @@
     overscroll-behavior-y: none;
   }
 
+  html.capacitor-native,
+  html.capacitor-native body,
+  html.capacitor-native #root {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  html.capacitor-native body {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+  }
+
+  html.capacitor-native .native-app-shell {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  html.capacitor-native .native-app-scroll {
+    height: 100dvh;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
   /* Native feel: no text selection / callout on interactive chrome */
   button,
   a,
