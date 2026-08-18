@@ -14,6 +14,7 @@ interface Profile {
   email: string | null;
   full_name: string | null;
   must_change_password: boolean;
+  tutorial_completed_at?: string | null;
 }
 
 interface Company {
