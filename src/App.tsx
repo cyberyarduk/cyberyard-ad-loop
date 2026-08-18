@@ -44,7 +44,9 @@ import ResearchAnalytics from "./pages/ResearchAnalytics";
 import PostTrialSurvey from "./pages/PostTrialSurvey";
 import PublicSurvey from "./pages/PublicSurvey";
 import CookieConsent from "@/components/CookieConsent";
+import GlobalHaptics from "@/components/GlobalHaptics";
 import { toast } from "sonner";
+
 
 const queryClient = new QueryClient();
 const isNativeApp = Capacitor.isNativePlatform();
