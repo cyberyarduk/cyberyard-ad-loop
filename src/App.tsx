@@ -172,7 +172,9 @@ const App = () => (
             <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <GlobalHaptics />
           {!isNativeApp && <CookieConsent />}
+
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
