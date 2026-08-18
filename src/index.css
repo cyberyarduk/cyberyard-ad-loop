@@ -107,12 +107,12 @@
     width: 100%;
   }
 
-  .native-app-shell {
+  html.capacitor-native .native-app-shell {
     height: 100dvh;
     overflow: hidden;
   }
 
-  .native-app-scroll {
+  html.capacitor-native .native-app-scroll {
     height: 100dvh;
     overflow-y: auto;
     overscroll-behavior-y: contain;
