@@ -85,8 +85,32 @@
     font-feature-settings: 'cv11', 'ss01', 'ss03';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Native feel: stop iOS rubber-band scroll from dragging fixed bars */
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    overscroll-behavior-y: none;
+  }
+
+  /* Native feel: no text selection / callout on interactive chrome */
+  button,
+  a,
+  [role="button"] {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  input,
+  textarea,
+  [contenteditable="true"] {
+    -webkit-user-select: text;
+    user-select: text;
   }
 }
+
 
 @layer utilities {
   /* Soft pastel gradient washes */
