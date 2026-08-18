@@ -14,8 +14,9 @@ import { DashboardAnalytics } from "@/components/DashboardAnalytics";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { Upload, X, Image as ImageIcon, GraduationCap } from "lucide-react";
 import { Link } from "react-router-dom";
+import GettingStartedTutorial from "@/components/GettingStartedTutorial";
 
 
 const Settings = () => {
