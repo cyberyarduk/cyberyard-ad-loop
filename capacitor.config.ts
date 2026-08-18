@@ -9,7 +9,7 @@ const config: CapacitorConfig = {
     captureInput: true
   },
   ios: {
-    contentInset: 'always',
+    contentInset: 'never',
     limitsNavigationsToAppBoundDomains: false,
     backgroundColor: '#000000',
     scrollEnabled: true

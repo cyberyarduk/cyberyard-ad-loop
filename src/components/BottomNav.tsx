@@ -1,7 +1,6 @@
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { LucideIcon } from "lucide-react";
-import { hapticSelection } from "@/lib/haptics";
 
 export interface BottomNavItem {
   path: string;
@@ -39,7 +38,6 @@ const BottomNav = ({ items }: BottomNavProps) => {
             <Link
               key={item.path}
               to={item.path}
-              onClick={() => hapticSelection()}
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-all duration-150 active:scale-90 ${
                 isActive ? "text-primary" : "text-foreground/60"
               }`}
