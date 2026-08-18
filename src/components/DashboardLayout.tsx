@@ -19,6 +19,22 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const location = useLocation();
   const { isSuperAdmin, signOut, profile, company } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
+
+  useEffect(() => {
+    if (profile && !profile.tutorial_completed_at && !isSuperAdmin) {
+      setTutorialOpen(true);
+    }
+  }, [profile, isSuperAdmin]);
+
+  const markTutorialComplete = async () => {
+    if (!profile || profile.tutorial_completed_at) return;
+    profile.tutorial_completed_at = new Date().toISOString();
+    await supabase
+      .from("profiles")
+      .update({ tutorial_completed_at: profile.tutorial_completed_at } as never)
+      .eq("id", profile.id);
+  };
 
   const navItems = [
     { path: "/dashboard", icon: LayoutDashboard, label: "Home" },
