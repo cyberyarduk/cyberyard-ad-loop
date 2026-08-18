@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'app.cyberyard.player',
-  appName: 'Cyberyard Player',
+  appName: 'Cyberyard',
   webDir: 'dist',
   android: {
     allowMixedContent: true,
