@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { KeyRound, Video, ArrowLeft, Phone, Wifi, List, Activity, AlertTriangle, RefreshCw, QrCode, PlayCircle } from "lucide-react";
+import { KeyRound, Video, ArrowLeft, Phone, Wifi, List, Activity, AlertTriangle, RefreshCw, QrCode, PlayCircle, LogOut } from "lucide-react";
 import { Capacitor } from '@capacitor/core';
 import {
   AlertDialog,
@@ -31,6 +32,7 @@ interface PlayerAdminModeProps {
 }
 
 const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps) => {
+  const navigate = useNavigate();
   // DEBUG: Log to verify latest code is running - v2024-12-03
   console.log('[PlayerAdminMode] Component loaded - version 2024-12-03 with Manage Playlist Videos');
   
@@ -262,7 +264,7 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
 
   if (showHealthMonitor) {
     return (
-      <div className="min-h-screen bg-background p-4">
+      <div className="native-app-scroll min-h-screen bg-background p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(4rem+env(safe-area-inset-bottom))]">
         <div className="max-w-2xl mx-auto space-y-6 py-8">
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold">Device Health</h1>
@@ -279,7 +281,7 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
 
   if (showDiagnostics) {
     return (
-      <div className="min-h-screen bg-background p-4">
+      <div className="native-app-scroll min-h-screen bg-background p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(4rem+env(safe-area-inset-bottom))]">
         <div className="max-w-2xl mx-auto space-y-6 py-8">
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold">Connection Diagnostics</h1>
@@ -296,7 +298,7 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
 
   if (showRepairQR) {
     return (
-      <div className="min-h-screen bg-background p-4 flex items-center justify-center">
+      <div className="native-app-scroll min-h-screen bg-background p-4 flex items-center justify-center pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(4rem+env(safe-area-inset-bottom))]">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <CardTitle>Re-Pair Device</CardTitle>
@@ -325,7 +327,7 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
 
   if (!authenticated) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="native-app-scroll min-h-screen bg-background flex items-center justify-center p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(4rem+env(safe-area-inset-bottom))]">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <KeyRound className="mx-auto h-12 w-12 mb-4 text-primary" />
@@ -369,7 +371,7 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <div className="native-app-scroll min-h-screen bg-background p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(4rem+env(safe-area-inset-bottom))]">
       <div className="max-w-2xl mx-auto space-y-6 py-8">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Admin Tools</h1>
@@ -574,9 +576,24 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
           </AlertDialog>
         </div>
 
+        <div className="pt-2">
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={() => navigate("/auth")}
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Exit to Portal Login
+          </Button>
+          <p className="text-center text-xs text-muted-foreground mt-2">
+            Leaves media player mode and returns to the Cyberyard portal sign-in.
+          </p>
+        </div>
+
         <div className="text-center text-sm text-muted-foreground">
           Device: {deviceInfo.device_name}
         </div>
+
       </div>
     </div>
   );

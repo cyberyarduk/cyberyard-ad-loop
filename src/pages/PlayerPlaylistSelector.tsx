@@ -103,7 +103,7 @@ const PlayerPlaylistSelector = ({ authToken, deviceInfo, onBack, onPlaylistChang
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <div className="native-app-scroll min-h-screen bg-background p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(4rem+env(safe-area-inset-bottom))]">
       <div className="max-w-2xl mx-auto space-y-6 py-8">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Select Playlist</h1>
