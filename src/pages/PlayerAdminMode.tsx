@@ -574,9 +574,24 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
           </AlertDialog>
         </div>
 
+        <div className="pt-2">
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={() => navigate("/auth")}
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Exit to Portal Login
+          </Button>
+          <p className="text-center text-xs text-muted-foreground mt-2">
+            Leaves media player mode and returns to the Cyberyard portal sign-in.
+          </p>
+        </div>
+
         <div className="text-center text-sm text-muted-foreground">
           Device: {deviceInfo.device_name}
         </div>
+
       </div>
     </div>
   );
