@@ -262,7 +262,7 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
 
   if (showHealthMonitor) {
     return (
-      <div className="min-h-screen bg-background p-4">
+      <div className="native-app-scroll min-h-screen bg-background p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(4rem+env(safe-area-inset-bottom))]">
         <div className="max-w-2xl mx-auto space-y-6 py-8">
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold">Device Health</h1>
@@ -279,7 +279,7 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
 
   if (showDiagnostics) {
     return (
-      <div className="min-h-screen bg-background p-4">
+      <div className="native-app-scroll min-h-screen bg-background p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(4rem+env(safe-area-inset-bottom))]">
         <div className="max-w-2xl mx-auto space-y-6 py-8">
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold">Connection Diagnostics</h1>
@@ -296,7 +296,7 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
 
   if (showRepairQR) {
     return (
-      <div className="min-h-screen bg-background p-4 flex items-center justify-center">
+      <div className="native-app-scroll min-h-screen bg-background p-4 flex items-center justify-center pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(4rem+env(safe-area-inset-bottom))]">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <CardTitle>Re-Pair Device</CardTitle>
@@ -325,7 +325,7 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
 
   if (!authenticated) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="native-app-scroll min-h-screen bg-background flex items-center justify-center p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(4rem+env(safe-area-inset-bottom))]">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <KeyRound className="mx-auto h-12 w-12 mb-4 text-primary" />
@@ -369,7 +369,7 @@ const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <div className="native-app-scroll min-h-screen bg-background p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(4rem+env(safe-area-inset-bottom))]">
       <div className="max-w-2xl mx-auto space-y-6 py-8">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Admin Tools</h1>

@@ -127,7 +127,7 @@ const PlayerPlaylistManager = ({ authToken, deviceInfo, onBack }: PlayerPlaylist
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <div className="native-app-scroll min-h-screen bg-background p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(4rem+env(safe-area-inset-bottom))]">
       <div className="max-w-2xl mx-auto space-y-6 py-8">
         <div className="flex items-center gap-4">
           <Button variant="outline" onClick={onBack}>
