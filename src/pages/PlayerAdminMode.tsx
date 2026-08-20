@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { KeyRound, Video, ArrowLeft, Phone, Wifi, List, Activity, AlertTriangle, RefreshCw, QrCode, PlayCircle } from "lucide-react";
+import { KeyRound, Video, ArrowLeft, Phone, Wifi, List, Activity, AlertTriangle, RefreshCw, QrCode, PlayCircle, LogOut } from "lucide-react";
 import { Capacitor } from '@capacitor/core';
 import {
   AlertDialog,
@@ -31,6 +32,7 @@ interface PlayerAdminModeProps {
 }
 
 const PlayerAdminMode = ({ authToken, deviceInfo, onExit }: PlayerAdminModeProps) => {
+  const navigate = useNavigate();
   // DEBUG: Log to verify latest code is running - v2024-12-03
   console.log('[PlayerAdminMode] Component loaded - version 2024-12-03 with Manage Playlist Videos');
   
