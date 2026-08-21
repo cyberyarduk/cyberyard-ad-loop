@@ -17,6 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Upload, X, Image as ImageIcon, GraduationCap } from "lucide-react";
 import { Link } from "react-router-dom";
 import GettingStartedTutorial from "@/components/GettingStartedTutorial";
+import ResetPasswordButton from "@/components/ResetPasswordButton";
 
 
 const Settings = () => {
@@ -230,6 +231,14 @@ const Settings = () => {
                 {loading ? "Updating..." : "Update Password"}
               </Button>
             </form>
+            <div className="mt-6 pt-4 border-t">
+              <p className="text-sm text-muted-foreground mb-2">
+                Forgotten your current password? Send yourself a reset link by email.
+              </p>
+              <div className="max-w-xs -ml-3">
+                <ResetPasswordButton />
+              </div>
+            </div>
           </CardContent>
         </Card>
 
