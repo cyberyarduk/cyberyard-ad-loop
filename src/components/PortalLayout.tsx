@@ -59,7 +59,7 @@ const PortalLayout = ({ children, variant }: PortalLayoutProps) => {
   };
 
   const sidebarContent = (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex h-full min-h-0 flex-col pb-6">
       <div className="mb-4 shrink-0">
         <Link to={variant === "sales" ? "/sales" : "/admin"} className="block">
           <div className="rounded-2xl bg-foreground/95 px-4 py-4 flex items-center justify-center overflow-hidden">
