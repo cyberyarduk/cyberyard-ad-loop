@@ -25,6 +25,8 @@ import { PlaylistSelectorDialog } from "@/components/PlaylistSelectorDialog";
 import UploadDocumentDialog from "@/components/UploadDocumentDialog";
 import UnsplashSearchDialog from "@/components/UnsplashSearchDialog";
 import AddLinkMediaDialog from "@/components/AddLinkMediaDialog";
+import { MediaPreviewDialog } from "@/components/MediaPreviewDialog";
+
 
 const Videos = () => {
   const [open, setOpen] = useState(false);
