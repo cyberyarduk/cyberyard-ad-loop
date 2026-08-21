@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
+import PortalLayout from "@/components/PortalLayout";
+import { DEMO_MODE_KEY } from "@/components/DemoModeBanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +24,18 @@ import ResetPasswordButton from "@/components/ResetPasswordButton";
 
 const Settings = () => {
   const { profile } = useAuth();
+  const demoMode = (() => {
+    try { return sessionStorage.getItem(DEMO_MODE_KEY) === "1"; } catch { return false; }
+  })();
+  const portalVariant: "admin" | "sales" | null =
+    profile?.role === "salesperson"
+      ? "sales"
+      : profile?.role === "super_admin" && !demoMode
+        ? "admin"
+        : null;
+  const isPortal = portalVariant !== null;
+  const Layout = ({ children }: { children: React.ReactNode }) =>
+    isPortal ? <PortalLayout variant={portalVariant!}>{children}</PortalLayout> : <DashboardLayout>{children}</DashboardLayout>;
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -114,7 +128,7 @@ const Settings = () => {
   };
 
   return (
-    <DashboardLayout>
+    <Layout>
       <div className="space-y-8 max-w-4xl">
         <div>
           <h1 className="text-3xl font-bold">Settings</h1>
@@ -283,7 +297,7 @@ const Settings = () => {
       </div>
 
       <GettingStartedTutorial open={tutorialOpen} onOpenChange={setTutorialOpen} />
-    </DashboardLayout>
+    </Layout>
   );
 };
 
