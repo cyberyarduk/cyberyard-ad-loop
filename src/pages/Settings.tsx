@@ -4,6 +4,7 @@ import PortalLayout from "@/components/PortalLayout";
 import { DEMO_MODE_KEY } from "@/components/DemoModeBanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/PasswordInput";
 import { Label } from "@/components/ui/label";
 import {
   Card,
@@ -20,6 +21,7 @@ import { Upload, X, Image as ImageIcon, GraduationCap } from "lucide-react";
 import { Link } from "react-router-dom";
 import GettingStartedTutorial from "@/components/GettingStartedTutorial";
 import ResetPasswordButton from "@/components/ResetPasswordButton";
+
 
 
 const Settings = () => {
@@ -225,9 +227,8 @@ const Settings = () => {
             <form onSubmit={handlePasswordChange} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="new-password">New Password</Label>
-                <Input
+                <PasswordInput
                   id="new-password"
-                  type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Enter new password"
@@ -236,9 +237,8 @@ const Settings = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirm-password">Confirm New Password</Label>
-                <Input
+                <PasswordInput
                   id="confirm-password"
-                  type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Confirm new password"

@@ -3,11 +3,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/PasswordInput";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ArrowLeft, Info } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
+
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -142,16 +144,14 @@ const ResetPassword = () => {
             )}
 
             <form onSubmit={handleUpdatePassword} className="space-y-4">
-              <Input
-                type="password"
+              <PasswordInput
                 placeholder="New password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 required
                 disabled={!canReset || loading}
               />
-              <Input
-                type="password"
+              <PasswordInput
                 placeholder="Confirm new password"
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
