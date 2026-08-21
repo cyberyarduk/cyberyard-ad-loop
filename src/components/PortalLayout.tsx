@@ -82,7 +82,7 @@ const PortalLayout = ({ children, variant }: PortalLayoutProps) => {
         ))}
       </nav>
 
-      <div className="mt-4 border-t border-border/60 pt-3 space-y-1 shrink-0 bg-inherit">
+      <div className="mt-4 border-t border-border/60 pt-3 space-y-1 shrink-0 rounded-xl bg-secondary/60 p-2">
         {profile && (
           <div className="px-3 mb-2">
             <p className="text-sm font-medium truncate">{profile.full_name || profile.email}</p>
@@ -96,7 +96,7 @@ const PortalLayout = ({ children, variant }: PortalLayoutProps) => {
         <ResetPasswordButton />
         <button
           onClick={signOut}
-          className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground/70 hover:bg-secondary hover:text-foreground transition-all"
+          className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground hover:bg-destructive/10 hover:text-destructive transition-all"
         >
           <LogOut className="h-4 w-4 shrink-0" />
           <span>Sign Out</span>
