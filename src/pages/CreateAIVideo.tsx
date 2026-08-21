@@ -440,9 +440,6 @@ const CreateAIVideo = () => {
                     <p className="text-xs text-muted-foreground">A pulsing red badge will appear near the top. Max 20 chars.</p>
                   </div>
                 )}
-                {!limitedOffer && (
-                  <p className="ml-7 text-xs text-muted-foreground">No badge will be shown — keeps the advert truthful.</p>
-                )}
               </div>
 
               {/* Animated overlay style picker */}
