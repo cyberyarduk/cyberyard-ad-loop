@@ -144,16 +144,14 @@ const ResetPassword = () => {
             )}
 
             <form onSubmit={handleUpdatePassword} className="space-y-4">
-              <Input
-                type="password"
+              <PasswordInput
                 placeholder="New password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 required
                 disabled={!canReset || loading}
               />
-              <Input
-                type="password"
+              <PasswordInput
                 placeholder="Confirm new password"
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
