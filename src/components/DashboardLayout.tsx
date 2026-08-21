@@ -1,6 +1,6 @@
 import { ReactNode, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import GettingStartedTutorial from "@/components/GettingStartedTutorial";
+import OnboardingWizard from "@/components/OnboardingWizard";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -154,7 +154,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         {children}
       </main>
 
-      <GettingStartedTutorial
+      <OnboardingWizard
         open={tutorialOpen}
         onOpenChange={setTutorialOpen}
         onFinish={markTutorialComplete}
