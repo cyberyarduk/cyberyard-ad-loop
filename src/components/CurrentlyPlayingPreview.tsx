@@ -231,8 +231,23 @@ export function CurrentlyPlayingPreview() {
     load();
     // Refresh playlist composition every 30s so newly added/removed videos appear
     const t = setInterval(load, 30000);
-    return () => clearInterval(t);
+
+    // Live-update when a device is paired, renamed, or changes playlist/status
+    const channel = supabase
+      .channel("dashboard-devices-live")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "devices" },
+        () => load(),
+      )
+      .subscribe();
+
+    return () => {
+      clearInterval(t);
+      supabase.removeChannel(channel);
+    };
   }, []);
+
 
   const handlePlaylistSelect = (device: DeviceInfo, playlistId: string) => {
     const playlist = playlists.find((p) => p.id === playlistId);
