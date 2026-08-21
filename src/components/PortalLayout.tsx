@@ -45,10 +45,10 @@ const PortalLayout = ({ children, variant }: PortalLayoutProps) => {
     return (
       <Link to={item.path} onClick={onClick}>
         <button
-          className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+          className={`w-full flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all ${
             isActive
               ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-foreground/70 hover:bg-secondary hover:text-foreground"
+              : "text-foreground/80 hover:bg-secondary hover:text-foreground"
           }`}
         >
           <Icon className="h-4 w-4 shrink-0" />
