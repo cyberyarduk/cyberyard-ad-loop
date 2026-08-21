@@ -11,6 +11,8 @@ const Player = () => {
   const { deviceId } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isPlayerRoute = location.pathname.startsWith('/player');
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [deviceInfo, setDeviceInfo] = useState<any>(null);
   const [autoPairing, setAutoPairing] = useState(false);
@@ -19,6 +21,8 @@ const Player = () => {
     return !splashShown;
   });
   const [launcherChoice, setLauncherChoice] = useState<"player" | null>(() => {
+    // On /player deep-link, skip the launcher and go straight to pairing
+    if (isPlayerRoute) return "player";
     return localStorage.getItem('cyberyard_device_token') ? "player" : null;
   });
 
