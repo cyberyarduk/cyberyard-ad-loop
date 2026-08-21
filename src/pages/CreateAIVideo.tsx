@@ -295,11 +295,28 @@ const CreateAIVideo = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Playlists */}
               <div className="space-y-2">
-                <Label>Target Playlists</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Target Playlists</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPlaylistDialogOpen(true)}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    New playlist
+                  </Button>
+                </div>
                 {playlists.length === 0 ? (
-                  <p className="text-sm text-muted-foreground border rounded-md p-3">
-                    No playlists available. Create one on the Playlists page first.
-                  </p>
+                  <div className="space-y-3 rounded-md border p-4 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      You don't have a playlist yet — create one now and your video will be added to it.
+                    </p>
+                    <Button type="button" onClick={() => setPlaylistDialogOpen(true)}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Create a playlist
+                    </Button>
+                  </div>
                 ) : (
                   <div className="border rounded-md p-3 space-y-2 max-h-56 overflow-y-auto">
                     {playlists.map((playlist) => {
@@ -328,23 +345,49 @@ const CreateAIVideo = () => {
                 </p>
               </div>
 
+              <PlaylistSelectorDialog
+                open={playlistDialogOpen}
+                onOpenChange={setPlaylistDialogOpen}
+                onSelected={(id) => fetchPlaylists(id)}
+                title="Create a playlist"
+                description="Your new video needs a playlist to live in — pick one or create a new one."
+              />
+
               {/* Image */}
               <div className="space-y-2">
                 <Label htmlFor="image">Product Image</Label>
-                <Input
-                  id="image"
-                  type="file"
-                  accept="image/jpeg,image/png"
-                  required
-                  onChange={handleImageChange}
-                />
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <Input
+                    id="image"
+                    type="file"
+                    accept="image/jpeg,image/png"
+                    onChange={handleImageChange}
+                    className="flex-1"
+                  />
+                  <StockPhotoPickerDialog
+                    trigger={
+                      <Button type="button" variant="outline">
+                        <ImageIcon className="mr-2 h-4 w-4" />
+                        Use a stock photo
+                      </Button>
+                    }
+                    onPick={(file, previewUrl) => {
+                      setImageFile(file);
+                      setImagePreview(previewUrl);
+                      toast.success("Stock photo selected");
+                    }}
+                  />
+                </div>
                 {imagePreview && (
                   <div className="mt-2">
                     <img src={imagePreview} alt="Preview" className="w-full max-w-xs rounded-lg border" />
                   </div>
                 )}
-                <p className="text-sm text-muted-foreground">Upload a photo (e.g., blueberry muffins)</p>
+                <p className="text-sm text-muted-foreground">
+                  Upload your own photo, or search free stock photos.
+                </p>
               </div>
+
 
               {/* Main text */}
               <div className="space-y-2">
