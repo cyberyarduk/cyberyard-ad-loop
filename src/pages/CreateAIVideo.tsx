@@ -100,52 +100,54 @@ const CreateAIVideo = () => {
   const [animatedOverlays, setAnimatedOverlays] = useState(true);
   const [overlayAnimation, setOverlayAnimation] = useState<string>("shine");
 
+  const [playlistDialogOpen, setPlaylistDialogOpen] = useState(false);
+
+  const fetchPlaylists = useCallback(async (selectId?: string) => {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) {
+        toast.error(`Authentication failed: ${userError.message}`);
+        return;
+      }
+      if (!user) {
+        toast.error("Not logged in. Redirecting...");
+        setTimeout(() => navigate("/auth"), 2000);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("playlists")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        toast.error(`Cannot load playlists: ${error.message}`);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        setPlaylists([]);
+        return;
+      }
+
+      setPlaylists(data);
+      if (selectId && data.some((p) => p.id === selectId)) {
+        setSelectedPlaylistIds([selectId]);
+      } else if (presetPlaylistId && data.some((p) => p.id === presetPlaylistId)) {
+        setSelectedPlaylistIds([presetPlaylistId]);
+      } else {
+        setSelectedPlaylistIds((prev) => (prev.length === 0 ? [data[0].id] : prev));
+      }
+    } catch (err) {
+      toast.error(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }, [navigate, presetPlaylistId]);
+
   // Fetch playlists on mount
   useEffect(() => {
-    const fetchPlaylists = async () => {
-      try {
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError) {
-          toast.error(`Authentication failed: ${userError.message}`);
-          return;
-        }
-        if (!user) {
-          toast.error("Not logged in. Redirecting...");
-          setTimeout(() => navigate("/auth"), 2000);
-          return;
-        }
-
-        const { data, error } = await supabase
-          .from("playlists")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false });
-
-        if (error) {
-          toast.error(`Cannot load playlists: ${error.message}`);
-          return;
-        }
-
-        if (!data || data.length === 0) {
-          toast.error("No playlists exist. Go to Playlists page and create one first.");
-          setPlaylists([]);
-          return;
-        }
-
-        setPlaylists(data);
-        if (presetPlaylistId && data.some((p) => p.id === presetPlaylistId)) {
-          setSelectedPlaylistIds([presetPlaylistId]);
-        } else if (selectedPlaylistIds.length === 0) {
-          setSelectedPlaylistIds([data[0].id]);
-        }
-      } catch (err) {
-        toast.error(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`);
-      }
-    };
-
     fetchPlaylists();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [presetPlaylistId]);
+  }, [fetchPlaylists]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -156,6 +158,7 @@ const CreateAIVideo = () => {
       reader.readAsDataURL(file);
     }
   };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
