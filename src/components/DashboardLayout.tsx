@@ -37,7 +37,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   const navItems = [
     { path: "/dashboard", icon: LayoutDashboard, label: "Home" },
+    { path: "/devices/add", icon: PlusCircle, label: "Add Device" },
     { path: "/devices", icon: Monitor, label: "Devices" },
+    { path: "/videos/create-ai", icon: Sparkles, label: "Create Video" },
     { path: "/videos", icon: Video, label: "Media" },
     { path: "/playlists", icon: List, label: "Playlists" },
     ...(isSuperAdmin ? [{ path: "/companies", icon: Building2, label: "Companies" }] : []),
