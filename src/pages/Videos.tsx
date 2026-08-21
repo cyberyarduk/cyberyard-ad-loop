@@ -735,33 +735,8 @@ const Videos = () => {
         )}
 
         {/* Preview Dialog */}
-        <Dialog open={!!previewVideo} onOpenChange={(o) => !o && setPreviewVideo(null)}>
-          <DialogContent className="max-w-md p-0 overflow-hidden bg-background flex flex-col max-h-[90vh]">
-            <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
-              <DialogTitle className="truncate">{previewVideo?.title}</DialogTitle>
-            </DialogHeader>
-            {previewVideo && (
-              <div className="flex-1 min-h-0 bg-muted flex items-center justify-center">
-                {previewVideo.media_type === 'image' ? (
-                  <img
-                    src={previewVideo.image_url || previewVideo.video_url}
-                    alt={previewVideo.title}
-                    className="max-w-full max-h-full object-contain bg-background"
-                  />
-                ) : (
-                  <video
-                    src={previewVideo.video_url}
-                    controls
-                    autoPlay
-                    loop
-                    playsInline
-                    className="max-w-full max-h-full object-contain bg-background"
-                  />
-                )}
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
+        <MediaPreviewDialog media={previewVideo} onOpenChange={(o) => !o && setPreviewVideo(null)} />
+
 
         {/* Duration Dialog */}
         <Dialog open={!!durationEdit} onOpenChange={(o) => !o && setDurationEdit(null)}>
