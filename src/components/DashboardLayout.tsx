@@ -4,7 +4,7 @@ import GettingStartedTutorial from "@/components/GettingStartedTutorial";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { LayoutDashboard, Video, List, Monitor, LogOut, Building2, Settings, Menu, Tv } from "lucide-react";
+import { LayoutDashboard, Video, List, Monitor, LogOut, Building2, Settings, Menu, Tv, Sparkles, PlusCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/logo.png";
 import DemoModeBanner from "@/components/DemoModeBanner";
