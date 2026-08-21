@@ -2,7 +2,7 @@ import { ReactNode, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { LayoutDashboard, Users, UserPlus, LogOut, Menu, Target, Building2, ClipboardList, BarChart3, Tv } from "lucide-react";
+import { LayoutDashboard, Users, UserPlus, LogOut, Menu, Target, Building2, ClipboardList, BarChart3, Tv, Settings } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/logo.png";
 import ResetPasswordButton from "@/components/ResetPasswordButton";
@@ -59,7 +59,7 @@ const PortalLayout = ({ children, variant }: PortalLayoutProps) => {
   };
 
   const sidebarContent = (
-    <div className="flex h-full min-h-0 flex-col overflow-y-auto pr-1">
+    <div className="flex h-full min-h-0 flex-col">
       <div className="mb-4 shrink-0">
         <Link to={variant === "sales" ? "/sales" : "/admin"} className="block">
           <div className="rounded-2xl bg-foreground/95 px-4 py-4 flex items-center justify-center overflow-hidden">
@@ -76,19 +76,23 @@ const PortalLayout = ({ children, variant }: PortalLayoutProps) => {
         )}
       </div>
 
-      <nav className="space-y-1">
+      <nav className="space-y-1 flex-1 min-h-0 overflow-y-auto pr-1">
         {navItems.map((item) => (
           <NavButton key={item.path} item={item} onClick={() => setMobileOpen(false)} />
         ))}
       </nav>
 
-      <div className="mt-4 border-t border-border/60 pt-3 space-y-1 shrink-0">
+      <div className="mt-4 border-t border-border/60 pt-3 space-y-1 shrink-0 bg-inherit">
         {profile && (
           <div className="px-3 mb-2">
             <p className="text-sm font-medium truncate">{profile.full_name || profile.email}</p>
             <p className="text-xs text-muted-foreground capitalize">{profile.role.replace("_", " ")}</p>
           </div>
         )}
+        <NavButton
+          item={{ path: "/settings", icon: Settings, label: "Settings" }}
+          onClick={() => setMobileOpen(false)}
+        />
         <ResetPasswordButton />
         <button
           onClick={signOut}
@@ -100,6 +104,7 @@ const PortalLayout = ({ children, variant }: PortalLayoutProps) => {
       </div>
     </div>
   );
+
 
   return (
     <div className="native-app-shell min-h-screen relative">
