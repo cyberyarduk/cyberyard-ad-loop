@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -7,11 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Sparkles, Loader2, Settings2, Wand2 } from "lucide-react";
+import { Sparkles, Loader2, Settings2, Wand2, Plus, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { VideoGenerationLoader } from "@/components/VideoGenerationLoader";
+import { PlaylistSelectorDialog } from "@/components/PlaylistSelectorDialog";
+import StockPhotoPickerDialog from "@/components/StockPhotoPickerDialog";
 import { cn } from "@/lib/utils";
+
 
 // ===== Customization options =====
 const STYLE_PRESETS = [
@@ -100,52 +103,54 @@ const CreateAIVideo = () => {
   const [animatedOverlays, setAnimatedOverlays] = useState(true);
   const [overlayAnimation, setOverlayAnimation] = useState<string>("shine");
 
+  const [playlistDialogOpen, setPlaylistDialogOpen] = useState(false);
+
+  const fetchPlaylists = useCallback(async (selectId?: string) => {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) {
+        toast.error(`Authentication failed: ${userError.message}`);
+        return;
+      }
+      if (!user) {
+        toast.error("Not logged in. Redirecting...");
+        setTimeout(() => navigate("/auth"), 2000);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("playlists")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        toast.error(`Cannot load playlists: ${error.message}`);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        setPlaylists([]);
+        return;
+      }
+
+      setPlaylists(data);
+      if (selectId && data.some((p) => p.id === selectId)) {
+        setSelectedPlaylistIds([selectId]);
+      } else if (presetPlaylistId && data.some((p) => p.id === presetPlaylistId)) {
+        setSelectedPlaylistIds([presetPlaylistId]);
+      } else {
+        setSelectedPlaylistIds((prev) => (prev.length === 0 ? [data[0].id] : prev));
+      }
+    } catch (err) {
+      toast.error(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }, [navigate, presetPlaylistId]);
+
   // Fetch playlists on mount
   useEffect(() => {
-    const fetchPlaylists = async () => {
-      try {
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError) {
-          toast.error(`Authentication failed: ${userError.message}`);
-          return;
-        }
-        if (!user) {
-          toast.error("Not logged in. Redirecting...");
-          setTimeout(() => navigate("/auth"), 2000);
-          return;
-        }
-
-        const { data, error } = await supabase
-          .from("playlists")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false });
-
-        if (error) {
-          toast.error(`Cannot load playlists: ${error.message}`);
-          return;
-        }
-
-        if (!data || data.length === 0) {
-          toast.error("No playlists exist. Go to Playlists page and create one first.");
-          setPlaylists([]);
-          return;
-        }
-
-        setPlaylists(data);
-        if (presetPlaylistId && data.some((p) => p.id === presetPlaylistId)) {
-          setSelectedPlaylistIds([presetPlaylistId]);
-        } else if (selectedPlaylistIds.length === 0) {
-          setSelectedPlaylistIds([data[0].id]);
-        }
-      } catch (err) {
-        toast.error(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`);
-      }
-    };
-
     fetchPlaylists();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [presetPlaylistId]);
+  }, [fetchPlaylists]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -156,6 +161,7 @@ const CreateAIVideo = () => {
       reader.readAsDataURL(file);
     }
   };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -289,11 +295,28 @@ const CreateAIVideo = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Playlists */}
               <div className="space-y-2">
-                <Label>Target Playlists</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Target Playlists</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPlaylistDialogOpen(true)}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    New playlist
+                  </Button>
+                </div>
                 {playlists.length === 0 ? (
-                  <p className="text-sm text-muted-foreground border rounded-md p-3">
-                    No playlists available. Create one on the Playlists page first.
-                  </p>
+                  <div className="space-y-3 rounded-md border p-4 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      You don't have a playlist yet — create one now and your video will be added to it.
+                    </p>
+                    <Button type="button" onClick={() => setPlaylistDialogOpen(true)}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Create a playlist
+                    </Button>
+                  </div>
                 ) : (
                   <div className="border rounded-md p-3 space-y-2 max-h-56 overflow-y-auto">
                     {playlists.map((playlist) => {
@@ -322,23 +345,49 @@ const CreateAIVideo = () => {
                 </p>
               </div>
 
+              <PlaylistSelectorDialog
+                open={playlistDialogOpen}
+                onOpenChange={setPlaylistDialogOpen}
+                onSelected={(id) => fetchPlaylists(id)}
+                title="Create a playlist"
+                description="Your new video needs a playlist to live in — pick one or create a new one."
+              />
+
               {/* Image */}
               <div className="space-y-2">
                 <Label htmlFor="image">Product Image</Label>
-                <Input
-                  id="image"
-                  type="file"
-                  accept="image/jpeg,image/png"
-                  required
-                  onChange={handleImageChange}
-                />
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <Input
+                    id="image"
+                    type="file"
+                    accept="image/jpeg,image/png"
+                    onChange={handleImageChange}
+                    className="flex-1"
+                  />
+                  <StockPhotoPickerDialog
+                    trigger={
+                      <Button type="button" variant="outline">
+                        <ImageIcon className="mr-2 h-4 w-4" />
+                        Use a stock photo
+                      </Button>
+                    }
+                    onPick={(file, previewUrl) => {
+                      setImageFile(file);
+                      setImagePreview(previewUrl);
+                      toast.success("Stock photo selected");
+                    }}
+                  />
+                </div>
                 {imagePreview && (
                   <div className="mt-2">
                     <img src={imagePreview} alt="Preview" className="w-full max-w-xs rounded-lg border" />
                   </div>
                 )}
-                <p className="text-sm text-muted-foreground">Upload a photo (e.g., blueberry muffins)</p>
+                <p className="text-sm text-muted-foreground">
+                  Upload your own photo, or search free stock photos.
+                </p>
               </div>
+
 
               {/* Main text */}
               <div className="space-y-2">
