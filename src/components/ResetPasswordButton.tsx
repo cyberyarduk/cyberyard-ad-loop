@@ -31,7 +31,7 @@ export const ResetPasswordButton = () => {
     <button
       onClick={handleReset}
       disabled={loading}
-      className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground/70 hover:bg-secondary hover:text-foreground transition-all disabled:opacity-60"
+      className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground hover:bg-secondary transition-all disabled:opacity-60"
     >
       <KeyRound className="h-4 w-4 shrink-0" />
       <span>{loading ? "Sending…" : "Reset password"}</span>
