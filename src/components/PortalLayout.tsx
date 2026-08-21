@@ -5,7 +5,6 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { LayoutDashboard, Users, UserPlus, LogOut, Menu, Target, Building2, ClipboardList, BarChart3, Tv, Settings } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/logo.png";
-import ResetPasswordButton from "@/components/ResetPasswordButton";
 import BottomNav from "@/components/BottomNav";
 
 interface PortalLayoutProps {
@@ -93,7 +92,6 @@ const PortalLayout = ({ children, variant }: PortalLayoutProps) => {
           item={{ path: "/settings", icon: Settings, label: "Settings" }}
           onClick={() => setMobileOpen(false)}
         />
-        <ResetPasswordButton />
         <button
           onClick={signOut}
           className="w-full flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-foreground hover:bg-destructive/10 hover:text-destructive transition-all"
