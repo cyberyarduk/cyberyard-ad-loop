@@ -33,7 +33,14 @@ const BottomNav = ({ items }: BottomNavProps) => {
             item.path === "/"
               ? location.pathname === "/"
               : location.pathname === item.path ||
-                location.pathname.startsWith(item.path + "/");
+                (location.pathname.startsWith(item.path + "/") &&
+                  !items.some(
+                    (other) =>
+                      other !== item &&
+                      other.path.startsWith(item.path + "/") &&
+                      (location.pathname === other.path ||
+                        location.pathname.startsWith(other.path + "/"))
+                  ));
           return (
             <Link
               key={item.path}
