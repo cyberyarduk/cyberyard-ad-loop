@@ -371,7 +371,7 @@ const Devices = ({ autoOpenAdd }: DevicesProps) => {
               <DialogHeader>
                 <DialogTitle>Register New Device</DialogTitle>
                 <DialogDescription>
-                  Create a new wearable screen device
+                  Create a new device
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
