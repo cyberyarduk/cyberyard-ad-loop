@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import PlayerPairing from "./PlayerPairing";
 import PlayerVideo from "./PlayerVideo";
 import PlayerSplash from "@/components/PlayerSplash";
