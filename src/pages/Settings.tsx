@@ -4,6 +4,7 @@ import PortalLayout from "@/components/PortalLayout";
 import { DEMO_MODE_KEY } from "@/components/DemoModeBanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/PasswordInput";
 import { Label } from "@/components/ui/label";
 import {
   Card,
@@ -20,6 +21,7 @@ import { Upload, X, Image as ImageIcon, GraduationCap } from "lucide-react";
 import { Link } from "react-router-dom";
 import GettingStartedTutorial from "@/components/GettingStartedTutorial";
 import ResetPasswordButton from "@/components/ResetPasswordButton";
+
 
 
 const Settings = () => {
