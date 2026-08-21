@@ -154,7 +154,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         {children}
       </main>
 
-      <GettingStartedTutorial
+      <OnboardingWizard
         open={tutorialOpen}
         onOpenChange={setTutorialOpen}
         onFinish={markTutorialComplete}
