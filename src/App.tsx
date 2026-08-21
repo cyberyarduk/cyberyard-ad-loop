@@ -129,6 +129,7 @@ const App = () => (
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/venues" element={<Navigate to="/dashboard" replace />} />
             <Route path="/devices" element={<ProtectedRoute><Devices /></ProtectedRoute>} />
+            <Route path="/devices/add" element={<ProtectedRoute><Devices autoOpenAdd /></ProtectedRoute>} />
             <Route path="/videos" element={<ProtectedRoute><Videos /></ProtectedRoute>} />
             <Route path="/videos/create-ai" element={<ProtectedRoute><CreateAIVideo /></ProtectedRoute>} />
             <Route path="/playlists" element={<ProtectedRoute><Playlists /></ProtectedRoute>} />
