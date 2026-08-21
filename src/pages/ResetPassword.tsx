@@ -3,11 +3,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/PasswordInput";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ArrowLeft, Info } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
+
 
 const ResetPassword = () => {
   const navigate = useNavigate();
