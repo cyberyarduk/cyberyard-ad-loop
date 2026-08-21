@@ -164,7 +164,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         items={[
           { path: "/dashboard", icon: LayoutDashboard, label: "Home" },
           { path: "/devices", icon: Monitor, label: "Devices" },
-          { path: "/videos/create-ai", icon: Video, label: "Create" },
+          { path: "/devices/add", icon: PlusCircle, label: "Add Device" },
           { path: "/playlists", icon: List, label: "Playlists" },
           { path: "/player", icon: Tv, label: "Player" },
         ]}
