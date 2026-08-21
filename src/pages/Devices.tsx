@@ -35,10 +35,13 @@ import { supabase } from "@/integrations/supabase/client";
 import QRCode from "qrcode";
 import DeviceScheduleDialog from "@/components/DeviceScheduleDialog";
 
+interface DevicesProps {
+  autoOpenAdd?: boolean;
+}
 
-const Devices = () => {
+const Devices = ({ autoOpenAdd }: DevicesProps) => {
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(autoOpenAdd || false);
   const [devices, setDevices] = useState<any[]>([]);
   const [venues, setVenues] = useState<any[]>([]);
   const [playlists, setPlaylists] = useState<any[]>([]);
