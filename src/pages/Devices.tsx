@@ -83,6 +83,13 @@ const Devices = ({ autoOpenAdd }: DevicesProps) => {
     fetchDeviceLimit();
   }, []);
 
+  // Auto-open the add-device dialog when accessed from the bottom nav shortcut
+  useEffect(() => {
+    if (autoOpenAdd) {
+      setOpen(true);
+    }
+  }, [autoOpenAdd]);
+
   const fetchDeviceLimit = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
