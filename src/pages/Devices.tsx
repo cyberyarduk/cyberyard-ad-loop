@@ -83,6 +83,27 @@ const Devices = ({ autoOpenAdd }: DevicesProps) => {
     fetchDeviceLimit();
   }, []);
 
+  // Live-update the device list when devices are paired / change status
+  useEffect(() => {
+    const channel = supabase
+      .channel('devices-live')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'devices' },
+        () => fetchDevices()
+      )
+      .subscribe();
+
+    // Polling fallback in case realtime is unavailable
+    const interval = setInterval(fetchDevices, 15000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
+  }, []);
+
+
   // Auto-open the add-device dialog when accessed from the bottom nav shortcut
   useEffect(() => {
     if (autoOpenAdd) {
