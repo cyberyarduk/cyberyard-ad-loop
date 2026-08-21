@@ -35,18 +35,18 @@ const Dashboard = () => {
 
   const actions = [
     {
-      icon: Video,
-      title: "Create Offer Video",
-      description: "Generate a new offer video",
-      to: "/videos/create-ai",
-      tone: "bg-peach",
-    },
-    {
       icon: Monitor,
       title: "Add new device",
       description: "Pair a new screen to your account",
       to: "/devices",
       tone: "bg-lavender",
+    },
+    {
+      icon: Video,
+      title: "Create Offer Video",
+      description: "Generate a new offer video",
+      to: "/videos/create-ai",
+      tone: "bg-peach",
     },
     {
       icon: List,
