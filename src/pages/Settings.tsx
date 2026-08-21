@@ -133,10 +133,11 @@ const Settings = () => {
         <div>
           <h1 className="text-3xl font-bold">Settings</h1>
           <p className="text-muted-foreground mt-1">
-            Manage your account and view analytics
+            Manage your account settings
           </p>
         </div>
 
+        {!isPortal && (
         <section className="space-y-4">
           <div>
             <h2 className="text-xl font-semibold">Analytics</h2>
@@ -146,6 +147,7 @@ const Settings = () => {
           </div>
           <DashboardAnalytics />
         </section>
+        )}
 
         <Card>
           <CardHeader>
@@ -168,6 +170,7 @@ const Settings = () => {
           </CardContent>
         </Card>
 
+        {!isPortal && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -209,6 +212,7 @@ const Settings = () => {
             </p>
           </CardContent>
         </Card>
+        )}
 
         <Card>
           <CardHeader>
@@ -256,6 +260,7 @@ const Settings = () => {
           </CardContent>
         </Card>
 
+        {!isPortal && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -269,6 +274,7 @@ const Settings = () => {
             <Button onClick={() => setTutorialOpen(true)}>Show me how it works</Button>
           </CardContent>
         </Card>
+        )}
 
         <Card>
           <CardHeader>
