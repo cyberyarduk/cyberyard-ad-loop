@@ -115,7 +115,7 @@ const CookieConsent = () => {
           role="dialog"
           aria-live="polite"
           aria-label="Cookie consent"
-          className="fixed bottom-3 left-3 right-3 md:left-6 md:right-6 z-[100] mx-auto max-w-3xl"
+          className="fixed bottom-3 left-3 right-3 md:left-6 md:right-6 lg:left-[17rem] z-[100] mx-auto max-w-3xl"
         >
           <div className="premium-card rounded-2xl p-5 md:p-6 shadow-2xl border bg-background">
             <div className="flex items-start gap-4">
