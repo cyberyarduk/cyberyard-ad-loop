@@ -229,7 +229,7 @@ const OnboardingWizard = ({ open, onOpenChange, onFinish }: Props) => {
 
   const totalSteps = 5;
 
-  const Shell = ({ children }: { children: React.ReactNode }) => (
+  const renderShell = (children: React.ReactNode) => (
     <div className="fixed inset-0 z-[100] bg-background overflow-y-auto">
       <div className="pointer-events-none fixed inset-0 -z-10 bg-wash-warm opacity-70" />
       <button
