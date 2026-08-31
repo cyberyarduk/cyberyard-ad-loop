@@ -262,7 +262,7 @@ const OnboardingWizard = ({ open, onOpenChange, onFinish }: Props) => {
   // Step 0 — welcome
   if (step === 0) {
     return (
-      <Shell>
+      {renderShell(<>
         <div className="p-3 bg-yellow-bright/60 rounded-xl w-fit mb-5">
           <Sparkles className="h-6 w-6 text-foreground" />
         </div>
@@ -291,14 +291,14 @@ const OnboardingWizard = ({ open, onOpenChange, onFinish }: Props) => {
             Let's go <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
         </div>
-      </Shell>
+      </>)}
     );
   }
 
   // Step 1 — pick the screen type
   if (step === 1) {
     return (
-      <Shell>
+      {renderShell(<>
         <h1 className="text-3xl font-semibold tracking-tight">What screen will you use?</h1>
         <p className="text-muted-foreground mt-3">
           This is the screen your customers will see — it can be anything you already own.
@@ -340,7 +340,7 @@ const OnboardingWizard = ({ open, onOpenChange, onFinish }: Props) => {
             <ArrowLeft className="h-4 w-4 mr-2" /> Back
           </Button>
         </div>
-      </Shell>
+      </>)}
     );
   }
 
@@ -348,7 +348,7 @@ const OnboardingWizard = ({ open, onOpenChange, onFinish }: Props) => {
   if (step === 2 && kind) {
     const info = INSTRUCTIONS[kind];
     return (
-      <Shell>
+      {renderShell(<>
         <h1 className="text-3xl font-semibold tracking-tight">{info.title}</h1>
         <div className="mt-5 rounded-2xl border border-border/60 bg-secondary/40 p-4">
           <p className="text-sm text-foreground/80">
@@ -397,14 +397,14 @@ const OnboardingWizard = ({ open, onOpenChange, onFinish }: Props) => {
             Get my pairing code
           </Button>
         </div>
-      </Shell>
+      </>)}
     );
   }
 
   // Step 3 — pairing code + live wait
   if (step === 3) {
     return (
-      <Shell>
+      {renderShell(<>
         <h1 className="text-3xl font-semibold tracking-tight">
           {paired ? "Your screen is connected" : "Enter this code on your screen"}
         </h1>
@@ -464,13 +464,13 @@ const OnboardingWizard = ({ open, onOpenChange, onFinish }: Props) => {
             </Button>
           )}
         </div>
-      </Shell>
+      </>)}
     );
   }
 
   // Step 4 — first video (playlist auto-created)
   return (
-    <Shell>
+    {renderShell(<>
       <h1 className="text-3xl font-semibold tracking-tight">Now let's make your first advert</h1>
       <p className="text-muted-foreground mt-3">
         Describe an offer in a sentence and Cyberyard builds the video for you — usually in about a minute.
@@ -504,7 +504,7 @@ const OnboardingWizard = ({ open, onOpenChange, onFinish }: Props) => {
           I'll do this later
         </Button>
       </div>
-    </Shell>
+    </>)}
   );
 };
 
