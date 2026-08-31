@@ -805,15 +805,21 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in generate-video function:', error);
+    const raw = error instanceof Error ? error.message : 'Unknown error';
+    // Never leak provider/API details to the client — map to friendly copy.
+    let friendly = "We couldn't create your video right now. Please try again in a moment.";
+    if (/exceeds one or more plan limits|credits|Forbidden|402|429|quota/i.test(raw)) {
+      friendly = "Video creation is temporarily unavailable. Our team has been notified — please try again shortly.";
+    } else if (/timed out|timeout/i.test(raw)) {
+      friendly = "Your video took too long to render. Please try again.";
+    }
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      }),
+      JSON.stringify({ success: false, error: friendly }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
   }
+
 });
