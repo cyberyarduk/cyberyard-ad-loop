@@ -37,8 +37,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   const navItems = [
     { path: "/dashboard", icon: LayoutDashboard, label: "Home" },
-    { path: "/devices/add", icon: PlusCircle, label: "Add Device" },
-    { path: "/devices", icon: Monitor, label: "Devices" },
+    { path: "/devices/add", icon: PlusCircle, label: "Connect a Screen" },
+    { path: "/devices", icon: Monitor, label: "My Screens" },
+
     { path: "/videos/create-ai", icon: Sparkles, label: "Create Video" },
     { path: "/videos", icon: Video, label: "Media" },
     { path: "/playlists", icon: List, label: "Playlists" },
@@ -163,8 +164,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       <BottomNav
         items={[
           { path: "/dashboard", icon: LayoutDashboard, label: "Home" },
-          { path: "/devices", icon: Monitor, label: "Devices" },
-          { path: "/devices/add", icon: PlusCircle, label: "Add Device" },
+          { path: "/devices", icon: Monitor, label: "Screens" },
+          { path: "/devices/add", icon: PlusCircle, label: "Connect" },
+
           { path: "/playlists", icon: List, label: "Playlists" },
           { path: "/player", icon: Tv, label: "Player" },
         ]}

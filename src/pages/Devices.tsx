@@ -370,9 +370,9 @@ const Devices = ({ autoOpenAdd }: DevicesProps) => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold">Devices</h1>
+            <h1 className="text-3xl font-bold">My Screens</h1>
             <p className="text-muted-foreground mt-1">
-              Manage your screen devices
+              Every screen playing your adverts
               {deviceLimit !== null && (
                 <span className="ml-2 font-medium">
                   ({devices.length} of {deviceLimit} used)
@@ -385,16 +385,17 @@ const Devices = ({ autoOpenAdd }: DevicesProps) => {
               <DialogTrigger asChild>
                 <Button disabled={deviceLimit !== null && devices.length >= deviceLimit}>
                   <Plus className="mr-2 h-4 w-4" />
-                  Add Device
+                  Connect a Screen
                 </Button>
               </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Register New Device</DialogTitle>
+                <DialogTitle>Connect a screen</DialogTitle>
                 <DialogDescription>
-                  Create a new device
+                  Name the screen, then we'll give you a code to type into it.
                 </DialogDescription>
               </DialogHeader>
+
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Device Name</Label>
