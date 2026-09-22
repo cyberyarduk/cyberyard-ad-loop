@@ -293,22 +293,50 @@ const OnboardingWizard = ({ open, onOpenChange, onFinish }: Props) => {
       </>);
   }
 
-  // Step 1 — pick the screen type
+  // Step 1 — is it this device, or another one?
   if (step === 1) {
+    const currentLabel =
+      SCREEN_OPTIONS.find((o) => o.kind === currentDevice)?.label.replace(/^A /, "") || "device";
+    const CurrentIcon = SCREEN_OPTIONS.find((o) => o.kind === currentDevice)?.icon || Tv;
     return renderShell(<>
-        <h1 className="text-3xl font-semibold tracking-tight">What screen will you use?</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Which screen will show your adverts?</h1>
         <p className="text-muted-foreground mt-3">
-          This is the screen your customers will see — it can be anything you already own.
+          This is the screen your customers will see.
         </p>
-        <div className="space-y-3 mt-7">
+
+        <button
+          onClick={() => {
+            setKind(currentDevice);
+            setThisDevice(true);
+            setDeviceName((n) => n || `My ${currentLabel}`);
+            setStep(2);
+          }}
+          className="mt-7 w-full rounded-2xl border-2 border-primary/40 bg-primary/5 hover:bg-primary/10 transition-all p-4 flex items-center gap-4 text-left"
+        >
+          <div className="h-12 w-12 rounded-xl bg-yellow-bright/60 flex items-center justify-center shrink-0">
+            <CurrentIcon className="h-6 w-6 text-foreground" />
+          </div>
+          <div className="flex-1">
+            <p className="font-medium">Use this {currentLabel}</p>
+            <p className="text-xs text-muted-foreground">
+              The {currentLabel} you're on right now becomes the screen. Quickest option.
+            </p>
+          </div>
+          <ArrowRight className="h-4 w-4 text-muted-foreground" />
+        </button>
+
+        <p className="text-xs uppercase tracking-wide text-muted-foreground mt-8 mb-3">
+          Or use a different screen
+        </p>
+        <div className="space-y-3">
           {SCREEN_OPTIONS.map((opt) => {
             const Icon = opt.icon;
-            const isCurrent = opt.kind === currentDevice;
             return (
               <button
                 key={opt.kind}
                 onClick={() => {
                   setKind(opt.kind);
+                  setThisDevice(false);
                   setStep(2);
                 }}
                 className="w-full rounded-2xl border border-border/60 bg-background hover:border-foreground/20 hover:bg-secondary/50 transition-all p-4 flex items-center gap-4 text-left"
@@ -317,14 +345,7 @@ const OnboardingWizard = ({ open, onOpenChange, onFinish }: Props) => {
                   <Icon className="h-6 w-6 text-foreground" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium">
-                    {opt.label}
-                    {isCurrent && (
-                      <span className="ml-2 text-xs font-normal text-muted-foreground">
-                        (looks like what you're on now)
-                      </span>
-                    )}
-                  </p>
+                  <p className="font-medium">{opt.label}</p>
                   <p className="text-xs text-muted-foreground">{opt.hint}</p>
                 </div>
                 <ArrowRight className="h-4 w-4 text-muted-foreground" />
@@ -339,6 +360,7 @@ const OnboardingWizard = ({ open, onOpenChange, onFinish }: Props) => {
         </div>
       </>);
   }
+
 
   // Step 2 — install / open the player on that screen, then name it
   if (step === 2 && kind) {
