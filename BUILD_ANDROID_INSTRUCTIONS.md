@@ -267,3 +267,30 @@ For issues:
 - Check the console in Android Studio's Logcat
 - Verify edge functions are working on web version first
 - Test pairing and video playback on web before testing on mobile
+
+## Fixing "app targets an out-of-date version of Android" (Google Play)
+
+Google Play requires new releases to target **Android 15 (API 35)**.
+
+1. Delete the old native folder so it is regenerated with current settings:
+   ```
+   rmdir /s /q android        (Windows)
+   rm -rf android             (Mac)
+   ```
+2. Regenerate and sync:
+   ```
+   npm install
+   npm run build
+   npx cap add android
+   npx cap sync android
+   ```
+3. Open `android/variables.gradle` and confirm (edit if lower):
+   ```gradle
+   ext {
+       minSdkVersion = 26
+       compileSdkVersion = 35
+       targetSdkVersion = 35
+   }
+   ```
+4. In Android Studio: **Build > Generate Signed App Bundle**, bump `versionCode`
+   in `android/app/build.gradle` to the next number, then upload the new `.aab`.
