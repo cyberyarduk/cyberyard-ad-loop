@@ -93,7 +93,9 @@ const OnboardingWizard = ({ open, onOpenChange, onFinish }: Props) => {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [kind, setKind] = useState<ScreenKind | null>(null);
+  const [thisDevice, setThisDevice] = useState(false);
   const [deviceName, setDeviceName] = useState("");
+
   const [creating, setCreating] = useState(false);
   const [device, setDevice] = useState<any>(null);
   const [qr, setQr] = useState("");
