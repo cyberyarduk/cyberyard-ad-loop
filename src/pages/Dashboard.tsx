@@ -36,9 +36,10 @@ const Dashboard = () => {
   const actions = [
     {
       icon: Monitor,
-      title: "Add new device",
-      description: "Pair a new screen to your account",
+      title: "Connect a screen",
+      description: "Set up a TV, tablet, phone or laptop to play your adverts",
       to: "/devices",
+
       tone: "bg-lavender",
     },
     {
