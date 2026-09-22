@@ -437,8 +437,11 @@ const OnboardingWizard = ({ open, onOpenChange, onFinish }: Props) => {
         <p className="text-muted-foreground mt-3">
           {paired
             ? `${device?.name} is paired and ready for content.`
-            : "On the other device, the Cyberyard player is asking for a pairing code. Type this in."}
+            : thisDevice
+              ? "Tap 'Player' in the bar at the bottom of this screen, then type this code in."
+              : "On the other device, the Cyberyard player is asking for a pairing code. Type this in."}
         </p>
+
 
         {!paired && (
           <>
