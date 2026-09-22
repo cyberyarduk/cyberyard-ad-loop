@@ -104,7 +104,6 @@ const OnboardingWizard = ({ open, onOpenChange, onFinish }: Props) => {
   const pollRef = useRef<number | null>(null);
 
   const currentDevice = useMemo(detectCurrentDevice, []);
-  const sameDeviceWarning = kind !== null && kind === currentDevice;
 
   // Generate the pairing QR once we have a device
   useEffect(() => {
